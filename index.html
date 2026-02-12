@@ -985,13 +985,19 @@
                         }
                         // Solid materials check for support
                         else {
+                            // SLIME GLUE: Any block touching slime is stuck - won't fall (floating metal!)
+                            const touchingSlime = this.get(x, y - 1) === MATERIAL.SLIME ||
+                                                  this.get(x, y + 1) === MATERIAL.SLIME ||
+                                                  this.get(x - 1, y) === MATERIAL.SLIME ||
+                                                  this.get(x + 1, y) === MATERIAL.SLIME;
+                            
                             // STICKY BLOCKS: Human-built blocks are sticky; PLANTS need ground support
                             const isHumanBuilt = this.humanBuiltBlocks[idx];
                             
                             // Check if there's direct support below
                             const hasDirectSupport = !this.isEmpty(x, y + 1);
                             
-                            if (!hasDirectSupport) {
+                            if (!hasDirectSupport && !touchingSlime) {
                                 // Plants need direct support below - no side/top "sticky" (prevents mid-air floating)
                                 if (material === MATERIAL.PLANT) {
                                     if (this.isEmpty(x, y + 1)) {
