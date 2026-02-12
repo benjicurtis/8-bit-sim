@@ -217,6 +217,7 @@
             <div><span class="key">CLICK + DRAG</span> Destroy | <span class="key">R</span> Rebuild | <span class="key">H</span> Hide UI</div>
             <div style="margin-top: 8px;"><span class="key">1</span> Concrete | <span class="key">2</span> Dust | <span class="key">3</span> Water | <span class="key">4</span> Metal | <span class="key">5</span> Lava | <span class="key">6</span> Acid | <span class="key">7</span> Human</div>
             <div style="margin-top: 5px;"><span class="key">8</span> Snow | <span class="key">9</span> Oil | <span class="key">0</span> Steam | <span class="key">Q</span> Blood | <span class="key">W</span> Slime | <span class="key">E</span> Fire | <span class="key">T</span> Plant | <span class="key">Y</span> Ice | <span class="key">U</span> Sand</div>
+            <div style="margin-top: 5px;"><span class="key">I</span> Honey | <span class="key">O</span> Gravel | <span class="key">P</span> Wood | <span class="key">G</span> Gunpowder | <span class="key">J</span> Stone | <span class="key">K</span> Ember</div>
         </div>
         
         <div id="uiToggleIndicator">Press H to show UI</div>
@@ -269,7 +270,13 @@
             FIRE: 16,        // Spreads and burns, rises
             PLANT: 17,       // Living material that grows
             ICE: 18,         // Solid that melts into water
-            SAND: 19         // Fast-falling particles, like dust but denser
+            SAND: 19,        // Fast-falling particles
+            HONEY: 20,       // Very viscous golden liquid
+            GRAVEL: 21,      // Heavy fast-falling particles
+            WOOD: 22,        // Burnable solid
+            GUNPOWDER: 23,   // Explosive particles
+            STONE: 24,       // Heavy solid, rugged
+            EMBER: 25        // Hot glowing particles that rise
         };
 
         // Material Properties
@@ -293,7 +300,13 @@
             [MATERIAL.FIRE]: { color: '#ff8c00', density: 0.3, strength: 0, flow: true, shadeBase: [255, 140, 0], burns: true, rises: true },
             [MATERIAL.PLANT]: { color: '#228b22', density: 3, strength: 2, flow: false, shadeBase: [34, 139, 34], grows: true },
             [MATERIAL.ICE]: { color: '#add8e6', density: 5, strength: 3, flow: false, shadeBase: [173, 216, 230], melts: true },
-            [MATERIAL.SAND]: { color: '#f4a460', density: 4, strength: 0, flow: true, shadeBase: [244, 164, 96] }
+            [MATERIAL.SAND]: { color: '#f4a460', density: 4, strength: 0, flow: true, shadeBase: [244, 164, 96] },
+            [MATERIAL.HONEY]: { color: '#daa520', density: 5, strength: 0, flow: true, shadeBase: [218, 165, 32], viscous: true },
+            [MATERIAL.GRAVEL]: { color: '#6b6b6b', density: 6, strength: 0, flow: true, shadeBase: [107, 107, 107] },
+            [MATERIAL.WOOD]: { color: '#8b4513', density: 5, strength: 4, flow: false, shadeBase: [139, 69, 19], flammable: true },
+            [MATERIAL.GUNPOWDER]: { color: '#3d3d3d', density: 3, strength: 0, flow: true, shadeBase: [61, 61, 61], explosive: true },
+            [MATERIAL.STONE]: { color: '#696969', density: 9, strength: 6, flow: false, shadeBase: [105, 105, 105] },
+            [MATERIAL.EMBER]: { color: '#ff6b35', density: 0.4, strength: 0, flow: true, shadeBase: [255, 107, 53], rises: true }
         };
 
         // Game State
@@ -536,7 +549,8 @@
                                     materialAtGroundPos === MATERIAL.LAVA ||
                                     materialAtGroundPos === MATERIAL.OIL ||
                                     materialAtGroundPos === MATERIAL.BLOOD ||
-                                    materialAtGroundPos === MATERIAL.SLIME;
+                                    materialAtGroundPos === MATERIAL.SLIME ||
+                                    materialAtGroundPos === MATERIAL.HONEY;
                                 
                                 if (canBuildGround) {
                                     // Always build ground block first
@@ -559,7 +573,8 @@
                                                 materialAtTowerPos === MATERIAL.LAVA ||
                                                 materialAtTowerPos === MATERIAL.OIL ||
                                                 materialAtTowerPos === MATERIAL.BLOOD ||
-                                                materialAtTowerPos === MATERIAL.SLIME) {
+                                                materialAtTowerPos === MATERIAL.SLIME ||
+                                                materialAtTowerPos === MATERIAL.HONEY) {
                                                 
                                                 this.set(buildX, towerY, MATERIAL.CONCRETE);
                                                 const towerIdx = this.getIndex(buildX, towerY);
@@ -578,7 +593,8 @@
                                             materialAtUpperPos === MATERIAL.LAVA ||
                                             materialAtUpperPos === MATERIAL.OIL ||
                                             materialAtUpperPos === MATERIAL.BLOOD ||
-                                            materialAtUpperPos === MATERIAL.SLIME) {
+                                            materialAtUpperPos === MATERIAL.SLIME ||
+                                            materialAtUpperPos === MATERIAL.HONEY) {
                                             
                                             this.set(buildX, upperBuildY, MATERIAL.CONCRETE);
                                             const upperIdx = this.getIndex(buildX, upperBuildY);
@@ -682,8 +698,10 @@
                             for (const [nx, ny] of neighbors) {
                                 const neighborMat = this.get(nx, ny);
                                 // Burns dust, glass, humans and converts them to lava or dust
-                                if ((neighborMat === MATERIAL.DUST || neighborMat === MATERIAL.GLASS) && Math.random() < 0.2) {
+                                if ((neighborMat === MATERIAL.DUST || neighborMat === MATERIAL.GLASS || neighborMat === MATERIAL.WOOD) && Math.random() < 0.2) {
                                     newGrid[this.getIndex(nx, ny)] = MATERIAL.LAVA;
+                                } else if (neighborMat === MATERIAL.GUNPOWDER && Math.random() < 0.7) {
+                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE; // Lava ignites gunpowder
                                 } else if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY) && Math.random() < 0.15) {
                                     // Humans burn to dust
                                     newGrid[this.getIndex(nx, ny)] = MATERIAL.DUST;
@@ -701,7 +719,8 @@
                             
                             for (const [nx, ny] of neighbors) {
                                 const neighborMat = this.get(nx, ny);
-                                if (neighborMat !== MATERIAL.EMPTY && neighborMat !== MATERIAL.ACID && neighborMat !== MATERIAL.DEAD_HUMAN) {
+                                if (neighborMat !== MATERIAL.EMPTY && neighborMat !== MATERIAL.ACID && neighborMat !== MATERIAL.DEAD_HUMAN && neighborMat !== MATERIAL.SLIME && neighborMat !== MATERIAL.HONEY) {
+                                    // Slime and honey resist acid - don't erode
                                     // Humans touched by acid turn into unmoving red voxels
                                     if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY) && Math.random() < 0.7) {
                                         newGrid[this.getIndex(nx, ny)] = MATERIAL.DEAD_HUMAN;
@@ -719,7 +738,7 @@
                                 const spreadX = x + spreadDir;
                                 const spreadY = y;
                                 const spreadMat = this.get(spreadX, spreadY);
-                                if (spreadMat !== MATERIAL.EMPTY && spreadMat !== MATERIAL.ACID) {
+                                if (spreadMat !== MATERIAL.EMPTY && spreadMat !== MATERIAL.ACID && spreadMat !== MATERIAL.SLIME && spreadMat !== MATERIAL.HONEY) {
                                     newGrid[this.getIndex(spreadX, spreadY)] = MATERIAL.ACID;
                                 }
                             }
@@ -737,6 +756,11 @@
                                 if (neighborMat === MATERIAL.OIL && Math.random() < 0.3) {
                                     newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
                                 } else if (neighborMat === MATERIAL.PLANT && Math.random() < 0.2) {
+                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
+                                } else if (neighborMat === MATERIAL.WOOD && Math.random() < 0.25) {
+                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE; // Wood burns
+                                } else if (neighborMat === MATERIAL.GUNPOWDER && Math.random() < 0.8) {
+                                    // Gunpowder explodes - convert to fire and spread
                                     newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
                                 } else if (neighborMat === MATERIAL.ICE && Math.random() < 0.1) {
                                     newGrid[this.getIndex(nx, ny)] = MATERIAL.LIQUID; // Melts ice
@@ -874,8 +898,8 @@
 
                         // Flow behavior for dust and liquids
                         if (props.flow) {
-                            // STEAM and FIRE rise instead of fall
-                            if (material === MATERIAL.STEAM || material === MATERIAL.FIRE) {
+                            // STEAM, FIRE, and EMBER rise instead of fall
+                            if (material === MATERIAL.STEAM || material === MATERIAL.FIRE || material === MATERIAL.EMBER) {
                                 // Try to rise straight up
                                 if (this.isEmpty(x, y - 1)) {
                                     const targetIdx = this.getIndex(x, y - 1);
@@ -909,6 +933,34 @@
                             else if (material === MATERIAL.SLIME) {
                                 // Only move 30% of the time (very slow)
                                 if (Math.random() < 0.3) {
+                                    if (this.isEmpty(x, y + 1)) {
+                                        const targetIdx = this.getIndex(x, y + 1);
+                                        newGrid[targetIdx] = material;
+                                        newGrid[idx] = MATERIAL.EMPTY;
+                                        moved = true;
+                                    } else if (this.isEmpty(x - 1, y + 1) || this.isEmpty(x + 1, y + 1)) {
+                                        const dir = Math.random() < 0.5 ? -1 : 1;
+                                        const nx = x + (this.isEmpty(x + dir, y + 1) ? dir : -dir);
+                                        if (this.isEmpty(nx, y + 1)) {
+                                            const targetIdx = this.getIndex(nx, y + 1);
+                                            newGrid[targetIdx] = material;
+                                            newGrid[idx] = MATERIAL.EMPTY;
+                                            moved = true;
+                                        }
+                                    } else {
+                                        const dir = Math.random() < 0.5 ? -1 : 1;
+                                        if (this.isEmpty(x + dir, y)) {
+                                            const targetIdx = this.getIndex(x + dir, y);
+                                            newGrid[targetIdx] = material;
+                                            newGrid[idx] = MATERIAL.EMPTY;
+                                            moved = true;
+                                        }
+                                    }
+                                }
+                            }
+                            // HONEY is very viscous - even slower than slime
+                            else if (material === MATERIAL.HONEY) {
+                                if (Math.random() < 0.15) {
                                     if (this.isEmpty(x, y + 1)) {
                                         const targetIdx = this.getIndex(x, y + 1);
                                         newGrid[targetIdx] = material;
@@ -985,11 +1037,11 @@
                         }
                         // Solid materials check for support
                         else {
-                            // SLIME GLUE: Any block touching slime is stuck - won't fall (floating metal!)
-                            const touchingSlime = this.get(x, y - 1) === MATERIAL.SLIME ||
-                                                  this.get(x, y + 1) === MATERIAL.SLIME ||
-                                                  this.get(x - 1, y) === MATERIAL.SLIME ||
-                                                  this.get(x + 1, y) === MATERIAL.SLIME;
+                            // SLIME/HONEY GLUE: Any block touching slime or honey is stuck - won't fall (floating metal!)
+                            const touchingSticky = this.get(x, y - 1) === MATERIAL.SLIME || this.get(x, y - 1) === MATERIAL.HONEY ||
+                                                  this.get(x, y + 1) === MATERIAL.SLIME || this.get(x, y + 1) === MATERIAL.HONEY ||
+                                                  this.get(x - 1, y) === MATERIAL.SLIME || this.get(x - 1, y) === MATERIAL.HONEY ||
+                                                  this.get(x + 1, y) === MATERIAL.SLIME || this.get(x + 1, y) === MATERIAL.HONEY;
                             
                             // STICKY BLOCKS: Human-built blocks are sticky; PLANTS need ground support
                             const isHumanBuilt = this.humanBuiltBlocks[idx];
@@ -997,7 +1049,7 @@
                             // Check if there's direct support below
                             const hasDirectSupport = !this.isEmpty(x, y + 1);
                             
-                            if (!hasDirectSupport && !touchingSlime) {
+                            if (!hasDirectSupport && !touchingSticky) {
                                 // Plants need direct support below - no side/top "sticky" (prevents mid-air floating)
                                 if (material === MATERIAL.PLANT) {
                                     if (this.isEmpty(x, y + 1)) {
@@ -1256,6 +1308,12 @@
                         } else if (material === MATERIAL.SLIME) {
                             const pulse = Math.sin(Date.now() * 0.002 + x * 0.3 + y * 0.3) * 10;
                             noise += pulse;
+                        } else if (material === MATERIAL.EMBER) {
+                            const pulse = Math.sin(Date.now() * 0.012 + x + y * 2) * 35;
+                            noise += pulse;
+                        } else if (material === MATERIAL.HONEY) {
+                            const goldenShimmer = Math.sin(x * 0.4 + y * 0.6) * 8;
+                            noise += goldenShimmer;
                         } else if (material === MATERIAL.PLANT) {
                             const idx = this.getIndex(x, y);
                             const pType = (this.plantType[idx] || 0);
@@ -1389,6 +1447,13 @@
             if (e.key === 't' || e.key === 'T') game.spawnPlant(); // Spawn small seeds that grow
             if (e.key === 'y' || e.key === 'Y') game.spawnMaterial(MATERIAL.ICE);
             if (e.key === 'u' || e.key === 'U') game.spawnMaterial(MATERIAL.SAND);
+            
+            if (e.key === 'i' || e.key === 'I') game.spawnMaterial(MATERIAL.HONEY);
+            if (e.key === 'o' || e.key === 'O') game.spawnMaterial(MATERIAL.GRAVEL);
+            if (e.key === 'p' || e.key === 'P') game.spawnMaterial(MATERIAL.WOOD);
+            if (e.key === 'g' || e.key === 'G') game.spawnMaterial(MATERIAL.GUNPOWDER);
+            if (e.key === 'j' || e.key === 'J') game.spawnMaterial(MATERIAL.STONE);
+            if (e.key === 'k' || e.key === 'K') game.spawnMaterial(MATERIAL.EMBER);
         });
 
         // Voxel size slider

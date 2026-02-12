@@ -34,6 +34,12 @@ A pixel-perfect destruction sandbox with Neal.fun-inspired cellular automata phy
 | `T` | Spawn plant seeds (grow into unique organic patterns) |
 | `Y` | Spawn ice (melts near heat) |
 | `U` | Spawn sand (fast particles) |
+| `I` | Spawn honey (viscous, acid-resistant, sticky) |
+| `O` | Spawn gravel (heavy particles) |
+| `P` | Spawn wood (burnable solid) |
+| `G` | Spawn gunpowder (explodes with fire!) |
+| `J` | Spawn stone (heavy solid) |
+| `K` | Spawn ember (glowing rising particles) |
 
 ## 🌟 Features Implemented
 
@@ -81,17 +87,23 @@ Humans now exhibit lemming-like construction behavior with advanced building mec
 - **Concrete** → Heavy, structural material
 - **Metal** → Dense, high strength, resists destruction
 - **Glass** → Brittle, shatters easily
+- **Stone** → Heavy rugged solid
+- **Wood** → Burnable solid, catches fire
 
 **Particles:**
 - **Dust** → Powder physics, flows freely
 - **Sand** → Fast-falling granular particles, denser than dust
 - **Snow** → White particles, melts near heat into water
+- **Gravel** → Heavy fast-falling particles
+- **Gunpowder** → Explosive! Ignites and spreads fire when touched by flame or lava
+- **Ember** → Glowing orange particles that rise like sparks
 
 **Liquids:**
 - **Water** → Spills, pools, spreads horizontally
 - **Oil** → Dark flammable liquid, ignites near fire
 - **Blood** → Red liquid, similar to water
-- **Slime** → Viscous green liquid, moves very slowly
+- **Slime** → Viscous green liquid, acid-resistant, sticks everything to it
+- **Honey** → Very viscous golden liquid, even slower than slime, acid-resistant, sticky
 
 **Reactive Materials:**
 - **Lava** → Glowing molten material, burns weak materials, spreads heat
