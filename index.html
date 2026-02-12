@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAMPAGE: VOXEL FURY 🧱💥</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1e 100%);
+            color: #fff;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #gameContainer {
+            position: relative;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        #gameCanvas {
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            background: #87ceeb;
+            cursor: none !important;
+        }
+
+        #gameCanvas * {
+            cursor: none !important;
+        }
+
+        #settings input[type="range"] {
+            cursor: pointer !important;
+        }
+
+        #gameContainer {
+            cursor: none !important;
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            pointer-events: none;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        
+        #ui.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        #ui h1 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #ff6b6b;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        #ui .stat {
+            margin: 5px 0;
+            color: #ffffff;
+        }
+
+        #ui .label {
+            color: #aaa;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        
+        #controls.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        #controls .key {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin: 0 2px;
+            color: #4ecdc4;
+            font-weight: bold;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #4ecdc4;
+        }
+
+        #settings {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            min-width: 200px;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        
+        #settings.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        #settings h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #4ecdc4;
+        }
+
+        .setting-item {
+            margin: 10px 0;
+        }
+
+        .setting-item label {
+            display: block;
+            margin-bottom: 5px;
+            color: #aaa;
+            font-size: 12px;
+        }
+
+        .setting-item input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .setting-value {
+            color: #fff;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .setting-note {
+            color: #666;
+            font-size: 10px;
+            margin-top: 3px;
+        }
+        
+        #uiToggleIndicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #4ecdc4;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            pointer-events: none;
+        }
+        
+        #uiToggleIndicator.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="ui">
+            <h1>💥 VOXEL FURY 🧱</h1>
+            <div class="stat"><span class="label">Voxels:</span> <span id="particleCount">0</span></div>
+            <div class="stat"><span class="label">Destroyed:</span> <span id="destructionPercent">0</span>%</div>
+            <div class="stat"><span class="label">FPS:</span> <span id="fps">60</span></div>
+        </div>
+
+        <div id="settings">
+            <h3>⚙️ Settings</h3>
+            <div class="setting-item">
+                <label>Voxel Size: <span class="setting-value" id="voxelSizeDisplay">3mm</span></label>
+                <input type="range" id="voxelSizeSlider" min="1" max="8" value="3" step="1">
+                <div class="setting-note">1mm = tiny | 8mm = huge</div>
+            </div>
+        </div>
+
+        <div id="controls">
+            <div><span class="key">CLICK + DRAG</span> Destroy | <span class="key">R</span> Rebuild | <span class="key">H</span> Hide UI</div>
+            <div style="margin-top: 8px;"><span class="key">1</span> Concrete | <span class="key">2</span> Dust | <span class="key">3</span> Water | <span class="key">4</span> Metal | <span class="key">5</span> Lava | <span class="key">6</span> Acid | <span class="key">7</span> Human</div>
+            <div style="margin-top: 5px;"><span class="key">8</span> Snow | <span class="key">9</span> Oil | <span class="key">0</span> Steam | <span class="key">Q</span> Blood | <span class="key">W</span> Slime | <span class="key">E</span> Fire | <span class="key">T</span> Plant | <span class="key">Y</span> Ice | <span class="key">U</span> Sand</div>
+        </div>
+        
+        <div id="uiToggleIndicator">Press H to show UI</div>
+    </div>
+
+    <script>
+        // ============================================
+        // RAMPAGE: VOXEL FURY
+        // Pixel-Perfect Destruction Physics Sandbox
+        // ============================================
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+
+        // Game Configuration
+        let CONFIG = {
+            width: 1280,
+            height: 720,
+            pixelSize: 3, // Size of each voxel particle in mm (1-8mm)
+            gravity: 0.25,
+            destroyRadius: 25
+        };
+
+        // Set canvas size
+        canvas.width = CONFIG.width;
+        canvas.height = CONFIG.height;
+
+        // Calculate grid dimensions (will be recalculated when voxel size changes)
+        let GRID_WIDTH = Math.floor(CONFIG.width / CONFIG.pixelSize);
+        let GRID_HEIGHT = Math.floor(CONFIG.height / CONFIG.pixelSize);
+
+        // Material Types
+        const MATERIAL = {
+            EMPTY: 0,
+            CONCRETE: 1,
+            METAL: 2,
+            GLASS: 3,
+            DUST: 4,
+            LIQUID: 5,
+            LAVA: 6,
+            ACID: 7,
+            HUMAN_HEAD: 8,
+            HUMAN_BODY: 9,
+            DEAD_HUMAN: 10,  // Red unmoving voxels (acid victims)
+            SNOW: 11,        // White particles, accumulate, cold
+            OIL: 12,         // Dark liquid, flammable
+            STEAM: 13,       // Gas that rises instead of falls
+            BLOOD: 14,       // Red liquid
+            SLIME: 15,       // Slow viscous liquid
+            FIRE: 16,        // Spreads and burns, rises
+            PLANT: 17,       // Living material that grows
+            ICE: 18,         // Solid that melts into water
+            SAND: 19         // Fast-falling particles, like dust but denser
+        };
+
+        // Material Properties
+        const MATERIAL_PROPS = {
+            [MATERIAL.EMPTY]: { color: null, density: 0, strength: 0 },
+            [MATERIAL.CONCRETE]: { color: '#5a6268', density: 8, strength: 5, flow: false, shadeBase: [90, 98, 104] },
+            [MATERIAL.METAL]: { color: '#8899aa', density: 10, strength: 8, flow: false, shadeBase: [136, 153, 170] },
+            [MATERIAL.GLASS]: { color: '#4a9eff', density: 4, strength: 2, flow: false, shadeBase: [74, 158, 255] },
+            [MATERIAL.DUST]: { color: '#c4a574', density: 2, strength: 0, flow: true, shadeBase: [196, 165, 116] },
+            [MATERIAL.LIQUID]: { color: '#2563eb', density: 3, strength: 0, flow: true, shadeBase: [37, 99, 235] },
+            [MATERIAL.LAVA]: { color: '#ff4500', density: 6, strength: 0, flow: true, shadeBase: [255, 69, 0], glows: true },
+            [MATERIAL.ACID]: { color: '#00ff41', density: 2, strength: 0, flow: true, shadeBase: [0, 255, 65], corrosive: true },
+            [MATERIAL.HUMAN_HEAD]: { color: '#ff69b4', density: 5, strength: 3, flow: false, shadeBase: [255, 105, 180], isHuman: true },
+            [MATERIAL.HUMAN_BODY]: { color: '#4169e1', density: 5, strength: 3, flow: false, shadeBase: [65, 105, 225], isHuman: true },
+            [MATERIAL.DEAD_HUMAN]: { color: '#ff0000', density: 100, strength: 0, flow: false, shadeBase: [255, 0, 0], static: true },
+            [MATERIAL.SNOW]: { color: '#ffffff', density: 1, strength: 0, flow: true, shadeBase: [255, 255, 255], cold: true },
+            [MATERIAL.OIL]: { color: '#2d2d2d', density: 2, strength: 0, flow: true, shadeBase: [45, 45, 45], flammable: true },
+            [MATERIAL.STEAM]: { color: '#e8e8e8', density: 0.5, strength: 0, flow: true, shadeBase: [232, 232, 232], rises: true },
+            [MATERIAL.BLOOD]: { color: '#8b0000', density: 3, strength: 0, flow: true, shadeBase: [139, 0, 0] },
+            [MATERIAL.SLIME]: { color: '#32cd32', density: 4, strength: 0, flow: true, shadeBase: [50, 205, 50], viscous: true },
+            [MATERIAL.FIRE]: { color: '#ff8c00', density: 0.3, strength: 0, flow: true, shadeBase: [255, 140, 0], burns: true, rises: true },
+            [MATERIAL.PLANT]: { color: '#228b22', density: 3, strength: 2, flow: false, shadeBase: [34, 139, 34], grows: true },
+            [MATERIAL.ICE]: { color: '#add8e6', density: 5, strength: 3, flow: false, shadeBase: [173, 216, 230], melts: true },
+            [MATERIAL.SAND]: { color: '#f4a460', density: 4, strength: 0, flow: true, shadeBase: [244, 164, 96] }
+        };
+
+        // Game State
+        class Game {
+            constructor() {
+                this.grid = new Array(GRID_WIDTH * GRID_HEIGHT).fill(MATERIAL.EMPTY);
+                this.velocityX = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
+                this.velocityY = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
+                this.particleAge = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0); // Track when debris was created
+                this.humanBuiltBlocks = new Array(GRID_WIDTH * GRID_HEIGHT).fill(false); // Track blocks placed by humans (sticky)
+                this.mouse = { x: -1000, y: -1000, down: false, isInCanvas: false }; // Start off-screen to prevent initial cursor
+                this.particleCount = 0;
+                this.initialParticles = 0;
+                this.fps = 60;
+                this.frameCount = 0;
+                this.lastFpsUpdate = Date.now();
+                this.humans = []; // Track human entities (each human is 2 voxels)
+                this.nextHumanId = 0;
+            }
+
+            // Reinitialize grid when voxel size changes
+            reinitializeGrid() {
+                const newSize = GRID_WIDTH * GRID_HEIGHT;
+                this.grid = new Array(newSize).fill(MATERIAL.EMPTY);
+                this.velocityX = new Array(newSize).fill(0);
+                this.velocityY = new Array(newSize).fill(0);
+                this.particleAge = new Array(newSize).fill(0);
+                this.humanBuiltBlocks = new Array(newSize).fill(false);
+                this.humans = []; // Clear all humans
+                this.nextHumanId = 0;
+                this.generateBuildings();
+            }
+
+            getIndex(x, y) {
+                if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) return -1;
+                return Math.floor(y) * GRID_WIDTH + Math.floor(x);
+            }
+
+            get(x, y) {
+                const idx = this.getIndex(x, y);
+                return idx === -1 ? MATERIAL.EMPTY : this.grid[idx];
+            }
+
+            set(x, y, material) {
+                const idx = this.getIndex(x, y);
+                if (idx !== -1) this.grid[idx] = material;
+            }
+
+            isEmpty(x, y) {
+                return this.get(x, y) === MATERIAL.EMPTY;
+            }
+
+            // Generate procedural buildings
+            generateBuildings() {
+                const groundLevel = GRID_HEIGHT - 15;
+                
+                // Ground
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    for (let y = groundLevel; y < GRID_HEIGHT; y++) {
+                        this.set(x, y, MATERIAL.CONCRETE);
+                    }
+                }
+
+                // Generate 6-8 buildings
+                const numBuildings = 6 + Math.floor(Math.random() * 3);
+                const spacing = GRID_WIDTH / numBuildings;
+
+                for (let i = 0; i < numBuildings; i++) {
+                    const x = Math.floor(i * spacing + spacing * 0.25);
+                    const width = Math.floor(spacing * 0.45 + Math.random() * spacing * 0.25);
+                    const height = Math.floor(60 + Math.random() * 120);
+                    const floors = Math.floor(height / 20);
+
+                    // Building structure with varied materials
+                    for (let bx = x; bx < x + width; bx++) {
+                        for (let by = groundLevel - height; by < groundLevel; by++) {
+                            // Edge columns are stronger (concrete/metal)
+                            if (bx === x || bx === x + width - 1) {
+                                this.set(bx, by, MATERIAL.CONCRETE);
+                            } else {
+                                const material = Math.random() < 0.75 ? MATERIAL.CONCRETE : 
+                                               Math.random() < 0.6 ? MATERIAL.METAL : MATERIAL.GLASS;
+                                this.set(bx, by, material);
+                            }
+                        }
+                    }
+
+                    // Windows (glass sections)
+                    for (let floor = 0; floor < floors; floor++) {
+                        const floorY = groundLevel - height + floor * 20 + 4;
+                        for (let wx = x + 3; wx < x + width - 3; wx += 6) {
+                            for (let wy = floorY; wy < floorY + 10; wy += 1) {
+                                if (wx + 2 < x + width - 3 && Math.random() < 0.8) {
+                                    this.set(wx, wy, MATERIAL.GLASS);
+                                    this.set(wx + 1, wy, MATERIAL.GLASS);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                this.countParticles();
+                this.initialParticles = this.particleCount;
+            }
+
+            // Update humans - they move as connected entities
+            updateHumans() {
+                for (let i = this.humans.length - 1; i >= 0; i--) {
+                    const human = this.humans[i];
+                    
+                    if (!human.alive) continue;
+                    
+                    // Check if acid is touching the human
+                    const neighbors = [
+                        [human.headX, human.headY + 1],
+                        [human.headX, human.headY - 1],
+                        [human.headX - 1, human.headY],
+                        [human.headX + 1, human.headY],
+                        [human.bodyX, human.bodyY + 1],
+                        [human.bodyX, human.bodyY - 1],
+                        [human.bodyX - 1, human.bodyY],
+                        [human.bodyX + 1, human.bodyY]
+                    ];
+                    
+                    let touchingAcid = false;
+                    for (const [nx, ny] of neighbors) {
+                        if (this.get(nx, ny) === MATERIAL.ACID) {
+                            touchingAcid = true;
+                            break;
+                        }
+                    }
+                    
+                    // If acid touches human, convert to static red voxels
+                    if (touchingAcid) {
+                        this.set(human.headX, human.headY, MATERIAL.DEAD_HUMAN);
+                        this.set(human.bodyX, human.bodyY, MATERIAL.DEAD_HUMAN);
+                        human.alive = false;
+                        continue;
+                    }
+                    
+                    // Check if human parts still exist
+                    const headExists = this.get(human.headX, human.headY) === MATERIAL.HUMAN_HEAD;
+                    const bodyExists = this.get(human.bodyX, human.bodyY) === MATERIAL.HUMAN_BODY;
+                    
+                    if (!headExists && !bodyExists) {
+                        // Both parts destroyed, remove human
+                        this.humans.splice(i, 1);
+                        continue;
+                    }
+                    
+                    if (!headExists || !bodyExists) {
+                        // One part destroyed, human falls apart
+                        human.alive = false;
+                        continue;
+                    }
+                    
+                    // Apply gravity
+                    human.vy += CONFIG.gravity;
+                    
+                    // Check if can fall
+                    const canFall = this.isEmpty(human.bodyX, human.bodyY + 1);
+                    
+                    if (canFall && human.vy > 0) {
+                        // Move both voxels down together (falling)
+                        this.set(human.headX, human.headY, MATERIAL.EMPTY);
+                        this.set(human.bodyX, human.bodyY, MATERIAL.EMPTY);
+                        
+                        human.headY += 1;
+                        human.bodyY += 1;
+                        
+                        this.set(human.headX, human.headY, MATERIAL.HUMAN_HEAD);
+                        this.set(human.bodyX, human.bodyY, MATERIAL.HUMAN_BODY);
+                    } else {
+                        // On ground - Builder AI behavior
+                        human.vy = 0;
+                        
+                        // Try to walk in current direction
+                        const nextX = human.bodyX + human.direction;
+                        const nextHeadX = human.headX + human.direction;
+                        
+                        // Check what's ahead
+                        const canMoveBody = this.isEmpty(nextX, human.bodyY);
+                        const canMoveHead = this.isEmpty(nextHeadX, human.headY);
+                        const groundAhead = this.get(nextX, human.bodyY + 1);
+                        const hasGround = groundAhead !== MATERIAL.EMPTY;
+                        
+                        // Check if there's a climbable block (1 level up)
+                        // Climbing conditions:
+                        // 1. Block at body level ahead (the stair/ledge)
+                        // 2. Empty space above that block (where body will go)
+                        // 3. Empty space for head above that
+                        const hasBlockAtBodyLevel = !this.isEmpty(nextX, human.bodyY);
+                        const hasSpaceAbove = this.isEmpty(nextX, human.bodyY - 1);
+                        const hasSpaceForHead = this.isEmpty(nextX, human.bodyY - 2);
+                        const canClimb = hasBlockAtBodyLevel && hasSpaceAbove && hasSpaceForHead;
+                        
+                        if (canClimb) {
+                            // CLIMB UP one level
+                            this.set(human.headX, human.headY, MATERIAL.EMPTY);
+                            this.set(human.bodyX, human.bodyY, MATERIAL.EMPTY);
+                            
+                            human.bodyX = nextX;
+                            human.bodyY = human.bodyY - 1;
+                            human.headX = nextX;
+                            human.headY = human.headY - 1;
+                            
+                            this.set(human.headX, human.headY, MATERIAL.HUMAN_HEAD);
+                            this.set(human.bodyX, human.bodyY, MATERIAL.HUMAN_BODY);
+                            
+                            human.justBuilt = false;
+                        } else if ((!canMoveBody || !canMoveHead) && !canClimb) {
+                            // Hit a wall - turn around
+                            human.direction *= -1;
+                            human.justBuilt = false;
+                        } else if (!hasGround) {
+                            // At an edge - BUILD OUTWARD to extend the platform with RANDOMNESS
+                            const buildX = nextX;
+                            const normalBuildY = human.bodyY + 1; // Ground level
+                            
+                            // RANDOM BUILDING DECISIONS for organic structures:
+                            // 25% chance to build upward (stairs)
+                            const buildUpward = Math.random() < 0.25;
+                            // 10% chance to build a tower (2-4 blocks high)
+                            const buildTower = Math.random() < 0.10;
+                            // 5% chance to skip this block entirely (creates gaps)
+                            const skipBlock = Math.random() < 0.05;
+                            
+                            if (skipBlock) {
+                                // Occasionally don't build, turn around
+                                human.direction *= -1;
+                                human.justBuilt = false;
+                            } else {
+                                // Check if we can build at ground level
+                                const materialAtGroundPos = this.get(buildX, normalBuildY);
+                                const canBuildGround = materialAtGroundPos === MATERIAL.EMPTY || 
+                                    materialAtGroundPos === MATERIAL.ACID || 
+                                    materialAtGroundPos === MATERIAL.LIQUID ||
+                                    materialAtGroundPos === MATERIAL.LAVA ||
+                                    materialAtGroundPos === MATERIAL.OIL ||
+                                    materialAtGroundPos === MATERIAL.BLOOD ||
+                                    materialAtGroundPos === MATERIAL.SLIME;
+                                
+                                if (canBuildGround) {
+                                    // Always build ground block first
+                                    this.set(buildX, normalBuildY, MATERIAL.CONCRETE);
+                                    const groundIdx = this.getIndex(buildX, normalBuildY);
+                                    if (groundIdx !== -1) {
+                                        this.humanBuiltBlocks[groundIdx] = true;
+                                    }
+                                    
+                                    // RANDOM UPWARD BUILDING for variety
+                                    if (buildTower) {
+                                        // Build a small tower (2-4 blocks high)
+                                        const towerHeight = Math.floor(Math.random() * 3) + 2; // 2 to 4 blocks
+                                        for (let h = 0; h < towerHeight; h++) {
+                                            const towerY = normalBuildY - h - 1;
+                                            const materialAtTowerPos = this.get(buildX, towerY);
+                                            if (materialAtTowerPos === MATERIAL.EMPTY || 
+                                                materialAtTowerPos === MATERIAL.ACID || 
+                                                materialAtTowerPos === MATERIAL.LIQUID ||
+                                                materialAtTowerPos === MATERIAL.LAVA ||
+                                                materialAtTowerPos === MATERIAL.OIL ||
+                                                materialAtTowerPos === MATERIAL.BLOOD ||
+                                                materialAtTowerPos === MATERIAL.SLIME) {
+                                                
+                                                this.set(buildX, towerY, MATERIAL.CONCRETE);
+                                                const towerIdx = this.getIndex(buildX, towerY);
+                                                if (towerIdx !== -1) {
+                                                    this.humanBuiltBlocks[towerIdx] = true;
+                                                }
+                                            }
+                                        }
+                                    } else if (buildUpward) {
+                                        // Build single stair step (one level up)
+                                        const upperBuildY = human.bodyY; // One level up
+                                        const materialAtUpperPos = this.get(buildX, upperBuildY);
+                                        if (materialAtUpperPos === MATERIAL.EMPTY || 
+                                            materialAtUpperPos === MATERIAL.ACID || 
+                                            materialAtUpperPos === MATERIAL.LIQUID ||
+                                            materialAtUpperPos === MATERIAL.LAVA ||
+                                            materialAtUpperPos === MATERIAL.OIL ||
+                                            materialAtUpperPos === MATERIAL.BLOOD ||
+                                            materialAtUpperPos === MATERIAL.SLIME) {
+                                            
+                                            this.set(buildX, upperBuildY, MATERIAL.CONCRETE);
+                                            const upperIdx = this.getIndex(buildX, upperBuildY);
+                                            if (upperIdx !== -1) {
+                                                this.humanBuiltBlocks[upperIdx] = true;
+                                            }
+                                        }
+                                    }
+                                    
+                                    human.justBuilt = true;
+                                    
+                                    // Turn around after building
+                                    human.direction *= -1;
+                                } else {
+                                    // Can't build here, turn around
+                                    human.direction *= -1;
+                                    human.justBuilt = false;
+                                }
+                            }
+                        } else {
+                            // Normal walking - path is clear
+                            human.justBuilt = false;
+                            
+                            // 3% chance to randomly change direction while walking (adds unpredictability)
+                            if (Math.random() < 0.03) {
+                                human.direction *= -1;
+                            } else {
+                                // Move horizontally
+                                this.set(human.headX, human.headY, MATERIAL.EMPTY);
+                                this.set(human.bodyX, human.bodyY, MATERIAL.EMPTY);
+                                
+                                human.headX = nextHeadX;
+                                human.bodyX = nextX;
+                                
+                                this.set(human.headX, human.headY, MATERIAL.HUMAN_HEAD);
+                                this.set(human.bodyX, human.bodyY, MATERIAL.HUMAN_BODY);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Physics simulation (cellular automata)
+            simulate() {
+                // Update humans first (they move as units)
+                this.updateHumans();
+                
+                const newGrid = [...this.grid];
+                const newVelX = [...this.velocityX];
+                const newVelY = [...this.velocityY];
+                const now = Date.now();
+
+                // Clean up old debris particles (disappear after 2 seconds)
+                for (let i = 0; i < this.grid.length; i++) {
+                    if (this.grid[i] === MATERIAL.DUST && this.particleAge[i] > 0) {
+                        if (now - this.particleAge[i] > 2000) {
+                            newGrid[i] = MATERIAL.EMPTY;
+                            this.particleAge[i] = 0;
+                        }
+                    }
+                }
+
+                // Simulate from bottom to top, random horizontal order
+                for (let y = GRID_HEIGHT - 2; y >= 0; y--) {
+                    const xOrder = Array.from({ length: GRID_WIDTH }, (_, i) => i);
+                    // Shuffle for natural randomness
+                    for (let i = xOrder.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [xOrder[i], xOrder[j]] = [xOrder[j], xOrder[i]];
+                    }
+
+                    for (const x of xOrder) {
+                        const idx = this.getIndex(x, y);
+                        const material = this.grid[idx];
+
+                        if (material === MATERIAL.EMPTY) continue;
+                        
+                        // Skip human materials - they're handled separately as connected entities
+                        if (material === MATERIAL.HUMAN_HEAD || material === MATERIAL.HUMAN_BODY) continue;
+                        
+                        // Skip dead humans - they don't move (static red voxels)
+                        if (material === MATERIAL.DEAD_HUMAN) continue;
+
+                        const props = MATERIAL_PROPS[material];
+                        const vx = this.velocityX[idx];
+                        const vy = this.velocityY[idx];
+
+                        // Apply gravity
+                        let newVY = vy + CONFIG.gravity;
+                        let newVX = vx * 0.95; // Friction
+
+                        let moved = false;
+
+                        // LAVA: Burns and melts weaker materials
+                        if (material === MATERIAL.LAVA) {
+                            // Lava destroys weaker materials (not metal or concrete)
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            
+                            for (const [nx, ny] of neighbors) {
+                                const neighborMat = this.get(nx, ny);
+                                // Burns dust, glass, humans and converts them to lava or dust
+                                if ((neighborMat === MATERIAL.DUST || neighborMat === MATERIAL.GLASS) && Math.random() < 0.2) {
+                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.LAVA;
+                                } else if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY) && Math.random() < 0.15) {
+                                    // Humans burn to dust
+                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.DUST;
+                                }
+                            }
+                        }
+
+                        // ACID: Destroys everything it touches - EXTREMELY satisfying!
+                        if (material === MATERIAL.ACID) {
+                            // Check all 8 neighbors and destroy them aggressively
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y],
+                                [x - 1, y + 1], [x + 1, y + 1], [x - 1, y - 1], [x + 1, y - 1]
+                            ];
+                            
+                            for (const [nx, ny] of neighbors) {
+                                const neighborMat = this.get(nx, ny);
+                                if (neighborMat !== MATERIAL.EMPTY && neighborMat !== MATERIAL.ACID && neighborMat !== MATERIAL.DEAD_HUMAN) {
+                                    // Humans touched by acid turn into unmoving red voxels
+                                    if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY) && Math.random() < 0.7) {
+                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.DEAD_HUMAN;
+                                    }
+                                    // Everything else dissolves - no remains, instant vanish!
+                                    else if (Math.random() < 0.7) {
+                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.EMPTY;
+                                    }
+                                }
+                            }
+                            
+                            // Sometimes acid also spreads aggressively to dissolve more
+                            if (Math.random() < 0.2) {
+                                const spreadDir = Math.random() < 0.5 ? -1 : 1;
+                                const spreadX = x + spreadDir;
+                                const spreadY = y;
+                                const spreadMat = this.get(spreadX, spreadY);
+                                if (spreadMat !== MATERIAL.EMPTY && spreadMat !== MATERIAL.ACID) {
+                                    newGrid[this.getIndex(spreadX, spreadY)] = MATERIAL.ACID;
+                                }
+                            }
+                        }
+
+                        // FIRE: Burns materials and rises like smoke
+                        if (material === MATERIAL.FIRE) {
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            
+                            for (const [nx, ny] of neighbors) {
+                                const neighborMat = this.get(nx, ny);
+                                // Fire burns flammable materials (oil, plants, wood structures)
+                                if (neighborMat === MATERIAL.OIL && Math.random() < 0.3) {
+                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
+                                } else if (neighborMat === MATERIAL.PLANT && Math.random() < 0.2) {
+                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
+                                } else if (neighborMat === MATERIAL.ICE && Math.random() < 0.1) {
+                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.LIQUID; // Melts ice
+                                }
+                            }
+                            
+                            // Fire dies out randomly
+                            if (Math.random() < 0.05) {
+                                newGrid[idx] = MATERIAL.STEAM;
+                            }
+                        }
+
+                        // PLANT: Grows slowly
+                        if (material === MATERIAL.PLANT) {
+                            if (Math.random() < 0.002) {
+                                const growDirs = [
+                                    [x, y - 1], [x - 1, y], [x + 1, y]
+                                ];
+                                const growDir = growDirs[Math.floor(Math.random() * growDirs.length)];
+                                const [gx, gy] = growDir;
+                                if (this.isEmpty(gx, gy)) {
+                                    newGrid[this.getIndex(gx, gy)] = MATERIAL.PLANT;
+                                }
+                            }
+                        }
+
+                        // ICE: Melts near hot materials
+                        if (material === MATERIAL.ICE) {
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            
+                            for (const [nx, ny] of neighbors) {
+                                const neighborMat = this.get(nx, ny);
+                                if ((neighborMat === MATERIAL.LAVA || neighborMat === MATERIAL.FIRE) && Math.random() < 0.3) {
+                                    newGrid[idx] = MATERIAL.LIQUID; // Melts to water
+                                    break;
+                                }
+                            }
+                        }
+
+                        // SNOW: Melts near hot materials, accumulates
+                        if (material === MATERIAL.SNOW) {
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            
+                            for (const [nx, ny] of neighbors) {
+                                const neighborMat = this.get(nx, ny);
+                                if ((neighborMat === MATERIAL.LAVA || neighborMat === MATERIAL.FIRE) && Math.random() < 0.4) {
+                                    newGrid[idx] = MATERIAL.LIQUID; // Melts to water
+                                    break;
+                                }
+                            }
+                        }
+
+                        // OIL: Ignites near fire
+                        if (material === MATERIAL.OIL) {
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            
+                            for (const [nx, ny] of neighbors) {
+                                const neighborMat = this.get(nx, ny);
+                                if ((neighborMat === MATERIAL.FIRE || neighborMat === MATERIAL.LAVA) && Math.random() < 0.5) {
+                                    newGrid[idx] = MATERIAL.FIRE; // Oil catches fire!
+                                    break;
+                                }
+                            }
+                        }
+
+                        // STEAM: Rises (handled in flow section with special logic)
+                        // BLOOD: Acts like water but thicker
+                        // SLIME: Very slow viscous liquid (handled in flow)
+                        // SAND: Fast-falling particles (handled in flow)
+
+                        // Flow behavior for dust and liquids
+                        if (props.flow) {
+                            // STEAM and FIRE rise instead of fall
+                            if (material === MATERIAL.STEAM || material === MATERIAL.FIRE) {
+                                // Try to rise straight up
+                                if (this.isEmpty(x, y - 1)) {
+                                    const targetIdx = this.getIndex(x, y - 1);
+                                    newGrid[targetIdx] = material;
+                                    newGrid[idx] = MATERIAL.EMPTY;
+                                    moved = true;
+                                }
+                                // Try diagonal rise
+                                else if (this.isEmpty(x - 1, y - 1) || this.isEmpty(x + 1, y - 1)) {
+                                    const dir = Math.random() < 0.5 ? -1 : 1;
+                                    const nx = x + (this.isEmpty(x + dir, y - 1) ? dir : -dir);
+                                    if (this.isEmpty(nx, y - 1)) {
+                                        const targetIdx = this.getIndex(nx, y - 1);
+                                        newGrid[targetIdx] = material;
+                                        newGrid[idx] = MATERIAL.EMPTY;
+                                        moved = true;
+                                    }
+                                }
+                                // Spread horizontally if can't rise
+                                else {
+                                    const dir = Math.random() < 0.5 ? -1 : 1;
+                                    if (this.isEmpty(x + dir, y)) {
+                                        const targetIdx = this.getIndex(x + dir, y);
+                                        newGrid[targetIdx] = material;
+                                        newGrid[idx] = MATERIAL.EMPTY;
+                                        moved = true;
+                                    }
+                                }
+                            }
+                            // SLIME is viscous - moves slowly
+                            else if (material === MATERIAL.SLIME) {
+                                // Only move 30% of the time (very slow)
+                                if (Math.random() < 0.3) {
+                                    if (this.isEmpty(x, y + 1)) {
+                                        const targetIdx = this.getIndex(x, y + 1);
+                                        newGrid[targetIdx] = material;
+                                        newGrid[idx] = MATERIAL.EMPTY;
+                                        moved = true;
+                                    } else if (this.isEmpty(x - 1, y + 1) || this.isEmpty(x + 1, y + 1)) {
+                                        const dir = Math.random() < 0.5 ? -1 : 1;
+                                        const nx = x + (this.isEmpty(x + dir, y + 1) ? dir : -dir);
+                                        if (this.isEmpty(nx, y + 1)) {
+                                            const targetIdx = this.getIndex(nx, y + 1);
+                                            newGrid[targetIdx] = material;
+                                            newGrid[idx] = MATERIAL.EMPTY;
+                                            moved = true;
+                                        }
+                                    } else {
+                                        const dir = Math.random() < 0.5 ? -1 : 1;
+                                        if (this.isEmpty(x + dir, y)) {
+                                            const targetIdx = this.getIndex(x + dir, y);
+                                            newGrid[targetIdx] = material;
+                                            newGrid[idx] = MATERIAL.EMPTY;
+                                            moved = true;
+                                        }
+                                    }
+                                }
+                            }
+                            // Normal falling behavior for particles and liquids
+                            else {
+                                // Try to fall straight down
+                                if (this.isEmpty(x, y + 1)) {
+                                    const targetIdx = this.getIndex(x, y + 1);
+                                    newGrid[targetIdx] = material;
+                                    newGrid[idx] = MATERIAL.EMPTY;
+                                    newVelY[targetIdx] = newVY;
+                                    newVelX[targetIdx] = newVX;
+                                    // Transfer particle age for debris tracking
+                                    if (material === MATERIAL.DUST && this.particleAge[idx] > 0) {
+                                        this.particleAge[targetIdx] = this.particleAge[idx];
+                                        this.particleAge[idx] = 0;
+                                    }
+                                    moved = true;
+                                }
+                                // Try diagonal fall
+                                else if (this.isEmpty(x - 1, y + 1) || this.isEmpty(x + 1, y + 1)) {
+                                    const dir = Math.random() < 0.5 ? -1 : 1;
+                                    const nx = x + (this.isEmpty(x + dir, y + 1) ? dir : -dir);
+                                    if (this.isEmpty(nx, y + 1)) {
+                                        const targetIdx = this.getIndex(nx, y + 1);
+                                        newGrid[targetIdx] = material;
+                                        newGrid[idx] = MATERIAL.EMPTY;
+                                        newVelY[targetIdx] = newVY;
+                                        newVelX[targetIdx] = newVX;
+                                        // Transfer particle age for debris tracking
+                                        if (material === MATERIAL.DUST && this.particleAge[idx] > 0) {
+                                            this.particleAge[targetIdx] = this.particleAge[idx];
+                                            this.particleAge[idx] = 0;
+                                        }
+                                        moved = true;
+                                    }
+                                }
+                                // Liquids spread horizontally (water, lava, acid, oil, blood)
+                                else if (material === MATERIAL.LIQUID || material === MATERIAL.LAVA || 
+                                         material === MATERIAL.ACID || material === MATERIAL.OIL || 
+                                         material === MATERIAL.BLOOD) {
+                                    const dir = Math.random() < 0.5 ? -1 : 1;
+                                    if (this.isEmpty(x + dir, y)) {
+                                        const targetIdx = this.getIndex(x + dir, y);
+                                        newGrid[targetIdx] = material;
+                                        newGrid[idx] = MATERIAL.EMPTY;
+                                        newVelX[targetIdx] = dir * (material === MATERIAL.LAVA ? 1 : 2);
+                                        moved = true;
+                                    }
+                                }
+                            }
+                        }
+                        // Solid materials check for support
+                        else {
+                            // STICKY BLOCKS: Human-built blocks are much more stable
+                            const isHumanBuilt = this.humanBuiltBlocks[idx];
+                            
+                            // Check if there's direct support below
+                            const hasDirectSupport = !this.isEmpty(x, y + 1);
+                            
+                            if (!hasDirectSupport) {
+                                // Human-built blocks are STICKY - they need strong connection
+                                if (isHumanBuilt) {
+                                    // Check if connected to ANY other block (very sticky!)
+                                    const hasLeftNeighbor = !this.isEmpty(x - 1, y);
+                                    const hasRightNeighbor = !this.isEmpty(x + 1, y);
+                                    const hasTopNeighbor = !this.isEmpty(x, y - 1);
+                                    const hasAnyConnection = hasLeftNeighbor || hasRightNeighbor || hasTopNeighbor;
+                                    
+                                    // Only fall if COMPLETELY isolated
+                                    if (!hasAnyConnection) {
+                                        if (this.isEmpty(x, y + 1)) {
+                                            newGrid[this.getIndex(x, y + 1)] = material;
+                                            newGrid[idx] = MATERIAL.EMPTY;
+                                            newVelY[this.getIndex(x, y + 1)] = newVY;
+                                            // Transfer sticky property
+                                            this.humanBuiltBlocks[this.getIndex(x, y + 1)] = true;
+                                            this.humanBuiltBlocks[idx] = false;
+                                            moved = true;
+                                        }
+                                    }
+                                } else {
+                                    // Regular blocks - normal physics
+                                    // Check structural integrity - needs solid support
+                                    const leftSupport = !this.isEmpty(x - 1, y) && !this.isEmpty(x - 1, y + 1);
+                                    const rightSupport = !this.isEmpty(x + 1, y) && !this.isEmpty(x + 1, y + 1);
+                                    
+                                    // Fall if not enough support (needs at least 1 diagonal support or random chance)
+                                    if ((!leftSupport && !rightSupport) || Math.random() < 0.02) {
+                                        if (this.isEmpty(x, y + 1)) {
+                                            newGrid[this.getIndex(x, y + 1)] = material;
+                                            newGrid[idx] = MATERIAL.EMPTY;
+                                            newVelY[this.getIndex(x, y + 1)] = newVY;
+                                            moved = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!moved) {
+                            newVelY[idx] = 0;
+                            newVelX[idx] = 0;
+                        }
+                    }
+                }
+
+                this.grid = newGrid;
+                this.velocityX = newVelX;
+                this.velocityY = newVelY;
+            }
+
+
+            // Mouse destruction
+            destroyAtMouse() {
+                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                const radius = CONFIG.destroyRadius / CONFIG.pixelSize;
+                const now = Date.now();
+
+                for (let dx = -radius; dx <= radius; dx++) {
+                    for (let dy = -radius; dy <= radius; dy++) {
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist <= radius) {
+                            const x = mx + dx;
+                            const y = my + dy;
+                            const material = this.get(x, y);
+                            
+                            if (material !== MATERIAL.EMPTY) {
+                                const destroyChance = 1.0 - (dist / radius) * 0.6;
+                                if (Math.random() < destroyChance) {
+                                    const idx = this.getIndex(x, y);
+                                    if (Math.random() < 0.5) {
+                                        this.set(x, y, MATERIAL.DUST);
+                                        const angle = Math.atan2(dy, dx);
+                                        this.velocityX[idx] = Math.cos(angle) * (4 + Math.random() * 2);
+                                        this.velocityY[idx] = Math.sin(angle) * (4 + Math.random() * 2);
+                                        // Set timestamp for debris to disappear after 2 seconds
+                                        this.particleAge[idx] = now;
+                                    } else {
+                                        this.set(x, y, MATERIAL.EMPTY);
+                                    }
+                                    // Clear human-built flag when destroyed
+                                    if (idx !== -1) this.humanBuiltBlocks[idx] = false;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Spawn material at mouse
+            spawnMaterial(material) {
+                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                const radius = 20;
+
+                for (let dx = -radius; dx <= radius; dx++) {
+                    for (let dy = -radius; dy <= radius; dy++) {
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist <= radius && Math.random() < 0.7) {
+                            this.set(mx + dx, my + dy, material);
+                        }
+                    }
+                }
+            }
+
+            // Spawn a single human (2 voxels: pink head on top, blue body on bottom)
+            spawnHuman() {
+                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                
+                // Check if there's space for the human (2 voxels high)
+                if (this.isEmpty(mx, my) && this.isEmpty(mx, my - 1)) {
+                    const humanId = this.nextHumanId++;
+                    
+                    // Body (bottom) - blue
+                    this.set(mx, my, MATERIAL.HUMAN_BODY);
+                    // Head (top) - pink
+                    this.set(mx, my - 1, MATERIAL.HUMAN_HEAD);
+                    
+                    // Track this human as a connected entity
+                    this.humans.push({
+                        id: humanId,
+                        headX: mx,
+                        headY: my - 1,
+                        bodyX: mx,
+                        bodyY: my,
+                        alive: true,
+                        vx: 0,
+                        vy: 0,
+                        direction: Math.random() < 0.5 ? -1 : 1, // Random starting direction (left or right)
+                        justBuilt: false // Track if they just placed a block
+                    });
+                }
+            }
+
+            // Count active particles
+            countParticles() {
+                this.particleCount = this.grid.filter(m => m !== MATERIAL.EMPTY).length;
+            }
+
+            // Update game state
+            update() {
+                this.simulate();
+
+                // FPS counter
+                this.frameCount++;
+                const now = Date.now();
+                if (now - this.lastFpsUpdate > 1000) {
+                    this.fps = this.frameCount;
+                    this.frameCount = 0;
+                    this.lastFpsUpdate = now;
+                }
+            }
+
+            // Render the game
+            render() {
+                // CLEAR EVERYTHING - no trails, no artifacts
+                ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
+                
+                // Sky background gradient
+                const gradient = ctx.createLinearGradient(0, 0, 0, CONFIG.height);
+                gradient.addColorStop(0, '#87ceeb');
+                gradient.addColorStop(1, '#b8d8eb');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, CONFIG.width, CONFIG.height);
+
+                // Draw voxels directly with fillRect for better performance and no artifacts
+                for (let y = 0; y < GRID_HEIGHT; y++) {
+                    for (let x = 0; x < GRID_WIDTH; x++) {
+                        const material = this.get(x, y);
+                        if (material === MATERIAL.EMPTY) continue;
+
+                        const props = MATERIAL_PROPS[material];
+                        const base = props.shadeBase;
+
+                        // Calculate lighting based on neighbors
+                        const hasTop = !this.isEmpty(x, y - 1);
+                        const hasBottom = !this.isEmpty(x, y + 1);
+                        const hasLeft = !this.isEmpty(x - 1, y);
+                        const hasRight = !this.isEmpty(x + 1, y);
+
+                        let shade = 0;
+                        if (!hasTop) shade += 20;
+                        if (!hasLeft) shade += 10;
+                        if (hasBottom && !hasTop) shade += 8;
+                        if (!hasRight) shade -= 10;
+                        if (!hasBottom) shade -= 15;
+
+                        // Add texture and effects
+                        let noise = (Math.random() - 0.5) * 12;
+                        if (material === MATERIAL.LAVA) {
+                            const pulse = Math.sin(Date.now() * 0.003 + x * 0.5 + y * 0.5) * 15;
+                            noise += pulse;
+                        } else if (material === MATERIAL.ACID) {
+                            const pulse = Math.sin(Date.now() * 0.008 + x + y) * 25;
+                            noise += pulse;
+                        } else if (material === MATERIAL.FIRE) {
+                            const pulse = Math.sin(Date.now() * 0.01 + x + y * 2) * 40;
+                            noise += pulse;
+                        } else if (material === MATERIAL.SLIME) {
+                            const pulse = Math.sin(Date.now() * 0.002 + x * 0.3 + y * 0.3) * 10;
+                            noise += pulse;
+                        }
+
+                        const r = Math.max(0, Math.min(255, base[0] + shade + noise));
+                        const g = Math.max(0, Math.min(255, base[1] + shade + noise));
+                        const b = Math.max(0, Math.min(255, base[2] + shade + noise));
+
+                        // Add transparency for steam
+                        if (material === MATERIAL.STEAM) {
+                            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
+                        } else {
+                            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                        }
+                        ctx.fillRect(x * CONFIG.pixelSize, y * CONFIG.pixelSize, CONFIG.pixelSize, CONFIG.pixelSize);
+                    }
+                }
+
+                // Draw SINGLE custom cursor - ONLY when mouse is actually in canvas
+                if (this.mouse.isInCanvas) {
+                    const mx = this.mouse.x;
+                    const my = this.mouse.y;
+                    
+                    // Outer circle
+                    ctx.strokeStyle = this.mouse.down ? 'rgba(255, 80, 80, 0.9)' : 'rgba(255, 255, 255, 0.7)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(mx, my, CONFIG.destroyRadius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    // Crosshair lines
+                    ctx.strokeStyle = this.mouse.down ? 'rgba(255, 80, 80, 0.8)' : 'rgba(255, 255, 255, 0.6)';
+                    ctx.lineWidth = 2;
+                    const crossSize = 10;
+                    ctx.beginPath();
+                    ctx.moveTo(mx - crossSize, my);
+                    ctx.lineTo(mx + crossSize, my);
+                    ctx.moveTo(mx, my - crossSize);
+                    ctx.lineTo(mx, my + crossSize);
+                    ctx.stroke();
+                    
+                    // Center dot
+                    ctx.fillStyle = this.mouse.down ? 'rgba(255, 60, 60, 0.9)' : 'rgba(255, 255, 255, 0.8)';
+                    ctx.beginPath();
+                    ctx.arc(mx, my, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Update UI
+                this.countParticles();
+                document.getElementById('particleCount').textContent = this.particleCount.toLocaleString();
+                const destruction = this.initialParticles > 0 
+                    ? Math.floor((1 - this.particleCount / this.initialParticles) * 100)
+                    : 0;
+                document.getElementById('destructionPercent').textContent = Math.max(0, destruction);
+                document.getElementById('fps').textContent = this.fps;
+            }
+
+            hexToRgb(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : { r: 0, g: 0, b: 0 };
+            }
+        }
+
+        // Initialize game
+        const game = new Game();
+        game.generateBuildings();
+        
+        // UI visibility state
+        let uiVisible = true;
+
+        // Input handling
+        window.addEventListener('keydown', (e) => {
+            // Rebuild
+            if (e.key === 'r' || e.key === 'R') {
+                game.grid.fill(MATERIAL.EMPTY);
+                game.humanBuiltBlocks.fill(false); // Clear sticky blocks
+                game.humans = []; // Clear all humans
+                game.nextHumanId = 0;
+                game.generateBuildings();
+            }
+            
+            // Toggle UI visibility
+            if (e.key === 'h' || e.key === 'H') {
+                uiVisible = !uiVisible;
+                const uiElement = document.getElementById('ui');
+                const controlsElement = document.getElementById('controls');
+                const settingsElement = document.getElementById('settings');
+                const indicator = document.getElementById('uiToggleIndicator');
+                
+                if (uiVisible) {
+                    uiElement.classList.remove('hidden');
+                    controlsElement.classList.remove('hidden');
+                    settingsElement.classList.remove('hidden');
+                    indicator.classList.remove('visible');
+                } else {
+                    uiElement.classList.add('hidden');
+                    controlsElement.classList.add('hidden');
+                    settingsElement.classList.add('hidden');
+                    indicator.classList.add('visible');
+                }
+            }
+
+            // Spawn materials
+            if (e.key === '1') game.spawnMaterial(MATERIAL.CONCRETE);
+            if (e.key === '2') game.spawnMaterial(MATERIAL.DUST);
+            if (e.key === '3') game.spawnMaterial(MATERIAL.LIQUID);
+            if (e.key === '4') game.spawnMaterial(MATERIAL.METAL);
+            if (e.key === '5') game.spawnMaterial(MATERIAL.LAVA);
+            if (e.key === '6') game.spawnMaterial(MATERIAL.ACID);
+            if (e.key === '7') game.spawnHuman(); // Spawn human
+            
+            // New materials
+            if (e.key === '8') game.spawnMaterial(MATERIAL.SNOW);
+            if (e.key === '9') game.spawnMaterial(MATERIAL.OIL);
+            if (e.key === '0') game.spawnMaterial(MATERIAL.STEAM);
+            if (e.key === 'q' || e.key === 'Q') game.spawnMaterial(MATERIAL.BLOOD);
+            if (e.key === 'w' || e.key === 'W') game.spawnMaterial(MATERIAL.SLIME);
+            if (e.key === 'e' || e.key === 'E') game.spawnMaterial(MATERIAL.FIRE);
+            if (e.key === 't' || e.key === 'T') game.spawnMaterial(MATERIAL.PLANT);
+            if (e.key === 'y' || e.key === 'Y') game.spawnMaterial(MATERIAL.ICE);
+            if (e.key === 'u' || e.key === 'U') game.spawnMaterial(MATERIAL.SAND);
+        });
+
+        // Voxel size slider
+        const voxelSizeSlider = document.getElementById('voxelSizeSlider');
+        const voxelSizeDisplay = document.getElementById('voxelSizeDisplay');
+        
+        voxelSizeSlider.addEventListener('input', (e) => {
+            const newSize = parseInt(e.target.value);
+            CONFIG.pixelSize = newSize;
+            voxelSizeDisplay.textContent = newSize + 'mm';
+            
+            // Recalculate grid dimensions
+            GRID_WIDTH = Math.floor(CONFIG.width / CONFIG.pixelSize);
+            GRID_HEIGHT = Math.floor(CONFIG.height / CONFIG.pixelSize);
+            
+            // FULL RESET: Clear everything and rebuild from scratch
+            game.grid = new Array(GRID_WIDTH * GRID_HEIGHT).fill(MATERIAL.EMPTY);
+            game.velocityX = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
+            game.velocityY = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
+            game.particleAge = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
+            game.humanBuiltBlocks = new Array(GRID_WIDTH * GRID_HEIGHT).fill(false);
+            game.particleCount = 0;
+            game.initialParticles = 0;
+            game.humans = []; // Clear all humans
+            game.nextHumanId = 0;
+            
+            // Generate new buildings
+            game.generateBuildings();
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            game.mouse.x = e.clientX - rect.left;
+            game.mouse.y = e.clientY - rect.top;
+            game.mouse.isInCanvas = true;
+        });
+
+        canvas.addEventListener('mouseenter', (e) => {
+            e.preventDefault();
+            game.mouse.isInCanvas = true;
+        });
+
+        canvas.addEventListener('mouseleave', (e) => {
+            e.preventDefault();
+            game.mouse.isInCanvas = false;
+            game.mouse.down = false;
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            e.preventDefault(); // Prevent default click behavior
+            game.mouse.down = true;
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            e.preventDefault(); // Prevent default click behavior
+            game.mouse.down = false;
+        });
+
+        // Global mouseup to catch releases outside canvas
+        window.addEventListener('mouseup', (e) => {
+            game.mouse.down = false;
+        });
+
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault(); // Prevent right-click menu
+        });
+
+        // Continuous destruction while mouse held
+        setInterval(() => {
+            if (game.mouse.down) {
+                game.destroyAtMouse();
+            }
+        }, 30);
+
+        // Game loop
+        function gameLoop() {
+            game.update();
+            game.render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>
