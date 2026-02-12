@@ -31,7 +31,7 @@ A pixel-perfect destruction sandbox with Neal.fun-inspired cellular automata phy
 | `Q` | Spawn blood (red liquid) |
 | `W` | Spawn slime (viscous liquid) |
 | `E` | Spawn fire (burns & rises) |
-| `T` | Spawn plant (grows organically) |
+| `T` | Spawn plant seeds (grow into unique organic patterns) |
 | `Y` | Spawn ice (melts near heat) |
 | `U` | Spawn sand (fast particles) |
 
@@ -70,7 +70,7 @@ Humans now exhibit lemming-like construction behavior with advanced building mec
 - Lava heat spread and burning
 - Fire combustion - spreads to oil, plants, and flammable materials
 - Ice and snow melting near heat sources
-- Plant growth mechanics - living material that spreads
+- Organic plant growth - seeds sprout into unique branching vines, bushes, and clusters with weighted random growth patterns
 - Gas physics - steam and fire rise instead of fall
 - Viscous liquid physics - slime moves slowly
 - **Smart Builder AI with Sticky Blocks** - Humans patrol surfaces, place sticky concrete that adheres together, climb ledges, and randomly build stairs and towers - creating unique gravity-defying structures with organic variety!
@@ -102,7 +102,16 @@ Humans now exhibit lemming-like construction behavior with advanced building mec
 - **Steam** → Semi-transparent gas that rises instead of falls
 
 **Life:**
-- **Plant** → Living green material that slowly grows upward and sideways
+- **Plant** → Organic life that starts as 1-3 small seeds and grows in fascinating ways:
+  - **Inherently sticky** - plant blocks stick to each other and don't fall when connected
+  - **Color variety**: Green leaves, brown stems, and infrequent bright flowers (yellow, red, pink, orange, magenta)
+  - Grows upward like vines and stems (50% chance)
+  - Branches sideways organically (25% chance)  
+  - Spreads diagonally creating natural shapes (15% chance)
+  - Creates hanging vines downward (10% chance)
+  - Forms dense clusters near other plants
+  - Isolated plants die back naturally
+  - Each growth pattern is unique and unpredictable
 - **Human** → AI-controlled builder entities with lemming-like behavior:
   - Walk back and forth on solid surfaces
   - Detect edges and automatically place **sticky concrete blocks** to extend platforms
@@ -177,7 +186,7 @@ Pure destruction and creation sandbox:
 - Lava glows and spreads heat, converting materials
 - Fire spreads dramatically through flammable materials (oil, plants)
 - Ice and snow melt realistically near heat sources
-- Plants grow organically, creating living structures
+- Plants grow from tiny seeds into unique organic structures - vines, bushes, and clusters that are different every time
 - Steam and fire rise beautifully against gravity
 - Oil ignites in spectacular chain reactions
 - Slime oozes slowly with viscous physics

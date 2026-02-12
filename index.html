@@ -304,6 +304,7 @@
                 this.velocityY = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
                 this.particleAge = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0); // Track when debris was created
                 this.humanBuiltBlocks = new Array(GRID_WIDTH * GRID_HEIGHT).fill(false); // Track blocks placed by humans (sticky)
+                this.plantType = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0); // 0=green leaf, 1=brown stem, 2+=flower colors
                 this.mouse = { x: -1000, y: -1000, down: false, isInCanvas: false }; // Start off-screen to prevent initial cursor
                 this.particleCount = 0;
                 this.initialParticles = 0;
@@ -322,6 +323,7 @@
                 this.velocityY = new Array(newSize).fill(0);
                 this.particleAge = new Array(newSize).fill(0);
                 this.humanBuiltBlocks = new Array(newSize).fill(false);
+                this.plantType = new Array(newSize).fill(0);
                 this.humans = []; // Clear all humans
                 this.nextHumanId = 0;
                 this.generateBuildings();
@@ -747,16 +749,75 @@
                             }
                         }
 
-                        // PLANT: Grows slowly
+                        // PLANT: Organic growth with branching patterns
                         if (material === MATERIAL.PLANT) {
-                            if (Math.random() < 0.002) {
-                                const growDirs = [
-                                    [x, y - 1], [x - 1, y], [x + 1, y]
-                                ];
-                                const growDir = growDirs[Math.floor(Math.random() * growDirs.length)];
-                                const [gx, gy] = growDir;
-                                if (this.isEmpty(gx, gy)) {
-                                    newGrid[this.getIndex(gx, gy)] = MATERIAL.PLANT;
+                            // Higher growth rate for more visible spreading (0.8% per frame)
+                            if (Math.random() < 0.008) {
+                                // Check if plant has ground support below (roots)
+                                const hasGroundBelow = !this.isEmpty(x, y + 1);
+                                
+                                // Weighted growth directions - plants prefer growing up and branching
+                                const growthChoices = [];
+                                
+                                // 50% chance to grow upward (like stems/vines)
+                                if (Math.random() < 0.5 && this.isEmpty(x, y - 1)) {
+                                    growthChoices.push([x, y - 1]);
+                                }
+                                
+                                // 25% chance to grow sideways (branching)
+                                if (Math.random() < 0.25) {
+                                    if (this.isEmpty(x - 1, y)) growthChoices.push([x - 1, y]);
+                                    if (this.isEmpty(x + 1, y)) growthChoices.push([x + 1, y]);
+                                }
+                                
+                                // 15% chance to grow diagonally (organic spread)
+                                if (Math.random() < 0.15) {
+                                    if (this.isEmpty(x - 1, y - 1)) growthChoices.push([x - 1, y - 1]);
+                                    if (this.isEmpty(x + 1, y - 1)) growthChoices.push([x + 1, y - 1]);
+                                }
+                                
+                                // 10% chance to grow downward (hanging vines)
+                                if (Math.random() < 0.10 && this.isEmpty(x, y + 1)) {
+                                    growthChoices.push([x, y + 1]);
+                                }
+                                
+                                // Grow in a random chosen direction
+                                if (growthChoices.length > 0) {
+                                    const [gx, gy] = growthChoices[Math.floor(Math.random() * growthChoices.length)];
+                                    const growIdx = this.getIndex(gx, gy);
+                                    
+                                    // Check for nearby plants to create dense clusters
+                                    const nearbyPlants = [
+                                        [gx, gy - 1], [gx, gy + 1], [gx - 1, gy], [gx + 1, gy]
+                                    ].filter(([nx, ny]) => this.get(nx, ny) === MATERIAL.PLANT).length;
+                                    
+                                    // More likely to grow if near other plants (clustering effect)
+                                    if (nearbyPlants > 0 || Math.random() < 0.6) {
+                                        newGrid[growIdx] = MATERIAL.PLANT;
+                                        
+                                        // Assign plant type: 55% green, 35% brown stem, 10% flower
+                                        const r = Math.random();
+                                        if (r < 0.10) {
+                                            // Flower - bright colors: yellow, red, pink, orange, magenta
+                                            this.plantType[growIdx] = 2 + Math.floor(Math.random() * 5);
+                                        } else if (r < 0.45) {
+                                            this.plantType[growIdx] = 1; // Brown stem
+                                        } else {
+                                            this.plantType[growIdx] = 0; // Green leaf
+                                        }
+                                    }
+                                }
+                                
+                                // Small chance to stop growing (die back) if too isolated
+                                if (Math.random() < 0.001) {
+                                    const nearbyPlants = [
+                                        [x, y - 1], [x, y + 1], [x - 1, y], [x + 1, y]
+                                    ].filter(([nx, ny]) => this.get(nx, ny) === MATERIAL.PLANT).length;
+                                    
+                                    if (nearbyPlants === 0) {
+                                        newGrid[idx] = MATERIAL.EMPTY; // Isolated plants die
+                                        this.plantType[idx] = 0; // Clear plant type
+                                    }
                                 }
                             }
                         }
@@ -924,15 +985,26 @@
                         }
                         // Solid materials check for support
                         else {
-                            // STICKY BLOCKS: Human-built blocks are much more stable
+                            // STICKY BLOCKS: Human-built blocks are sticky; PLANTS need ground support
                             const isHumanBuilt = this.humanBuiltBlocks[idx];
                             
                             // Check if there's direct support below
                             const hasDirectSupport = !this.isEmpty(x, y + 1);
                             
                             if (!hasDirectSupport) {
+                                // Plants need direct support below - no side/top "sticky" (prevents mid-air floating)
+                                if (material === MATERIAL.PLANT) {
+                                    if (this.isEmpty(x, y + 1)) {
+                                        newGrid[this.getIndex(x, y + 1)] = material;
+                                        newGrid[idx] = MATERIAL.EMPTY;
+                                        newVelY[this.getIndex(x, y + 1)] = newVY;
+                                        this.plantType[this.getIndex(x, y + 1)] = this.plantType[idx];
+                                        this.plantType[idx] = 0;
+                                        moved = true;
+                                    }
+                                }
                                 // Human-built blocks are STICKY - they need strong connection
-                                if (isHumanBuilt) {
+                                else if (isHumanBuilt) {
                                     // Check if connected to ANY other block (very sticky!)
                                     const hasLeftNeighbor = !this.isEmpty(x - 1, y);
                                     const hasRightNeighbor = !this.isEmpty(x + 1, y);
@@ -1012,8 +1084,11 @@
                                     } else {
                                         this.set(x, y, MATERIAL.EMPTY);
                                     }
-                                    // Clear human-built flag when destroyed
-                                    if (idx !== -1) this.humanBuiltBlocks[idx] = false;
+                                    // Clear flags when destroyed
+                                    if (idx !== -1) {
+                                        this.humanBuiltBlocks[idx] = false;
+                                        this.plantType[idx] = 0;
+                                    }
                                 }
                             }
                         }
@@ -1032,6 +1107,30 @@
                         const dist = Math.sqrt(dx * dx + dy * dy);
                         if (dist <= radius && Math.random() < 0.7) {
                             this.set(mx + dx, my + dy, material);
+                        }
+                    }
+                }
+            }
+
+            // Spawn small plant seeds (1-3 voxels)
+            spawnPlant() {
+                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                
+                // Spawn 1-3 small seed voxels instead of a large circle
+                const seedCount = Math.floor(Math.random() * 3) + 1;
+                for (let i = 0; i < seedCount; i++) {
+                    const offsetX = Math.floor(Math.random() * 5) - 2;
+                    const offsetY = Math.floor(Math.random() * 5) - 2;
+                    const seedX = mx + offsetX;
+                    const seedY = my + offsetY;
+                    
+                    if (this.isEmpty(seedX, seedY)) {
+                        this.set(seedX, seedY, MATERIAL.PLANT);
+                        const seedIdx = this.getIndex(seedX, seedY);
+                        if (seedIdx !== -1) {
+                            // Seeds start as green (0), occasionally brown (1)
+                            this.plantType[seedIdx] = Math.random() < 0.2 ? 1 : 0;
                         }
                     }
                 }
@@ -1098,6 +1197,17 @@
                 ctx.fillStyle = gradient;
                 ctx.fillRect(0, 0, CONFIG.width, CONFIG.height);
 
+                // Plant color palette: 0=green, 1=brown, 2=yellow, 3=red, 4=pink, 5=orange, 6=magenta
+                const PLANT_COLORS = [
+                    [34, 139, 34],   // 0: forest green (leaves)
+                    [139, 90, 43],   // 1: saddle brown (stems)
+                    [255, 255, 0],   // 2: yellow (flower)
+                    [255, 80, 80],   // 3: coral red (flower)
+                    [255, 182, 193], // 4: light pink (flower)
+                    [255, 165, 0],   // 5: orange (flower)
+                    [255, 0, 255]    // 6: magenta (flower)
+                ];
+
                 // Draw voxels directly with fillRect for better performance and no artifacts
                 for (let y = 0; y < GRID_HEIGHT; y++) {
                     for (let x = 0; x < GRID_WIDTH; x++) {
@@ -1105,7 +1215,13 @@
                         if (material === MATERIAL.EMPTY) continue;
 
                         const props = MATERIAL_PROPS[material];
-                        const base = props.shadeBase;
+                        // Use plant-specific colors when applicable
+                        let base = props.shadeBase;
+                        if (material === MATERIAL.PLANT) {
+                            const idx = this.getIndex(x, y);
+                            const pType = this.plantType[idx] || 0;
+                            base = PLANT_COLORS[Math.min(pType, 6)];
+                        }
 
                         // Calculate lighting based on neighbors
                         const hasTop = !this.isEmpty(x, y - 1);
@@ -1134,6 +1250,14 @@
                         } else if (material === MATERIAL.SLIME) {
                             const pulse = Math.sin(Date.now() * 0.002 + x * 0.3 + y * 0.3) * 10;
                             noise += pulse;
+                        } else if (material === MATERIAL.PLANT) {
+                            const idx = this.getIndex(x, y);
+                            const pType = (this.plantType[idx] || 0);
+                            // Organic variation - less for flowers to keep them bright
+                            const organicVariation = pType >= 2 
+                                ? (Math.sin(x * 0.5 + y * 0.8) * 8)  // Flowers: subtle variation
+                                : (Math.sin(x * 0.7 + y * 1.3) * 15) + (Math.cos(x * 1.1 + y * 0.9) * 10); // Leaves/stems
+                            noise += organicVariation;
                         }
 
                         const r = Math.max(0, Math.min(255, base[0] + shade + noise));
@@ -1213,6 +1337,7 @@
             if (e.key === 'r' || e.key === 'R') {
                 game.grid.fill(MATERIAL.EMPTY);
                 game.humanBuiltBlocks.fill(false); // Clear sticky blocks
+                game.plantType.fill(0); // Clear plant colors
                 game.humans = []; // Clear all humans
                 game.nextHumanId = 0;
                 game.generateBuildings();
@@ -1255,7 +1380,7 @@
             if (e.key === 'q' || e.key === 'Q') game.spawnMaterial(MATERIAL.BLOOD);
             if (e.key === 'w' || e.key === 'W') game.spawnMaterial(MATERIAL.SLIME);
             if (e.key === 'e' || e.key === 'E') game.spawnMaterial(MATERIAL.FIRE);
-            if (e.key === 't' || e.key === 'T') game.spawnMaterial(MATERIAL.PLANT);
+            if (e.key === 't' || e.key === 'T') game.spawnPlant(); // Spawn small seeds that grow
             if (e.key === 'y' || e.key === 'Y') game.spawnMaterial(MATERIAL.ICE);
             if (e.key === 'u' || e.key === 'U') game.spawnMaterial(MATERIAL.SAND);
         });
@@ -1279,6 +1404,7 @@
             game.velocityY = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
             game.particleAge = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
             game.humanBuiltBlocks = new Array(GRID_WIDTH * GRID_HEIGHT).fill(false);
+            game.plantType = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
             game.particleCount = 0;
             game.initialParticles = 0;
             game.humans = []; // Clear all humans
