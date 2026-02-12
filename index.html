@@ -700,8 +700,22 @@
                                 // Burns dust, glass, humans and converts them to lava or dust
                                 if ((neighborMat === MATERIAL.DUST || neighborMat === MATERIAL.GLASS || neighborMat === MATERIAL.WOOD) && Math.random() < 0.2) {
                                     newGrid[this.getIndex(nx, ny)] = MATERIAL.LAVA;
-                                } else if (neighborMat === MATERIAL.GUNPOWDER && Math.random() < 0.7) {
-                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE; // Lava ignites gunpowder
+                                } else if (neighborMat === MATERIAL.GUNPOWDER) {
+                                    // LAVA + GUNPOWDER = GIANT EXPLOSION
+                                    const explosionRadius = 8;
+                                    for (let ex = nx - explosionRadius; ex <= nx + explosionRadius; ex++) {
+                                        for (let ey = ny - explosionRadius; ey <= ny + explosionRadius; ey++) {
+                                            const dist = Math.sqrt((ex - nx) ** 2 + (ey - ny) ** 2);
+                                            if (dist <= explosionRadius && this.get(ex, ey) === MATERIAL.GUNPOWDER) {
+                                                newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
+                                            }
+                                            if (dist <= explosionRadius * 0.6 && (this.get(ex, ey) === MATERIAL.DUST || this.get(ex, ey) === MATERIAL.WOOD || this.get(ex, ey) === MATERIAL.PLANT)) {
+                                                if (Math.random() < 0.7) newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
+                                            }
+                                        }
+                                    }
+                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
+                                    break; // One explosion per lava voxel
                                 } else if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY) && Math.random() < 0.15) {
                                     // Humans burn to dust
                                     newGrid[this.getIndex(nx, ny)] = MATERIAL.DUST;
@@ -752,18 +766,43 @@
                             
                             for (const [nx, ny] of neighbors) {
                                 const neighborMat = this.get(nx, ny);
-                                // Fire burns flammable materials (oil, plants, wood structures)
-                                if (neighborMat === MATERIAL.OIL && Math.random() < 0.3) {
-                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
+                                const nIdx = this.getIndex(nx, ny);
+                                
+                                // GUNPOWDER + FIRE = GIANT EXPLOSION
+                                if (neighborMat === MATERIAL.GUNPOWDER) {
+                                    const explosionRadius = 8;
+                                    for (let ex = nx - explosionRadius; ex <= nx + explosionRadius; ex++) {
+                                        for (let ey = ny - explosionRadius; ey <= ny + explosionRadius; ey++) {
+                                            const dist = Math.sqrt((ex - nx) ** 2 + (ey - ny) ** 2);
+                                            if (dist <= explosionRadius && this.get(ex, ey) === MATERIAL.GUNPOWDER) {
+                                                newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
+                                            }
+                                            if (dist <= explosionRadius * 0.6 && (this.get(ex, ey) === MATERIAL.DUST || this.get(ex, ey) === MATERIAL.WOOD || this.get(ex, ey) === MATERIAL.PLANT)) {
+                                                if (Math.random() < 0.7) newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
+                                            }
+                                        }
+                                    }
+                                    newGrid[nIdx] = MATERIAL.FIRE;
+                                    break; // One explosion per fire voxel
+                                } else if (neighborMat === MATERIAL.OIL && Math.random() < 0.3) {
+                                    newGrid[nIdx] = MATERIAL.FIRE;
                                 } else if (neighborMat === MATERIAL.PLANT && Math.random() < 0.2) {
-                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
+                                    newGrid[nIdx] = MATERIAL.FIRE;
                                 } else if (neighborMat === MATERIAL.WOOD && Math.random() < 0.25) {
-                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE; // Wood burns
-                                } else if (neighborMat === MATERIAL.GUNPOWDER && Math.random() < 0.8) {
-                                    // Gunpowder explodes - convert to fire and spread
-                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
+                                    newGrid[nIdx] = MATERIAL.FIRE;
                                 } else if (neighborMat === MATERIAL.ICE && Math.random() < 0.1) {
-                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.LIQUID; // Melts ice
+                                    newGrid[nIdx] = MATERIAL.LIQUID;
+                                }
+                            }
+                            
+                            // Spawn embers at same rate as plants (0.008)
+                            if (Math.random() < 0.008) {
+                                const emberDirs = [[x, y - 1], [x - 1, y - 1], [x + 1, y - 1], [x - 1, y], [x + 1, y]];
+                                for (const [ex, ey] of emberDirs) {
+                                    if (this.isEmpty(ex, ey) && Math.random() < 0.5) {
+                                        newGrid[this.getIndex(ex, ey)] = MATERIAL.EMBER;
+                                        break; // Spawn one ember per chance
+                                    }
                                 }
                             }
                             
