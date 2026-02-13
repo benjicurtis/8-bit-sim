@@ -233,9 +233,13 @@
 
         <div id="controls">
             <div><span class="key">CLICK+DRAG</span> Destroy | <span class="key">R</span> Rebuild | <span class="key">H</span> Hide UI</div>
-            <div style="margin-top: 4px;"><span class="key">1</span> Concrete <span class="key">2</span> Dust <span class="key">3</span> Water <span class="key">4</span> Metal <span class="key">5</span> Lava <span class="key">6</span> Acid <span class="key">7</span> Human <span class="key">B</span> Builder</div>
-            <div style="margin-top: 2px;"><span class="key">8</span> Snow <span class="key">9</span> Oil <span class="key">0</span> Steam <span class="key">Q</span> Blood <span class="key">W</span> Slime <span class="key">E</span> Fire <span class="key">T</span> Plant <span class="key">Y</span> Ice <span class="key">U</span> Sand</div>
-            <div style="margin-top: 2px;"><span class="key">I</span> Honey <span class="key">O</span> Gravel <span class="key">P</span> Wood <span class="key">G</span> Gunpowder <span class="key">J</span> Stone <span class="key">K</span> Ember</div>
+            <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Liquid</div>
+            <div style="margin-top: 2px;"><span class="key">3</span> Water <span class="key">5</span> Lava <span class="key">6</span> Acid <span class="key">9</span> Oil <span class="key">0</span> Steam <span class="key">Q</span> Blood <span class="key">W</span> Slime <span class="key">I</span> Honey</div>
+            <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Solid</div>
+            <div style="margin-top: 2px;"><span class="key">1</span> Concrete <span class="key">2</span> Dust <span class="key">4</span> Metal <span class="key">8</span> Snow <span class="key">E</span> Fire <span class="key">Y</span> Ice <span class="key">U</span> Sand <span class="key">O</span> Gravel</div>
+            <div style="margin-top: 2px;"><span class="key">P</span> Wood <span class="key">G</span> Gunpowder <span class="key">J</span> Stone <span class="key">K</span> Ember <span class="key">F</span> Feces</div>
+            <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Life</div>
+            <div style="margin-top: 2px;"><span class="key">7</span> Human <span class="key">B</span> Builder <span class="key">T</span> Plant <span class="key">L</span> Flies</div>
         </div>
         
         <div id="uiToggleIndicator">Press H to show UI</div>
@@ -296,7 +300,9 @@
             WOOD: 22,        // Burnable solid
             GUNPOWDER: 23,   // Explosive particles
             STONE: 24,       // Heavy solid, rugged
-            EMBER: 25        // Hot glowing particles that rise
+            EMBER: 25,       // Hot glowing particles that rise
+            FEECES: 27,      // Brown solid, attracts flies
+            FLY: 28          // Life form - buzzes toward feces
         };
 
         // Material Properties
@@ -327,7 +333,9 @@
             [MATERIAL.WOOD]: { color: '#8b4513', density: 5, strength: 4, flow: false, shadeBase: [139, 69, 19], flammable: true },
             [MATERIAL.GUNPOWDER]: { color: '#3d3d3d', density: 3, strength: 0, flow: true, shadeBase: [61, 61, 61], explosive: true },
             [MATERIAL.STONE]: { color: '#696969', density: 9, strength: 6, flow: false, shadeBase: [105, 105, 105] },
-            [MATERIAL.EMBER]: { color: '#ff6b35', density: 0.4, strength: 0, flow: true, shadeBase: [255, 107, 53], rises: true }
+            [MATERIAL.EMBER]: { color: '#ff6b35', density: 0.4, strength: 0, flow: true, shadeBase: [255, 107, 53], rises: true },
+            [MATERIAL.FEECES]: { color: '#5d4037', density: 4, strength: 1, flow: false, shadeBase: [93, 64, 55], attractsFlies: true },
+            [MATERIAL.FLY]: { color: '#1a1a1a', density: 0.2, strength: 0, flow: false, shadeBase: [26, 26, 26], isFly: true }
         };
 
         // Game State
@@ -347,6 +355,8 @@
                 this.lastFpsUpdate = Date.now();
                 this.humans = []; // Track human entities (each human is 2 voxels)
                 this.nextHumanId = 0;
+                this.flies = [];  // Track fly entities (1 voxel each)
+                this.nextFlyId = 0;
             }
 
             // Reinitialize grid when voxel size changes
@@ -360,6 +370,8 @@
                 this.plantType = new Array(newSize).fill(0);
                 this.humans = []; // Clear all humans
                 this.nextHumanId = 0;
+                this.flies = [];
+                this.nextFlyId = 0;
                 this.generateBuildings();
             }
 
@@ -672,10 +684,86 @@
                 }
             }
 
+            // Find nearest feces within range (returns [x,y] or null)
+            findNearestFeces(flyX, flyY, range) {
+                let nearest = null;
+                let nearestDist = range + 1;
+                for (let gy = Math.max(0, flyY - range); gy <= Math.min(GRID_HEIGHT - 1, flyY + range); gy++) {
+                    for (let gx = Math.max(0, flyX - range); gx <= Math.min(GRID_WIDTH - 1, flyX + range); gx++) {
+                        if (this.get(gx, gy) === MATERIAL.FEECES) {
+                            const dist = Math.sqrt((gx - flyX) ** 2 + (gy - flyY) ** 2);
+                            if (dist < nearestDist) {
+                                nearestDist = dist;
+                                nearest = [gx, gy];
+                            }
+                        }
+                    }
+                }
+                return nearest;
+            }
+
+            // Update flies - they buzz toward feces when nearby
+            updateFlies() {
+                const FEECES_ATTRACT_RANGE = 18;
+                for (let i = this.flies.length - 1; i >= 0; i--) {
+                    const fly = this.flies[i];
+                    if (!fly.alive) continue;
+
+                    // Check if acid or fire touching fly - dies
+                    const neighbors = [
+                        [fly.x, fly.y + 1], [fly.x, fly.y - 1], [fly.x - 1, fly.y], [fly.x + 1, fly.y]
+                    ];
+                    for (const [nx, ny] of neighbors) {
+                        const m = this.get(nx, ny);
+                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA) {
+                            this.set(fly.x, fly.y, MATERIAL.EMPTY);
+                            fly.alive = false;
+                            this.flies.splice(i, 1);
+                            break;
+                        }
+                    }
+                    if (!fly.alive) continue;
+
+                    if (this.get(fly.x, fly.y) !== MATERIAL.FLY) {
+                        this.flies.splice(i, 1);
+                        continue;
+                    }
+
+                    const feces = this.findNearestFeces(fly.x, fly.y, FEECES_ATTRACT_RANGE);
+                    let moveX = 0, moveY = 0;
+
+                    if (feces) {
+                        // Move toward feces (flies buzz downward toward it)
+                        const dx = feces[0] - fly.x;
+                        const dy = feces[1] - fly.y;
+                        if (Math.abs(dx) > Math.abs(dy)) {
+                            moveX = dx > 0 ? 1 : -1;
+                        } else {
+                            moveY = dy > 0 ? 1 : -1;
+                        }
+                    } else {
+                        // Random buzz: prefer up, occasionally horizontal
+                        if (Math.random() < 0.4) moveY = -1;
+                        else if (Math.random() < 0.2) moveY = 1;
+                        if (Math.random() < 0.5) moveX = Math.random() < 0.5 ? -1 : 1;
+                    }
+
+                    const newX = fly.x + moveX;
+                    const newY = fly.y + moveY;
+                    if (newX >= 0 && newX < GRID_WIDTH && newY >= 0 && newY < GRID_HEIGHT && this.isEmpty(newX, newY)) {
+                        this.set(fly.x, fly.y, MATERIAL.EMPTY);
+                        fly.x = newX;
+                        fly.y = newY;
+                        this.set(fly.x, fly.y, MATERIAL.FLY);
+                    }
+                }
+            }
+
             // Physics simulation (cellular automata)
             simulate() {
                 // Update humans first (they move as units)
                 this.updateHumans();
+                this.updateFlies();
                 
                 const newGrid = [...this.grid];
                 const newVelX = [...this.velocityX];
@@ -716,6 +804,9 @@
                         
                         // Skip human materials - they're handled separately as connected entities
                         if (material === MATERIAL.HUMAN_HEAD || material === MATERIAL.HUMAN_BODY || material === MATERIAL.HUMAN_BODY_BUILDER) continue;
+                        
+                        // Skip flies - they're handled separately as life-form entities
+                        if (material === MATERIAL.FLY) continue;
                         
                         // Skip dead humans - they don't move (static red voxels)
                         if (material === MATERIAL.DEAD_HUMAN) continue;
@@ -1155,12 +1246,11 @@
                             newVelX[idx] = 0;
                         }
                     }
-                }
-
                 this.grid = newGrid;
                 this.velocityX = newVelX;
                 this.velocityY = newVelY;
             }
+
 
 
             // Mouse destruction
@@ -1270,6 +1360,33 @@
                 }
             }
 
+            // Spawn human feces (attracts flies)
+            spawnFeces() {
+                this.spawnMaterial(MATERIAL.FEECES);
+            }
+
+            // Spawn a fly (or several) - life form attracted to feces
+            spawnFly() {
+                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                const count = Math.floor(Math.random() * 3) + 2; // 2-4 flies
+                for (let i = 0; i < count; i++) {
+                    const offsetX = Math.floor(Math.random() * 7) - 3;
+                    const offsetY = Math.floor(Math.random() * 7) - 3;
+                    const fx = mx + offsetX;
+                    const fy = my + offsetY;
+                    if (fx >= 0 && fx < GRID_WIDTH && fy >= 0 && fy < GRID_HEIGHT && this.isEmpty(fx, fy)) {
+                        this.set(fx, fy, MATERIAL.FLY);
+                        this.flies.push({
+                            id: this.nextFlyId++,
+                            x: fx,
+                            y: fy,
+                            alive: true
+                        });
+                    }
+                }
+            }
+
             // Spawn a builder human (2 voxels: pink head, yellow shirt) - builds at edges
             spawnBuilderHuman() {
                 const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
@@ -1371,6 +1488,7 @@
                         else if (material === MATERIAL.SLIME) noise += Math.sin(t * 0.002 + x * 0.3 + y * 0.3) * 10;
                         else if (material === MATERIAL.EMBER) noise += Math.sin(t * 0.012 + x + y * 2) * 35;
                         else if (material === MATERIAL.HONEY) noise += Math.sin(x * 0.4 + y * 0.6) * 8;
+                        else if (material === MATERIAL.FLY) noise += Math.sin(t * 0.02 + x * 2 + y * 2) * 15;
                         else if (material === MATERIAL.PLANT) {
                             const pType = this.plantType[this.getIndex(x, y)] || 0;
                             noise += pType >= 2 ? Math.sin(x * 0.5 + y * 0.8) * 8
@@ -1452,6 +1570,8 @@
                 game.plantType.fill(0); // Clear plant colors
                 game.humans = []; // Clear all humans
                 game.nextHumanId = 0;
+                game.flies = [];
+                game.nextFlyId = 0;
                 game.generateBuildings();
             }
             
@@ -1503,6 +1623,8 @@
             if (e.key === 'g' || e.key === 'G') game.spawnMaterial(MATERIAL.GUNPOWDER);
             if (e.key === 'j' || e.key === 'J') game.spawnMaterial(MATERIAL.STONE);
             if (e.key === 'k' || e.key === 'K') game.spawnMaterial(MATERIAL.EMBER);
+            if (e.key === 'f' || e.key === 'F') game.spawnFeces();
+            if (e.key === 'l' || e.key === 'L') game.spawnFly();
         });
 
         // Voxel size slider
@@ -1530,6 +1652,8 @@
             game.initialParticles = 0;
             game.humans = []; // Clear all humans
             game.nextHumanId = 0;
+            game.flies = [];
+            game.nextFlyId = 0;
             
             // Generate new buildings
             game.generateBuildings();
