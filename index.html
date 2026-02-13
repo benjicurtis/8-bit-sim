@@ -369,6 +369,12 @@
                 return this.get(x, y) === MATERIAL.EMPTY;
             }
 
+            // Check empty in a specific grid (for sim - target cells use newGrid)
+            isEmptyIn(grid, x, y) {
+                const idx = this.getIndex(x, y);
+                return idx === -1 ? true : grid[idx] === MATERIAL.EMPTY;
+            }
+
             // Generate procedural buildings
             generateBuildings() {
                 const groundLevel = GRID_HEIGHT - 15;
@@ -673,17 +679,24 @@
                     }
                 }
 
-                // Simulate from bottom to top, random horizontal order
-                for (let y = GRID_HEIGHT - 2; y >= 0; y--) {
-                    const xOrder = Array.from({ length: GRID_WIDTH }, (_, i) => i);
-                    // Shuffle for natural randomness
-                    for (let i = xOrder.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [xOrder[i], xOrder[j]] = [xOrder[j], xOrder[i]];
-                    }
-
-                    for (const x of xOrder) {
-                        const idx = this.getIndex(x, y);
+                // Process all cells in random order so voxels fall together (not by row)
+                const totalCells = GRID_WIDTH * GRID_HEIGHT;
+                if (!this._simOrder || this._simOrder.length !== totalCells) {
+                    this._simOrder = new Int32Array(totalCells);
+                    for (let i = 0; i < totalCells; i++) this._simOrder[i] = i;
+                }
+                for (let i = totalCells - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    const t = this._simOrder[i];
+                    this._simOrder[i] = this._simOrder[j];
+                    this._simOrder[j] = t;
+                }
+                const emptyIn = (g, ax, ay) => this.isEmptyIn(g, ax, ay);
+                for (let si = 0; si < totalCells; si++) {
+                    const idx = this._simOrder[si];
+                    const y = Math.floor(idx / GRID_WIDTH);
+                    const x = idx % GRID_WIDTH;
+                    if (y >= GRID_HEIGHT - 1) continue;
                         const material = this.grid[idx];
 
                         if (material === MATERIAL.EMPTY) continue;
@@ -811,13 +824,12 @@
                                 }
                             }
                             
-                            // Spawn embers at same rate as plants (0.008)
                             if (Math.random() < 0.008) {
                                 const emberDirs = [[x, y - 1], [x - 1, y - 1], [x + 1, y - 1], [x - 1, y], [x + 1, y]];
                                 for (const [ex, ey] of emberDirs) {
-                                    if (this.isEmpty(ex, ey) && Math.random() < 0.5) {
+                                    if (emptyIn(newGrid, ex, ey) && Math.random() < 0.5) {
                                         newGrid[this.getIndex(ex, ey)] = MATERIAL.EMBER;
-                                        break; // Spawn one ember per chance
+                                        break;
                                     }
                                 }
                             }
@@ -828,35 +840,23 @@
                             }
                         }
 
-                        // PLANT: Organic growth with branching patterns
                         if (material === MATERIAL.PLANT) {
-                            // Higher growth rate for more visible spreading (0.8% per frame)
                             if (Math.random() < 0.008) {
-                                // Check if plant has ground support below (roots)
-                                const hasGroundBelow = !this.isEmpty(x, y + 1);
-                                
-                                // Weighted growth directions - plants prefer growing up and branching
+                                const hasGroundBelow = !emptyIn(newGrid, x, y + 1);
                                 const growthChoices = [];
                                 
-                                // 50% chance to grow upward (like stems/vines)
-                                if (Math.random() < 0.5 && this.isEmpty(x, y - 1)) {
+                                if (Math.random() < 0.5 && emptyIn(newGrid, x, y - 1)) {
                                     growthChoices.push([x, y - 1]);
                                 }
-                                
-                                // 25% chance to grow sideways (branching)
                                 if (Math.random() < 0.25) {
-                                    if (this.isEmpty(x - 1, y)) growthChoices.push([x - 1, y]);
-                                    if (this.isEmpty(x + 1, y)) growthChoices.push([x + 1, y]);
+                                    if (emptyIn(newGrid, x - 1, y)) growthChoices.push([x - 1, y]);
+                                    if (emptyIn(newGrid, x + 1, y)) growthChoices.push([x + 1, y]);
                                 }
-                                
-                                // 15% chance to grow diagonally (organic spread)
                                 if (Math.random() < 0.15) {
-                                    if (this.isEmpty(x - 1, y - 1)) growthChoices.push([x - 1, y - 1]);
-                                    if (this.isEmpty(x + 1, y - 1)) growthChoices.push([x + 1, y - 1]);
+                                    if (emptyIn(newGrid, x - 1, y - 1)) growthChoices.push([x - 1, y - 1]);
+                                    if (emptyIn(newGrid, x + 1, y - 1)) growthChoices.push([x + 1, y - 1]);
                                 }
-                                
-                                // 10% chance to grow downward (hanging vines)
-                                if (Math.random() < 0.10 && this.isEmpty(x, y + 1)) {
+                                if (Math.random() < 0.10 && emptyIn(newGrid, x, y + 1)) {
                                     growthChoices.push([x, y + 1]);
                                 }
                                 
@@ -955,28 +955,25 @@
                         if (props.flow) {
                             // STEAM, FIRE, and EMBER rise instead of fall
                             if (material === MATERIAL.STEAM || material === MATERIAL.FIRE || material === MATERIAL.EMBER) {
-                                // Try to rise straight up
-                                if (this.isEmpty(x, y - 1)) {
+                                if (emptyIn(newGrid, x, y - 1)) {
                                     const targetIdx = this.getIndex(x, y - 1);
                                     newGrid[targetIdx] = material;
                                     newGrid[idx] = MATERIAL.EMPTY;
                                     moved = true;
                                 }
-                                // Try diagonal rise
-                                else if (this.isEmpty(x - 1, y - 1) || this.isEmpty(x + 1, y - 1)) {
+                                else if (emptyIn(newGrid, x - 1, y - 1) || emptyIn(newGrid, x + 1, y - 1)) {
                                     const dir = Math.random() < 0.5 ? -1 : 1;
-                                    const nx = x + (this.isEmpty(x + dir, y - 1) ? dir : -dir);
-                                    if (this.isEmpty(nx, y - 1)) {
+                                    const nx = x + (emptyIn(newGrid, x + dir, y - 1) ? dir : -dir);
+                                    if (emptyIn(newGrid, nx, y - 1)) {
                                         const targetIdx = this.getIndex(nx, y - 1);
                                         newGrid[targetIdx] = material;
                                         newGrid[idx] = MATERIAL.EMPTY;
                                         moved = true;
                                     }
                                 }
-                                // Spread horizontally if can't rise
                                 else {
                                     const dir = Math.random() < 0.5 ? -1 : 1;
-                                    if (this.isEmpty(x + dir, y)) {
+                                    if (emptyIn(newGrid, x + dir, y)) {
                                         const targetIdx = this.getIndex(x + dir, y);
                                         newGrid[targetIdx] = material;
                                         newGrid[idx] = MATERIAL.EMPTY;
@@ -986,17 +983,16 @@
                             }
                             // SLIME is viscous - moves slowly
                             else if (material === MATERIAL.SLIME) {
-                                // Only move 30% of the time (very slow)
                                 if (Math.random() < 0.3) {
-                                    if (this.isEmpty(x, y + 1)) {
+                                    if (emptyIn(newGrid, x, y + 1)) {
                                         const targetIdx = this.getIndex(x, y + 1);
                                         newGrid[targetIdx] = material;
                                         newGrid[idx] = MATERIAL.EMPTY;
                                         moved = true;
-                                    } else if (this.isEmpty(x - 1, y + 1) || this.isEmpty(x + 1, y + 1)) {
+                                    } else if (emptyIn(newGrid, x - 1, y + 1) || emptyIn(newGrid, x + 1, y + 1)) {
                                         const dir = Math.random() < 0.5 ? -1 : 1;
-                                        const nx = x + (this.isEmpty(x + dir, y + 1) ? dir : -dir);
-                                        if (this.isEmpty(nx, y + 1)) {
+                                        const nx = x + (emptyIn(newGrid, x + dir, y + 1) ? dir : -dir);
+                                        if (emptyIn(newGrid, nx, y + 1)) {
                                             const targetIdx = this.getIndex(nx, y + 1);
                                             newGrid[targetIdx] = material;
                                             newGrid[idx] = MATERIAL.EMPTY;
@@ -1004,7 +1000,7 @@
                                         }
                                     } else {
                                         const dir = Math.random() < 0.5 ? -1 : 1;
-                                        if (this.isEmpty(x + dir, y)) {
+                                        if (emptyIn(newGrid, x + dir, y)) {
                                             const targetIdx = this.getIndex(x + dir, y);
                                             newGrid[targetIdx] = material;
                                             newGrid[idx] = MATERIAL.EMPTY;
@@ -1016,15 +1012,15 @@
                             // HONEY is very viscous - even slower than slime
                             else if (material === MATERIAL.HONEY) {
                                 if (Math.random() < 0.15) {
-                                    if (this.isEmpty(x, y + 1)) {
+                                    if (emptyIn(newGrid, x, y + 1)) {
                                         const targetIdx = this.getIndex(x, y + 1);
                                         newGrid[targetIdx] = material;
                                         newGrid[idx] = MATERIAL.EMPTY;
                                         moved = true;
-                                    } else if (this.isEmpty(x - 1, y + 1) || this.isEmpty(x + 1, y + 1)) {
+                                    } else if (emptyIn(newGrid, x - 1, y + 1) || emptyIn(newGrid, x + 1, y + 1)) {
                                         const dir = Math.random() < 0.5 ? -1 : 1;
-                                        const nx = x + (this.isEmpty(x + dir, y + 1) ? dir : -dir);
-                                        if (this.isEmpty(nx, y + 1)) {
+                                        const nx = x + (emptyIn(newGrid, x + dir, y + 1) ? dir : -dir);
+                                        if (emptyIn(newGrid, nx, y + 1)) {
                                             const targetIdx = this.getIndex(nx, y + 1);
                                             newGrid[targetIdx] = material;
                                             newGrid[idx] = MATERIAL.EMPTY;
@@ -1032,7 +1028,7 @@
                                         }
                                     } else {
                                         const dir = Math.random() < 0.5 ? -1 : 1;
-                                        if (this.isEmpty(x + dir, y)) {
+                                        if (emptyIn(newGrid, x + dir, y)) {
                                             const targetIdx = this.getIndex(x + dir, y);
                                             newGrid[targetIdx] = material;
                                             newGrid[idx] = MATERIAL.EMPTY;
@@ -1041,33 +1037,28 @@
                                     }
                                 }
                             }
-                            // Normal falling behavior for particles and liquids
                             else {
-                                // Try to fall straight down
-                                if (this.isEmpty(x, y + 1)) {
+                                if (emptyIn(newGrid, x, y + 1)) {
                                     const targetIdx = this.getIndex(x, y + 1);
                                     newGrid[targetIdx] = material;
                                     newGrid[idx] = MATERIAL.EMPTY;
                                     newVelY[targetIdx] = newVY;
                                     newVelX[targetIdx] = newVX;
-                                    // Transfer particle age for debris tracking
                                     if (material === MATERIAL.DUST && this.particleAge[idx] > 0) {
                                         this.particleAge[targetIdx] = this.particleAge[idx];
                                         this.particleAge[idx] = 0;
                                     }
                                     moved = true;
                                 }
-                                // Try diagonal fall
-                                else if (this.isEmpty(x - 1, y + 1) || this.isEmpty(x + 1, y + 1)) {
+                                else if (emptyIn(newGrid, x - 1, y + 1) || emptyIn(newGrid, x + 1, y + 1)) {
                                     const dir = Math.random() < 0.5 ? -1 : 1;
-                                    const nx = x + (this.isEmpty(x + dir, y + 1) ? dir : -dir);
-                                    if (this.isEmpty(nx, y + 1)) {
+                                    const nx = x + (emptyIn(newGrid, x + dir, y + 1) ? dir : -dir);
+                                    if (emptyIn(newGrid, nx, y + 1)) {
                                         const targetIdx = this.getIndex(nx, y + 1);
                                         newGrid[targetIdx] = material;
                                         newGrid[idx] = MATERIAL.EMPTY;
                                         newVelY[targetIdx] = newVY;
                                         newVelX[targetIdx] = newVX;
-                                        // Transfer particle age for debris tracking
                                         if (material === MATERIAL.DUST && this.particleAge[idx] > 0) {
                                             this.particleAge[targetIdx] = this.particleAge[idx];
                                             this.particleAge[idx] = 0;
@@ -1075,12 +1066,11 @@
                                         moved = true;
                                     }
                                 }
-                                // Liquids spread horizontally (water, lava, acid, oil, blood)
                                 else if (material === MATERIAL.LIQUID || material === MATERIAL.LAVA || 
                                          material === MATERIAL.ACID || material === MATERIAL.OIL || 
                                          material === MATERIAL.BLOOD) {
                                     const dir = Math.random() < 0.5 ? -1 : 1;
-                                    if (this.isEmpty(x + dir, y)) {
+                                    if (emptyIn(newGrid, x + dir, y)) {
                                         const targetIdx = this.getIndex(x + dir, y);
                                         newGrid[targetIdx] = material;
                                         newGrid[idx] = MATERIAL.EMPTY;
@@ -1101,53 +1091,45 @@
                             // STICKY BLOCKS: Human-built blocks are sticky; PLANTS need ground support
                             const isHumanBuilt = this.humanBuiltBlocks[idx];
                             
-                            // Check if there's direct support below
-                            const hasDirectSupport = !this.isEmpty(x, y + 1);
+                            const hasDirectSupport = !emptyIn(newGrid, x, y + 1);
                             
                             if (!hasDirectSupport && !touchingSticky) {
-                                // Plants need direct support below - no side/top "sticky" (prevents mid-air floating)
                                 if (material === MATERIAL.PLANT) {
-                                    if (this.isEmpty(x, y + 1)) {
-                                        newGrid[this.getIndex(x, y + 1)] = material;
+                                    if (emptyIn(newGrid, x, y + 1)) {
+                                        const ti = this.getIndex(x, y + 1);
+                                        newGrid[ti] = material;
                                         newGrid[idx] = MATERIAL.EMPTY;
-                                        newVelY[this.getIndex(x, y + 1)] = newVY;
-                                        this.plantType[this.getIndex(x, y + 1)] = this.plantType[idx];
+                                        newVelY[ti] = newVY;
+                                        this.plantType[ti] = this.plantType[idx];
                                         this.plantType[idx] = 0;
                                         moved = true;
                                     }
                                 }
-                                // Human-built blocks are STICKY - they need strong connection
                                 else if (isHumanBuilt) {
-                                    // Check if connected to ANY other block (very sticky!)
-                                    const hasLeftNeighbor = !this.isEmpty(x - 1, y);
-                                    const hasRightNeighbor = !this.isEmpty(x + 1, y);
-                                    const hasTopNeighbor = !this.isEmpty(x, y - 1);
+                                    const hasLeftNeighbor = !emptyIn(newGrid, x - 1, y);
+                                    const hasRightNeighbor = !emptyIn(newGrid, x + 1, y);
+                                    const hasTopNeighbor = !emptyIn(newGrid, x, y - 1);
                                     const hasAnyConnection = hasLeftNeighbor || hasRightNeighbor || hasTopNeighbor;
                                     
-                                    // Only fall if COMPLETELY isolated
-                                    if (!hasAnyConnection) {
-                                        if (this.isEmpty(x, y + 1)) {
-                                            newGrid[this.getIndex(x, y + 1)] = material;
-                                            newGrid[idx] = MATERIAL.EMPTY;
-                                            newVelY[this.getIndex(x, y + 1)] = newVY;
-                                            // Transfer sticky property
-                                            this.humanBuiltBlocks[this.getIndex(x, y + 1)] = true;
-                                            this.humanBuiltBlocks[idx] = false;
-                                            moved = true;
-                                        }
+                                    if (!hasAnyConnection && emptyIn(newGrid, x, y + 1)) {
+                                        const ti = this.getIndex(x, y + 1);
+                                        newGrid[ti] = material;
+                                        newGrid[idx] = MATERIAL.EMPTY;
+                                        newVelY[ti] = newVY;
+                                        this.humanBuiltBlocks[ti] = true;
+                                        this.humanBuiltBlocks[idx] = false;
+                                        moved = true;
                                     }
                                 } else {
-                                    // Regular blocks - normal physics
-                                    // Check structural integrity - needs solid support
-                                    const leftSupport = !this.isEmpty(x - 1, y) && !this.isEmpty(x - 1, y + 1);
-                                    const rightSupport = !this.isEmpty(x + 1, y) && !this.isEmpty(x + 1, y + 1);
+                                    const leftSupport = !emptyIn(newGrid, x - 1, y) && !emptyIn(newGrid, x - 1, y + 1);
+                                    const rightSupport = !emptyIn(newGrid, x + 1, y) && !emptyIn(newGrid, x + 1, y + 1);
                                     
-                                    // Fall if not enough support (needs at least 1 diagonal support or random chance)
                                     if ((!leftSupport && !rightSupport) || Math.random() < 0.02) {
-                                        if (this.isEmpty(x, y + 1)) {
-                                            newGrid[this.getIndex(x, y + 1)] = material;
+                                        if (emptyIn(newGrid, x, y + 1)) {
+                                            const ti = this.getIndex(x, y + 1);
+                                            newGrid[ti] = material;
                                             newGrid[idx] = MATERIAL.EMPTY;
-                                            newVelY[this.getIndex(x, y + 1)] = newVY;
+                                            newVelY[ti] = newVY;
                                             moved = true;
                                         }
                                     }
@@ -1343,22 +1325,20 @@
                     [255, 0, 255]    // 6: magenta (flower)
                 ];
 
-                // Draw voxels directly with fillRect for better performance and no artifacts
+                const t = Date.now();
+                const ps = CONFIG.pixelSize;
                 for (let y = 0; y < GRID_HEIGHT; y++) {
                     for (let x = 0; x < GRID_WIDTH; x++) {
                         const material = this.get(x, y);
                         if (material === MATERIAL.EMPTY) continue;
 
                         const props = MATERIAL_PROPS[material];
-                        // Use plant-specific colors when applicable
                         let base = props.shadeBase;
                         if (material === MATERIAL.PLANT) {
-                            const idx = this.getIndex(x, y);
-                            const pType = this.plantType[idx] || 0;
+                            const pType = this.plantType[this.getIndex(x, y)] || 0;
                             base = PLANT_COLORS[Math.min(pType, 6)];
                         }
 
-                        // Calculate lighting based on neighbors
                         const hasTop = !this.isEmpty(x, y - 1);
                         const hasBottom = !this.isEmpty(x, y + 1);
                         const hasLeft = !this.isEmpty(x - 1, y);
@@ -1371,47 +1351,25 @@
                         if (!hasRight) shade -= 10;
                         if (!hasBottom) shade -= 15;
 
-                        // Add texture and effects
-                        let noise = (Math.random() - 0.5) * 12;
-                        if (material === MATERIAL.LAVA) {
-                            const pulse = Math.sin(Date.now() * 0.003 + x * 0.5 + y * 0.5) * 15;
-                            noise += pulse;
-                        } else if (material === MATERIAL.ACID) {
-                            const pulse = Math.sin(Date.now() * 0.008 + x + y) * 25;
-                            noise += pulse;
-                        } else if (material === MATERIAL.FIRE) {
-                            const pulse = Math.sin(Date.now() * 0.01 + x + y * 2) * 40;
-                            noise += pulse;
-                        } else if (material === MATERIAL.SLIME) {
-                            const pulse = Math.sin(Date.now() * 0.002 + x * 0.3 + y * 0.3) * 10;
-                            noise += pulse;
-                        } else if (material === MATERIAL.EMBER) {
-                            const pulse = Math.sin(Date.now() * 0.012 + x + y * 2) * 35;
-                            noise += pulse;
-                        } else if (material === MATERIAL.HONEY) {
-                            const goldenShimmer = Math.sin(x * 0.4 + y * 0.6) * 8;
-                            noise += goldenShimmer;
-                        } else if (material === MATERIAL.PLANT) {
-                            const idx = this.getIndex(x, y);
-                            const pType = (this.plantType[idx] || 0);
-                            // Organic variation - less for flowers to keep them bright
-                            const organicVariation = pType >= 2 
-                                ? (Math.sin(x * 0.5 + y * 0.8) * 8)  // Flowers: subtle variation
-                                : (Math.sin(x * 0.7 + y * 1.3) * 15) + (Math.cos(x * 1.1 + y * 0.9) * 10); // Leaves/stems
-                            noise += organicVariation;
+                        let noise = (((x * 31 + y * 17) % 101) / 101 - 0.5) * 12;
+                        if (material === MATERIAL.LAVA) noise += Math.sin(t * 0.003 + x * 0.5 + y * 0.5) * 15;
+                        else if (material === MATERIAL.ACID) noise += Math.sin(t * 0.008 + x + y) * 25;
+                        else if (material === MATERIAL.FIRE) noise += Math.sin(t * 0.01 + x + y * 2) * 40;
+                        else if (material === MATERIAL.SLIME) noise += Math.sin(t * 0.002 + x * 0.3 + y * 0.3) * 10;
+                        else if (material === MATERIAL.EMBER) noise += Math.sin(t * 0.012 + x + y * 2) * 35;
+                        else if (material === MATERIAL.HONEY) noise += Math.sin(x * 0.4 + y * 0.6) * 8;
+                        else if (material === MATERIAL.PLANT) {
+                            const pType = this.plantType[this.getIndex(x, y)] || 0;
+                            noise += pType >= 2 ? Math.sin(x * 0.5 + y * 0.8) * 8
+                                : Math.sin(x * 0.7 + y * 1.3) * 15 + Math.cos(x * 1.1 + y * 0.9) * 10;
                         }
 
                         const r = Math.max(0, Math.min(255, base[0] + shade + noise));
                         const g = Math.max(0, Math.min(255, base[1] + shade + noise));
                         const b = Math.max(0, Math.min(255, base[2] + shade + noise));
 
-                        // Add transparency for steam
-                        if (material === MATERIAL.STEAM) {
-                            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
-                        } else {
-                            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-                        }
-                        ctx.fillRect(x * CONFIG.pixelSize, y * CONFIG.pixelSize, CONFIG.pixelSize, CONFIG.pixelSize);
+                        ctx.fillStyle = material === MATERIAL.STEAM ? `rgba(${r},${g},${b},0.5)` : `rgb(${r},${g},${b})`;
+                        ctx.fillRect(x * ps, y * ps, ps, ps);
                     }
                 }
 
@@ -1548,6 +1506,7 @@
             GRID_HEIGHT = Math.floor(CONFIG.height / CONFIG.pixelSize);
             
             // FULL RESET: Clear everything and rebuild from scratch
+            game._simOrder = null;
             game.grid = new Array(GRID_WIDTH * GRID_HEIGHT).fill(MATERIAL.EMPTY);
             game.velocityX = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
             game.velocityY = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
