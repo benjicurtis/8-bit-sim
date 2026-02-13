@@ -238,7 +238,7 @@
             <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Solid</div>
             <div style="margin-top: 2px;"><span class="key">1</span> Concrete <span class="key">2</span> Dust <span class="key">4</span> Metal <span class="key">8</span> Snow <span class="key">E</span> Fire <span class="key">Y</span> Ice <span class="key">U</span> Sand <span class="key">O</span> Gravel</div>
             <div style="margin-top: 2px;"><span class="key">P</span> Wood <span class="key">G</span> Gunpowder <span class="key">J</span> Stone <span class="key">K</span> Ember <span class="key">F</span> Feces</div>
-            <div style="margin-top: 2px;"><span class="key">V</span> Lead Brick <span class="key">M</span> Lead Ball <span class="key">N</span> Glue Metal <span class="key">A</span> Pellets <span class="key">S</span> Fuse <span class="key">.</span> Rubber <span class="key">Z</span> Milk <span class="key">`</span> Antimatter</div>
+            <div style="margin-top: 2px;"><span class="key">V</span> Lead Brick <span class="key">M</span> Lead Ball <span class="key">N</span> Glue Metal <span class="key">A</span> Pellets <span class="key">S</span> Fuse <span class="key">.</span> Rubber <span class="key">Z</span> Milk <span class="key">`</span> Antimatter (ignite w/ fire)</div>
             <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Life</div>
             <div style="margin-top: 2px;"><span class="key">7</span> Human <span class="key">B</span> Builder <span class="key">T</span> Plant <span class="key">L</span> Flies <span class="key">X</span> Worm <span class="key">C</span> Bacteria</div>
         </div>
@@ -314,7 +314,8 @@
             PELLET: 36,      // Light shot - small, launched in spread for shotgun contraptions
             FUSE: 37,        // Burnable solid - carries fire along its length for chain ignition
             RUBBER: 38,      // Bouncy block - deflects lead and pellets
-            ANTIMATTER: 39  // Annihilates on contact with ANY matter - MASSIVE explosion!
+            ANTIMATTER: 39,  // Purple powder - ignite with fire for purple/blue blast!
+            ANTIMATTER_BLAST: 40  // Purple-blue blast from antimatter explosion (rises, destroys)
         };
 
         // Material Properties
@@ -358,7 +359,8 @@
             [MATERIAL.PELLET]: { color: '#8b7355', density: 4, strength: 2, flow: false, shadeBase: [139, 115, 85], isPellet: true },
             [MATERIAL.FUSE]: { color: '#4a3728', density: 2, strength: 1, flow: false, shadeBase: [74, 55, 40], flammable: true, isFuse: true },
             [MATERIAL.RUBBER]: { color: '#2d2d2d', density: 3, strength: 3, flow: false, shadeBase: [45, 45, 50], bouncy: true },
-            [MATERIAL.ANTIMATTER]: { color: '#ff00ff', density: 2, strength: 0, flow: true, shadeBase: [255, 0, 255], glows: true, annihilates: true }
+            [MATERIAL.ANTIMATTER]: { color: '#8b008b', density: 3, strength: 0, flow: true, shadeBase: [139, 0, 139], explosive: true },
+            [MATERIAL.ANTIMATTER_BLAST]: { color: '#8a2be2', density: 0.3, strength: 0, flow: true, shadeBase: [120, 80, 255], burns: true, rises: true }
         };
 
         // Game State
@@ -869,43 +871,6 @@
                 }
             }
 
-            // Trigger antimatter explosion (called when lead/pellets hit antimatter - modifies grid directly)
-            triggerAntimatterExplosion(ex, ey) {
-                const explosionRadius = 30;
-                for (let rx = ex - explosionRadius; rx <= ex + explosionRadius; rx++) {
-                    for (let ry = ey - explosionRadius; ry <= ey + explosionRadius; ry++) {
-                        const dist = Math.sqrt((rx - ex) ** 2 + (ry - ey) ** 2);
-                        const cellMat = this.get(rx, ry);
-                        if (dist <= explosionRadius) {
-                            if (dist <= explosionRadius * 0.4) {
-                                this.set(rx, ry, MATERIAL.FIRE);
-                            } else if (dist <= explosionRadius * 0.7) {
-                                if (cellMat === MATERIAL.METAL || cellMat === MATERIAL.STONE || cellMat === MATERIAL.CONCRETE || cellMat === MATERIAL.LEAD_BRICK) {
-                                    this.set(rx, ry, Math.random() < 0.6 ? MATERIAL.DUST : MATERIAL.FIRE);
-                                } else {
-                                    this.set(rx, ry, MATERIAL.FIRE);
-                                }
-                            } else if (cellMat !== MATERIAL.EMPTY && cellMat !== MATERIAL.FIRE && cellMat !== MATERIAL.STEAM) {
-                                if (Math.random() < 0.5) this.set(rx, ry, MATERIAL.FIRE);
-                                else if ((cellMat === MATERIAL.WOOD || cellMat === MATERIAL.PLANT || cellMat === MATERIAL.OIL) && Math.random() < 0.8)
-                                    this.set(rx, ry, MATERIAL.FIRE);
-                            }
-                        }
-                    }
-                }
-                this.launchLeadBallsNear(ex, ey, explosionRadius);
-                this.launchPelletsNear(ex, ey, explosionRadius);
-                for (const h of this.humans) {
-                    if (!h.alive) continue;
-                    const hDist = Math.sqrt((h.headX - ex) ** 2 + (h.headY - ey) ** 2);
-                    if (hDist <= explosionRadius) {
-                        this.set(h.headX, h.headY, MATERIAL.DEAD_HUMAN);
-                        this.set(h.bodyX, h.bodyY, MATERIAL.DEAD_HUMAN);
-                        h.alive = false;
-                    }
-                }
-            }
-
             // Launch lead balls within explosion radius (gunpowder explosion)
             launchLeadBallsNear(ex, ey, radius) {
                 for (const ball of this.leadBalls) {
@@ -950,14 +915,6 @@
 
                     const newVoxels = voxels.map(({ x, y }) => ({ x: x + moveX, y: y + moveY }));
                     const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
-                    const hitsAntimatter = newVoxels.some(({ x, y }) => this.get(x, y) === MATERIAL.ANTIMATTER);
-                    if (hitsAntimatter) {
-                        const hitVoxel = newVoxels.find(({ x, y }) => this.get(x, y) === MATERIAL.ANTIMATTER);
-                        if (hitVoxel) this.triggerAntimatterExplosion(hitVoxel.x, hitVoxel.y);
-                        for (const { x, y } of voxels) this.set(x, y, MATERIAL.EMPTY);
-                        this.leadBalls.splice(i, 1);
-                        continue;
-                    }
                     const hitsGunpowder = speed > 2 && newVoxels.some(({ x, y }) => this.get(x, y) === MATERIAL.GUNPOWDER);
                     if (hitsGunpowder) {
                         for (const { x, y } of newVoxels) {
@@ -1043,13 +1000,6 @@
                     const newX = px + moveX, newY = py + moveY;
                     const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
                     const targetMat = this.get(newX, newY);
-                    const hitsAntimatter = targetMat === MATERIAL.ANTIMATTER;
-                    if (hitsAntimatter) {
-                        this.triggerAntimatterExplosion(newX, newY);
-                        this.set(px, py, MATERIAL.EMPTY);
-                        this.pelletBalls.splice(i, 1);
-                        continue;
-                    }
                     const hitsGunpowder = speed > 2 && targetMat === MATERIAL.GUNPOWDER;
                     if (hitsGunpowder) {
                         this.set(newX, newY, MATERIAL.FIRE);
@@ -1173,68 +1123,6 @@
                         // Skip dead humans - they don't move (static red voxels)
                         if (material === MATERIAL.DEAD_HUMAN) continue;
 
-                        // ANTIMATTER: Annihilates on contact with ANY matter - MASSIVE explosion!
-                        if (material === MATERIAL.ANTIMATTER) {
-                            const neighbors = [
-                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y],
-                                [x - 1, y - 1], [x + 1, y - 1], [x - 1, y + 1], [x + 1, y + 1]
-                            ];
-                            let touchesMatter = false;
-                            for (const [nx, ny] of neighbors) {
-                                const neighborMat = this.get(nx, ny);
-                                if (neighborMat !== MATERIAL.EMPTY && neighborMat !== MATERIAL.ANTIMATTER) {
-                                    touchesMatter = true;
-                                    break;
-                                }
-                            }
-                            if (touchesMatter) {
-                                // HUGE explosion - radius 30 (vs gunpowder's 8)
-                                const explosionRadius = 30;
-                                const ex = x, ey = y;
-                                for (let rx = ex - explosionRadius; rx <= ex + explosionRadius; rx++) {
-                                    for (let ry = ey - explosionRadius; ry <= ey + explosionRadius; ry++) {
-                                        const dist = Math.sqrt((rx - ex) ** 2 + (ry - ey) ** 2);
-                                        const nIdx = this.getIndex(rx, ry);
-                                        if (nIdx === -1) continue;
-                                        const cellMat = this.get(rx, ry);
-                                        if (dist <= explosionRadius) {
-                                            // Inner core: vaporize everything to fire
-                                            if (dist <= explosionRadius * 0.4) {
-                                                newGrid[nIdx] = MATERIAL.FIRE;
-                                            } else if (dist <= explosionRadius * 0.7) {
-                                                // Middle: most things become fire, heavy stuff becomes dust
-                                                if (cellMat === MATERIAL.METAL || cellMat === MATERIAL.STONE || cellMat === MATERIAL.CONCRETE || cellMat === MATERIAL.LEAD_BRICK) {
-                                                    if (Math.random() < 0.6) newGrid[nIdx] = MATERIAL.DUST;
-                                                    else newGrid[nIdx] = MATERIAL.FIRE;
-                                                } else {
-                                                    newGrid[nIdx] = MATERIAL.FIRE;
-                                                }
-                                            } else {
-                                                // Outer: flammable burns, others take damage
-                                                if (cellMat !== MATERIAL.EMPTY && cellMat !== MATERIAL.FIRE && cellMat !== MATERIAL.STEAM) {
-                                                    if (Math.random() < 0.5) newGrid[nIdx] = MATERIAL.FIRE;
-                                                    else if ((cellMat === MATERIAL.WOOD || cellMat === MATERIAL.PLANT || cellMat === MATERIAL.OIL) && Math.random() < 0.8)
-                                                        newGrid[nIdx] = MATERIAL.FIRE;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                newGrid[idx] = MATERIAL.EMPTY;
-                                this.launchLeadBallsNear(ex, ey, explosionRadius);
-                                this.launchPelletsNear(ex, ey, explosionRadius);
-                                // Kill humans in blast zone
-                                for (const h of this.humans) {
-                                    const hDist = Math.sqrt((h.headX - ex) ** 2 + (h.headY - ey) ** 2);
-                                    if (hDist <= explosionRadius) {
-                                        newGrid[this.getIndex(h.headX, h.headY)] = MATERIAL.DEAD_HUMAN;
-                                        newGrid[this.getIndex(h.bodyX, h.bodyY)] = MATERIAL.DEAD_HUMAN;
-                                    }
-                                }
-                                continue; // Skip rest of processing for this cell
-                            }
-                        }
-
                         const props = MATERIAL_PROPS[material];
                         const vx = this.velocityX[idx];
                         const vy = this.velocityY[idx];
@@ -1296,6 +1184,29 @@
                                         this.launchLeadBallsNear(nx, ny, explosionRadius);
                                         this.launchPelletsNear(nx, ny, explosionRadius);
                                         break; // One explosion per lava voxel
+                                    } else if (neighborMat === MATERIAL.ANTIMATTER) {
+                                        // LAVA + ANTIMATTER = Purple/blue blast (4 voxel core destroys everything)
+                                        const blastEx = nx, blastEy = ny;
+                                        for (let bx = blastEx - 12; bx <= blastEx + 12; bx++) {
+                                            for (let by = blastEy - 12; by <= blastEy + 12; by++) {
+                                                const dist = Math.sqrt((bx - blastEx) ** 2 + (by - blastEy) ** 2);
+                                                const bIdx = this.getIndex(bx, by);
+                                                if (bIdx === -1) continue;
+                                                if (dist <= 4) newGrid[bIdx] = MATERIAL.EMPTY;
+                                                else if (dist <= 12 && this.get(bx, by) !== MATERIAL.EMPTY) newGrid[bIdx] = MATERIAL.ANTIMATTER_BLAST;
+                                            }
+                                        }
+                                        this.launchLeadBallsNear(blastEx, blastEy, 12);
+                                        this.launchPelletsNear(blastEx, blastEy, 12);
+                                        for (const h of this.humans) {
+                                            const hDist = Math.sqrt((h.headX - blastEx) ** 2 + (h.headY - blastEy) ** 2);
+                                            if (hDist <= 12) {
+                                                newGrid[this.getIndex(h.headX, h.headY)] = MATERIAL.DEAD_HUMAN;
+                                                newGrid[this.getIndex(h.bodyX, h.bodyY)] = MATERIAL.DEAD_HUMAN;
+                                                h.alive = false;
+                                            }
+                                        }
+                                        break;
                                     } else if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY || neighborMat === MATERIAL.HUMAN_BODY_BUILDER) && Math.random() < 0.15) {
                                         // Humans burn to dust
                                         newGrid[this.getIndex(nx, ny)] = MATERIAL.DUST;
@@ -1378,6 +1289,29 @@
                                         this.launchLeadBallsNear(nx, ny, explosionRadius);
                                         this.launchPelletsNear(nx, ny, explosionRadius);
                                         break; // One explosion per fire voxel
+                                    } else if (neighborMat === MATERIAL.ANTIMATTER) {
+                                        // FIRE + ANTIMATTER = Purple/blue blast (4 voxel core destroys everything)
+                                        const blastEx = nx, blastEy = ny;
+                                        for (let bx = blastEx - 12; bx <= blastEx + 12; bx++) {
+                                            for (let by = blastEy - 12; by <= blastEy + 12; by++) {
+                                                const dist = Math.sqrt((bx - blastEx) ** 2 + (by - blastEy) ** 2);
+                                                const bIdx = this.getIndex(bx, by);
+                                                if (bIdx === -1) continue;
+                                                if (dist <= 4) newGrid[bIdx] = MATERIAL.EMPTY;
+                                                else if (dist <= 12 && this.get(bx, by) !== MATERIAL.EMPTY) newGrid[bIdx] = MATERIAL.ANTIMATTER_BLAST;
+                                            }
+                                        }
+                                        this.launchLeadBallsNear(blastEx, blastEy, 12);
+                                        this.launchPelletsNear(blastEx, blastEy, 12);
+                                        for (const h of this.humans) {
+                                            const hDist = Math.sqrt((h.headX - blastEx) ** 2 + (h.headY - blastEy) ** 2);
+                                            if (hDist <= 12) {
+                                                newGrid[this.getIndex(h.headX, h.headY)] = MATERIAL.DEAD_HUMAN;
+                                                newGrid[this.getIndex(h.bodyX, h.bodyY)] = MATERIAL.DEAD_HUMAN;
+                                                h.alive = false;
+                                            }
+                                        }
+                                        break;
                                     } else if (neighborMat === MATERIAL.FUSE) {
                                         if (Math.random() < 0.92) newGrid[nIdx] = MATERIAL.FIRE;
                                     } else if (neighborMat === MATERIAL.OIL && Math.random() < 0.3) {
@@ -1412,6 +1346,44 @@
                                     newGrid[idx] = MATERIAL.STEAM;
                                 }
                             }
+                        }
+
+                        // ANTIMATTER_BLAST: Purple/blue blast - ignites antimatter (chain reaction), burns things
+                        if (material === MATERIAL.ANTIMATTER_BLAST) {
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            for (const [nx, ny] of neighbors) {
+                                const neighborMat = this.get(nx, ny);
+                                const nIdx = this.getIndex(nx, ny);
+                                if (neighborMat === MATERIAL.ANTIMATTER) {
+                                    // Chain reaction: antimatter ignites!
+                                    const blastEx = nx, blastEy = ny;
+                                    for (let bx = blastEx - 12; bx <= blastEx + 12; bx++) {
+                                        for (let by = blastEy - 12; by <= blastEy + 12; by++) {
+                                            const dist = Math.sqrt((bx - blastEx) ** 2 + (by - blastEy) ** 2);
+                                            const bIdx = this.getIndex(bx, by);
+                                            if (bIdx === -1) continue;
+                                            if (dist <= 4) newGrid[bIdx] = MATERIAL.EMPTY;
+                                            else if (dist <= 12 && this.get(bx, by) !== MATERIAL.EMPTY) newGrid[bIdx] = MATERIAL.ANTIMATTER_BLAST;
+                                        }
+                                    }
+                                    this.launchLeadBallsNear(blastEx, blastEy, 12);
+                                    this.launchPelletsNear(blastEx, blastEy, 12);
+                                    for (const h of this.humans) {
+                                        const hDist = Math.sqrt((h.headX - blastEx) ** 2 + (h.headY - blastEy) ** 2);
+                                        if (hDist <= 12) {
+                                            newGrid[this.getIndex(h.headX, h.headY)] = MATERIAL.DEAD_HUMAN;
+                                            newGrid[this.getIndex(h.bodyX, h.bodyY)] = MATERIAL.DEAD_HUMAN;
+                                            h.alive = false;
+                                        }
+                                    }
+                                    break;
+                                } else if (neighborMat === MATERIAL.WOOD || neighborMat === MATERIAL.PLANT || neighborMat === MATERIAL.OIL) {
+                                    if (Math.random() < 0.15) newGrid[nIdx] = MATERIAL.ANTIMATTER_BLAST;
+                                }
+                            }
+                            if (Math.random() < 0.03) newGrid[idx] = MATERIAL.EMPTY; // Blast fades
                         }
 
                         if (material === MATERIAL.PLANT) {
@@ -1618,8 +1590,8 @@
                         // Flow behavior for dust and liquids (skip if particle was transformed, e.g. bacteria killed)
                         if (newGrid[idx] !== material) { moved = true; } // Already transformed, skip flow
                         else if (props.flow) {
-                            // STEAM, FIRE, and EMBER rise instead of fall
-                            if (material === MATERIAL.STEAM || material === MATERIAL.FIRE || material === MATERIAL.EMBER) {
+                            // STEAM, FIRE, EMBER, and ANTIMATTER_BLAST rise instead of fall
+                            if (material === MATERIAL.STEAM || material === MATERIAL.FIRE || material === MATERIAL.EMBER || material === MATERIAL.ANTIMATTER_BLAST) {
                                 if (emptyIn(newGrid, x, y - 1)) {
                                     const targetIdx = this.getIndex(x, y - 1);
                                     newGrid[targetIdx] = material;
@@ -2127,7 +2099,12 @@
                         else if (material === MATERIAL.FLY) noise += Math.sin(t * 0.02 + x * 2 + y * 2) * 15;
                         else if (material === MATERIAL.WORM) noise += Math.sin(t * 0.025 + x * 1.5 + y * 1.5) * 12;
                         else if (material === MATERIAL.MERCURY) noise += Math.sin(t * 0.002 + x * 0.6 + y * 0.6) * 18;
-                        else if (material === MATERIAL.ANTIMATTER) noise += Math.sin(t * 0.006 + x * 0.8 + y * 0.8) * 35;
+                        else if (material === MATERIAL.ANTIMATTER) noise += Math.sin(t * 0.004 + x * 0.5 + y * 0.5) * 20;
+                        else if (material === MATERIAL.ANTIMATTER_BLAST) {
+                            noise += Math.sin(t * 0.015 + x + y * 2) * 45;
+                            // Purple-blue variation based on position
+                            base = (base[0] + Math.sin(x * 0.3 + y * 0.2) * 40 > 128) ? [160, 60, 255] : [80, 100, 255];
+                        }
                         else if (material === MATERIAL.BACTERIA) noise += Math.sin(t * 0.015 + x * 2 + y * 2) * 8;
                         else if (material === MATERIAL.PLANT) {
                             const pType = this.plantType[this.getIndex(x, y)] || 0;
@@ -2139,7 +2116,9 @@
                         const g = Math.max(0, Math.min(255, base[1] + shade + noise));
                         const b = Math.max(0, Math.min(255, base[2] + shade + noise));
 
-                        ctx.fillStyle = material === MATERIAL.STEAM ? `rgba(${r},${g},${b},0.5)` : `rgb(${r},${g},${b})`;
+                        let fillStyle = material === MATERIAL.STEAM ? `rgba(${r},${g},${b},0.5)` : `rgb(${r},${g},${b})`;
+                        if (material === MATERIAL.ANTIMATTER_BLAST) fillStyle = `rgba(${r},${g},${b},0.85)`;
+                        ctx.fillStyle = fillStyle;
                         ctx.fillRect(x * ps, y * ps, ps, ps);
                     }
                 }
