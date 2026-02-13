@@ -892,15 +892,15 @@
                         continue;
                     }
                     const hitsGlueMetal = newVoxels.some(({ x, y }) => this.get(x, y) === MATERIAL.GLUE_METAL);
-                    if (hitsGlueMetal && speed < 100) {
-                        ball.vx *= -1.2;
-                        ball.vy *= -1.2;
+                    if (hitsGlueMetal) {
+                        ball.vx = 0;
+                        ball.vy = 0;
                         continue;
                     }
                     const hitsLeadBrick = newVoxels.some(({ x, y }) => this.get(x, y) === MATERIAL.LEAD_BRICK);
                     if (hitsLeadBrick) {
-                        ball.vx *= -1.2;
-                        ball.vy *= -1.2;
+                        ball.vx = 0;
+                        ball.vy = 0;
                         continue;
                     }
                     const hitsHuman = newVoxels.some(({ x, y }) => {
