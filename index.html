@@ -825,6 +825,31 @@
                     }
                     if (this.worms[i] !== worm) continue;
 
+                    // Ballistic movement when launched by explosion
+                    const vx = worm.vx || 0, vy = worm.vy || 0;
+                    if (Math.abs(vx) > 0.1 || Math.abs(vy) > 0.1) {
+                        worm.vy = (worm.vy || 0) + CONFIG.gravity * 0.8;
+                        worm.vx *= 0.97;
+                        worm.vy *= 0.97;
+                        const moveX = Math.round(worm.vx);
+                        const moveY = Math.round(worm.vy);
+                        if (moveX !== 0 || moveY !== 0) {
+                            const newX = worm.x + moveX, newY = worm.y + moveY;
+                            if (newX >= 0 && newX < GRID_WIDTH && newY >= 0 && newY < GRID_HEIGHT && this.isEmpty(newX, newY)) {
+                                this.set(worm.x, worm.y, MATERIAL.EMPTY);
+                                worm.x = newX;
+                                worm.y = newY;
+                                this.set(worm.x, worm.y, MATERIAL.WORM);
+                            } else {
+                                worm.vx *= 0.3;
+                                worm.vy *= 0.3;
+                            }
+                        }
+                        continue;
+                    }
+                    worm.vx = 0;
+                    worm.vy = 0;
+
                     // Crawl movement: fall when nothing below, otherwise wiggle horizontally (no flying)
                     let moveX = 0, moveY = 0;
                     if (this.isEmpty(worm.x, worm.y + 1)) {
@@ -856,6 +881,22 @@
                 return voxels;
             }
 
+            // Launch worms within explosion radius (gunpowder explosion)
+            launchWormsNear(ex, ey, radius) {
+                for (const worm of this.worms) {
+                    const dist = Math.sqrt((worm.x - ex) ** 2 + (worm.y - ey) ** 2);
+                    if (dist <= radius && dist > 0) {
+                        const dx = worm.x - ex, dy = worm.y - ey;
+                        const mag = Math.sqrt(dx * dx + dy * dy) || 1;
+                        const force = 4 + (radius - dist) * 0.5;
+                        worm.vx = worm.vx || 0;
+                        worm.vy = worm.vy || 0;
+                        worm.vx += (dx / mag) * force;
+                        worm.vy += (dy / mag) * force;
+                    }
+                }
+            }
+
             // Launch pellets within explosion radius - SPREAD pattern (shotgun style)
             launchPelletsNear(ex, ey, radius) {
                 for (const ball of this.pelletBalls) {
@@ -873,8 +914,8 @@
                 }
             }
 
-            // Launch lead balls within explosion radius (gunpowder explosion)
-            launchLeadBallsNear(ex, ey, radius) {
+            // Launch lead balls within explosion radius (gunpowder or antimatter)
+            launchLeadBallsNear(ex, ey, radius, fromAntimatter = false) {
                 for (const ball of this.leadBalls) {
                     let minDist = radius + 1;
                     for (const v of ball.voxels) {
@@ -887,6 +928,7 @@
                         const force = 6 + (radius - minDist) * 0.8;
                         ball.vx += (dx / mag) * force;
                         ball.vy += (dy / mag) * force;
+                        if (fromAntimatter) ball.antimatterLaunched = true;
                     }
                 }
             }
@@ -958,6 +1000,18 @@
                         const m = this.get(x, y);
                         return m === MATERIAL.HUMAN_HEAD || m === MATERIAL.HUMAN_BODY || m === MATERIAL.HUMAN_BODY_BUILDER;
                     });
+
+                    // Block at walls unless launched by antimatter (antimatter-launched balls phase through)
+                    const WALL_MATERIALS = [MATERIAL.CONCRETE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.STONE, MATERIAL.WOOD];
+                    const hitsWall = newVoxels.some(({ x, y }) => {
+                        const m = this.get(x, y);
+                        return m !== MATERIAL.EMPTY && WALL_MATERIALS.includes(m);
+                    });
+                    if (hitsWall && !ball.antimatterLaunched) {
+                        ball.vx = 0;
+                        ball.vy = 0;
+                        continue;
+                    }
 
                     if (hitsHuman && speed > 2) {
                         for (const h of this.humans) {
@@ -1188,6 +1242,7 @@
                                         newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
                                         this.launchLeadBallsNear(nx, ny, explosionRadius);
                                         this.launchPelletsNear(nx, ny, explosionRadius);
+                                        this.launchWormsNear(nx, ny, explosionRadius);
                                         break; // One explosion per lava voxel
                                     } else if (neighborMat === MATERIAL.ANTIMATTER) {
                                         // LAVA + ANTIMATTER = Purple/blue blast (4 voxel core destroys everything)
@@ -1201,8 +1256,9 @@
                                                 else if (dist <= 12 && this.get(bx, by) !== MATERIAL.EMPTY) newGrid[bIdx] = MATERIAL.ANTIMATTER_BLAST;
                                             }
                                         }
-                                        this.launchLeadBallsNear(blastEx, blastEy, 12);
+                                        this.launchLeadBallsNear(blastEx, blastEy, 12, true);
                                         this.launchPelletsNear(blastEx, blastEy, 12);
+                                        this.launchWormsNear(blastEx, blastEy, 12);
                                         for (const h of this.humans) {
                                             const hDist = Math.sqrt((h.headX - blastEx) ** 2 + (h.headY - blastEy) ** 2);
                                             if (hDist <= 12) {
@@ -1215,6 +1271,14 @@
                                     } else if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY || neighborMat === MATERIAL.HUMAN_BODY_BUILDER) && Math.random() < 0.15) {
                                         // Humans burn to dust
                                         newGrid[this.getIndex(nx, ny)] = MATERIAL.DUST;
+                                    } else if (neighborMat === MATERIAL.GRAVEL && Math.random() < 0.15) {
+                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.STONE;
+                                    } else if (neighborMat === MATERIAL.GLASS && Math.random() < 0.3) {
+                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.LAVA;
+                                    } else if (neighborMat === MATERIAL.GLUE_METAL && Math.random() < 0.12) {
+                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.LAVA;
+                                    } else if (neighborMat === MATERIAL.RUBBER && Math.random() < 0.25) {
+                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
                                     }
                                 }
                             }
@@ -1237,6 +1301,13 @@
                                     else if (neighborMat === MATERIAL.CONCRETE || neighborMat === MATERIAL.LEAD_BRICK) corrodeChance = 0.45;
                                     if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY || neighborMat === MATERIAL.HUMAN_BODY_BUILDER) && Math.random() < 0.7) {
                                         newGrid[this.getIndex(nx, ny)] = MATERIAL.DEAD_HUMAN;
+                                    }
+                                    else if (neighborMat === MATERIAL.PLANT && Math.random() < 0.8) {
+                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.EMPTY;
+                                    } else if (neighborMat === MATERIAL.ICE && Math.random() < 0.6) {
+                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.LIQUID;
+                                    } else if (neighborMat === MATERIAL.SAND && Math.random() < 0.5) {
+                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.EMPTY;
                                     }
                                     else if (Math.random() < corrodeChance) {
                                         newGrid[this.getIndex(nx, ny)] = neighborMat === MATERIAL.METAL ? MATERIAL.DUST : MATERIAL.EMPTY;
@@ -1293,6 +1364,7 @@
                                         newGrid[nIdx] = MATERIAL.FIRE;
                                         this.launchLeadBallsNear(nx, ny, explosionRadius);
                                         this.launchPelletsNear(nx, ny, explosionRadius);
+                                        this.launchWormsNear(nx, ny, explosionRadius);
                                         break; // One explosion per fire voxel
                                     } else if (neighborMat === MATERIAL.ANTIMATTER) {
                                         // FIRE + ANTIMATTER = Purple/blue blast (4 voxel core destroys everything)
@@ -1306,8 +1378,9 @@
                                                 else if (dist <= 12 && this.get(bx, by) !== MATERIAL.EMPTY) newGrid[bIdx] = MATERIAL.ANTIMATTER_BLAST;
                                             }
                                         }
-                                        this.launchLeadBallsNear(blastEx, blastEy, 12);
+                                        this.launchLeadBallsNear(blastEx, blastEy, 12, true);
                                         this.launchPelletsNear(blastEx, blastEy, 12);
+                                        this.launchWormsNear(blastEx, blastEy, 12);
                                         for (const h of this.humans) {
                                             const hDist = Math.sqrt((h.headX - blastEx) ** 2 + (h.headY - blastEy) ** 2);
                                             if (hDist <= 12) {
@@ -1333,6 +1406,12 @@
                                         if (Math.random() < (woodWet ? 0.06 : 0.25)) newGrid[nIdx] = MATERIAL.FIRE;
                                     } else if (neighborMat === MATERIAL.ICE && Math.random() < 0.1) {
                                         newGrid[nIdx] = MATERIAL.LIQUID;
+                                    } else if (neighborMat === MATERIAL.DUST && Math.random() < 0.22) {
+                                        newGrid[nIdx] = MATERIAL.FIRE;
+                                    } else if (neighborMat === MATERIAL.HONEY && Math.random() < 0.2) {
+                                        newGrid[nIdx] = MATERIAL.FIRE;
+                                    } else if (neighborMat === MATERIAL.RUBBER && Math.random() < 0.18) {
+                                        newGrid[nIdx] = MATERIAL.FIRE;
                                     }
                                 }
                                 
@@ -1373,8 +1452,9 @@
                                             else if (dist <= 12 && this.get(bx, by) !== MATERIAL.EMPTY) newGrid[bIdx] = MATERIAL.ANTIMATTER_BLAST;
                                         }
                                     }
-                                    this.launchLeadBallsNear(blastEx, blastEy, 12);
+                                    this.launchLeadBallsNear(blastEx, blastEy, 12, true);
                                     this.launchPelletsNear(blastEx, blastEy, 12);
+                                    this.launchWormsNear(blastEx, blastEy, 12);
                                     for (const h of this.humans) {
                                         const hDist = Math.sqrt((h.headX - blastEx) ** 2 + (h.headY - blastEy) ** 2);
                                         if (hDist <= 12) {
@@ -1389,6 +1469,47 @@
                                 }
                             }
                             if (Math.random() < 0.03) newGrid[idx] = MATERIAL.EMPTY; // Blast fades
+                        }
+
+                        // EMBER: Hot glowing particles - ignite flammables, extinguish in water
+                        if (material === MATERIAL.EMBER) {
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            let emberExtinguished = false;
+                            for (const [nx, ny] of neighbors) {
+                                const neighborMat = this.get(nx, ny);
+                                const nIdx = this.getIndex(nx, ny);
+                                if (neighborMat === MATERIAL.LIQUID || neighborMat === MATERIAL.MILK) {
+                                    newGrid[idx] = MATERIAL.STEAM;
+                                    emberExtinguished = true;
+                                    break;
+                                }
+                                if (neighborMat === MATERIAL.OIL && Math.random() < 0.35) {
+                                    newGrid[nIdx] = MATERIAL.FIRE;
+                                    break;
+                                }
+                                if (neighborMat === MATERIAL.WOOD && Math.random() < 0.2) {
+                                    newGrid[nIdx] = MATERIAL.FIRE;
+                                    break;
+                                }
+                                if (neighborMat === MATERIAL.GUNPOWDER) {
+                                    const explosionRadius = 6;
+                                    for (let ex = nx - explosionRadius; ex <= nx + explosionRadius; ex++) {
+                                        for (let ey = ny - explosionRadius; ey <= ny + explosionRadius; ey++) {
+                                            const dist = Math.sqrt((ex - nx) ** 2 + (ey - ny) ** 2);
+                                            if (dist <= explosionRadius && this.get(ex, ey) === MATERIAL.GUNPOWDER) {
+                                                newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
+                                            }
+                                        }
+                                    }
+                                    newGrid[nIdx] = MATERIAL.FIRE;
+                                    this.launchLeadBallsNear(nx, ny, explosionRadius);
+                                    this.launchPelletsNear(nx, ny, explosionRadius);
+                                    this.launchWormsNear(nx, ny, explosionRadius);
+                                    break;
+                                }
+                            }
                         }
 
                         if (material === MATERIAL.PLANT) {
@@ -1510,6 +1631,20 @@
                             }
                             if (coldCount >= 2 && Math.random() < 0.08) {
                                 newGrid[idx] = MATERIAL.ICE;
+                            }
+                        }
+
+                        // MILK: Curdles/evaporates near heat - becomes steam
+                        if (material === MATERIAL.MILK) {
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            for (const [nx, ny] of neighbors) {
+                                const neighborMat = this.get(nx, ny);
+                                if ((neighborMat === MATERIAL.FIRE || neighborMat === MATERIAL.LAVA || neighborMat === MATERIAL.EMBER) && Math.random() < 0.4) {
+                                    newGrid[idx] = MATERIAL.STEAM;
+                                    break;
+                                }
                             }
                         }
 
@@ -2022,7 +2157,7 @@
                 const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
                 if (this.isEmpty(mx, my)) {
                     this.set(mx, my, MATERIAL.WORM);
-                    this.worms.push({ id: this.nextWormId++, x: mx, y: my });
+                    this.worms.push({ id: this.nextWormId++, x: mx, y: my, vx: 0, vy: 0 });
                 }
             }
 
