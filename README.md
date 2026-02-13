@@ -43,6 +43,7 @@ A pixel-perfect destruction sandbox with Neal.fun-inspired cellular automata phy
 | `A` | Spawn pellets (shotgun spread - light projectiles, launched by gunpowder) |
 | `S` | Spawn fuse (burnable - carries fire along its length for chain ignition) |
 | `.` | Spawn rubber (bouncy block - deflects lead and pellets) |
+| ` (backtick) | Spawn antimatter (annihilates on contact with ANY matter - HUGE explosion!) |
 | `C` | Spawn bacteria (reproduces near nutrients, dies from heat/acid) |
 | `D` | Spawn mercury (dense toxic liquid metal) |
 
@@ -144,6 +145,7 @@ Humans now exhibit lemming-like construction behavior with advanced building mec
   - Turn around after building and continue patrolling
 
 **Special:**
+- **Antimatter** → Glowing magenta particles - annihilates on contact with ANY matter, creating a MASSIVE explosion (radius 30 vs gunpowder's 8)! Drop it on buildings for instant devastation.
 - **Ice** → Solid frozen material, melts into water near heat sources
 - **Mercury** → Dense liquid metal with real-life properties:
   - One of the densest liquids - sinks through water, oil, and other fluids
