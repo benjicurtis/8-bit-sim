@@ -220,7 +220,7 @@
 
         <div id="controls">
             <div><span class="key">CLICK + DRAG</span> Destroy | <span class="key">R</span> Rebuild | <span class="key">H</span> Hide UI</div>
-            <div style="margin-top: 8px;"><span class="key">1</span> Concrete | <span class="key">2</span> Dust | <span class="key">3</span> Water | <span class="key">4</span> Metal | <span class="key">5</span> Lava | <span class="key">6</span> Acid | <span class="key">7</span> Human</div>
+            <div style="margin-top: 8px;"><span class="key">1</span> Concrete | <span class="key">2</span> Dust | <span class="key">3</span> Water | <span class="key">4</span> Metal | <span class="key">5</span> Lava | <span class="key">6</span> Acid | <span class="key">7</span> Human | <span class="key">B</span> Builder</div>
             <div style="margin-top: 5px;"><span class="key">8</span> Snow | <span class="key">9</span> Oil | <span class="key">0</span> Steam | <span class="key">Q</span> Blood | <span class="key">W</span> Slime | <span class="key">E</span> Fire | <span class="key">T</span> Plant | <span class="key">Y</span> Ice | <span class="key">U</span> Sand</div>
             <div style="margin-top: 5px;"><span class="key">I</span> Honey | <span class="key">O</span> Gravel | <span class="key">P</span> Wood | <span class="key">G</span> Gunpowder | <span class="key">J</span> Stone | <span class="key">K</span> Ember</div>
         </div>
@@ -266,7 +266,8 @@
             LAVA: 6,
             ACID: 7,
             HUMAN_HEAD: 8,
-            HUMAN_BODY: 9,
+            HUMAN_BODY: 9,           // Normal human - blue shirt, does not build
+            HUMAN_BODY_BUILDER: 26,  // Builder human - yellow shirt, builds at edges
             DEAD_HUMAN: 10,  // Red unmoving voxels (acid victims)
             SNOW: 11,        // White particles, accumulate, cold
             OIL: 12,         // Dark liquid, flammable
@@ -297,6 +298,7 @@
             [MATERIAL.ACID]: { color: '#00ff41', density: 2, strength: 0, flow: true, shadeBase: [0, 255, 65], corrosive: true },
             [MATERIAL.HUMAN_HEAD]: { color: '#ff69b4', density: 5, strength: 3, flow: false, shadeBase: [255, 105, 180], isHuman: true },
             [MATERIAL.HUMAN_BODY]: { color: '#4169e1', density: 5, strength: 3, flow: false, shadeBase: [65, 105, 225], isHuman: true },
+            [MATERIAL.HUMAN_BODY_BUILDER]: { color: '#ffd700', density: 5, strength: 3, flow: false, shadeBase: [255, 215, 0], isHuman: true },
             [MATERIAL.DEAD_HUMAN]: { color: '#ff0000', density: 100, strength: 0, flow: false, shadeBase: [255, 0, 0], static: true },
             [MATERIAL.SNOW]: { color: '#ffffff', density: 1, strength: 0, flow: true, shadeBase: [255, 255, 255], cold: true },
             [MATERIAL.OIL]: { color: '#2d2d2d', density: 2, strength: 0, flow: true, shadeBase: [45, 45, 45], flammable: true },
@@ -457,7 +459,8 @@
                     
                     // Check if human parts still exist
                     const headExists = this.get(human.headX, human.headY) === MATERIAL.HUMAN_HEAD;
-                    const bodyExists = this.get(human.bodyX, human.bodyY) === MATERIAL.HUMAN_BODY;
+                    const bodyExists = this.get(human.bodyX, human.bodyY) === MATERIAL.HUMAN_BODY || 
+                                       this.get(human.bodyX, human.bodyY) === MATERIAL.HUMAN_BODY_BUILDER;
                     
                     if (!headExists && !bodyExists) {
                         // Both parts destroyed, remove human
@@ -479,6 +482,7 @@
                     
                     if (canFall && human.vy > 0) {
                         // Move both voxels down together (falling)
+                        const bodyMat = human.isBuilder ? MATERIAL.HUMAN_BODY_BUILDER : MATERIAL.HUMAN_BODY;
                         this.set(human.headX, human.headY, MATERIAL.EMPTY);
                         this.set(human.bodyX, human.bodyY, MATERIAL.EMPTY);
                         
@@ -486,7 +490,7 @@
                         human.bodyY += 1;
                         
                         this.set(human.headX, human.headY, MATERIAL.HUMAN_HEAD);
-                        this.set(human.bodyX, human.bodyY, MATERIAL.HUMAN_BODY);
+                        this.set(human.bodyX, human.bodyY, bodyMat);
                     } else {
                         // On ground - Builder AI behavior
                         human.vy = 0;
@@ -513,6 +517,7 @@
                         
                         if (canClimb) {
                             // CLIMB UP one level
+                            const bodyMat = human.isBuilder ? MATERIAL.HUMAN_BODY_BUILDER : MATERIAL.HUMAN_BODY;
                             this.set(human.headX, human.headY, MATERIAL.EMPTY);
                             this.set(human.bodyX, human.bodyY, MATERIAL.EMPTY);
                             
@@ -522,15 +527,15 @@
                             human.headY = human.headY - 1;
                             
                             this.set(human.headX, human.headY, MATERIAL.HUMAN_HEAD);
-                            this.set(human.bodyX, human.bodyY, MATERIAL.HUMAN_BODY);
+                            this.set(human.bodyX, human.bodyY, bodyMat);
                             
                             human.justBuilt = false;
                         } else if ((!canMoveBody || !canMoveHead) && !canClimb) {
                             // Hit a wall - turn around
                             human.direction *= -1;
                             human.justBuilt = false;
-                        } else if (!hasGround) {
-                            // At an edge - BUILD OUTWARD to extend the platform with RANDOMNESS
+                        } else if (!hasGround && human.isBuilder) {
+                            // At an edge - Builder humans BUILD OUTWARD to extend the platform with RANDOMNESS
                             const buildX = nextX;
                             const normalBuildY = human.bodyY + 1; // Ground level
                             
@@ -620,6 +625,10 @@
                                     human.justBuilt = false;
                                 }
                             }
+                        } else if (!hasGround && !human.isBuilder) {
+                            // Normal human at edge - turn around (no building)
+                            human.direction *= -1;
+                            human.justBuilt = false;
                         } else {
                             // Normal walking - path is clear
                             human.justBuilt = false;
@@ -629,6 +638,7 @@
                                 human.direction *= -1;
                             } else {
                                 // Move horizontally
+                                const bodyMat = human.isBuilder ? MATERIAL.HUMAN_BODY_BUILDER : MATERIAL.HUMAN_BODY;
                                 this.set(human.headX, human.headY, MATERIAL.EMPTY);
                                 this.set(human.bodyX, human.bodyY, MATERIAL.EMPTY);
                                 
@@ -636,7 +646,7 @@
                                 human.bodyX = nextX;
                                 
                                 this.set(human.headX, human.headY, MATERIAL.HUMAN_HEAD);
-                                this.set(human.bodyX, human.bodyY, MATERIAL.HUMAN_BODY);
+                                this.set(human.bodyX, human.bodyY, bodyMat);
                             }
                         }
                     }
@@ -679,7 +689,7 @@
                         if (material === MATERIAL.EMPTY) continue;
                         
                         // Skip human materials - they're handled separately as connected entities
-                        if (material === MATERIAL.HUMAN_HEAD || material === MATERIAL.HUMAN_BODY) continue;
+                        if (material === MATERIAL.HUMAN_HEAD || material === MATERIAL.HUMAN_BODY || material === MATERIAL.HUMAN_BODY_BUILDER) continue;
                         
                         // Skip dead humans - they don't move (static red voxels)
                         if (material === MATERIAL.DEAD_HUMAN) continue;
@@ -722,7 +732,7 @@
                                     }
                                     newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
                                     break; // One explosion per lava voxel
-                                } else if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY) && Math.random() < 0.15) {
+                                } else if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY || neighborMat === MATERIAL.HUMAN_BODY_BUILDER) && Math.random() < 0.15) {
                                     // Humans burn to dust
                                     newGrid[this.getIndex(nx, ny)] = MATERIAL.DUST;
                                 }
@@ -742,7 +752,7 @@
                                 if (neighborMat !== MATERIAL.EMPTY && neighborMat !== MATERIAL.ACID && neighborMat !== MATERIAL.DEAD_HUMAN && neighborMat !== MATERIAL.SLIME && neighborMat !== MATERIAL.HONEY) {
                                     // Slime and honey resist acid - don't erode
                                     // Humans touched by acid turn into unmoving red voxels
-                                    if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY) && Math.random() < 0.7) {
+                                    if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY || neighborMat === MATERIAL.HUMAN_BODY_BUILDER) && Math.random() < 0.7) {
                                         newGrid[this.getIndex(nx, ny)] = MATERIAL.DEAD_HUMAN;
                                     }
                                     // Everything else dissolves - no remains, instant vanish!
@@ -1239,21 +1249,16 @@
                 }
             }
 
-            // Spawn a single human (2 voxels: pink head on top, blue body on bottom)
+            // Spawn a normal human (2 voxels: pink head, blue shirt) - does NOT build
             spawnHuman() {
                 const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
                 const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
                 
-                // Check if there's space for the human (2 voxels high)
                 if (this.isEmpty(mx, my) && this.isEmpty(mx, my - 1)) {
                     const humanId = this.nextHumanId++;
-                    
-                    // Body (bottom) - blue
                     this.set(mx, my, MATERIAL.HUMAN_BODY);
-                    // Head (top) - pink
                     this.set(mx, my - 1, MATERIAL.HUMAN_HEAD);
                     
-                    // Track this human as a connected entity
                     this.humans.push({
                         id: humanId,
                         headX: mx,
@@ -1263,8 +1268,35 @@
                         alive: true,
                         vx: 0,
                         vy: 0,
-                        direction: Math.random() < 0.5 ? -1 : 1, // Random starting direction (left or right)
-                        justBuilt: false // Track if they just placed a block
+                        direction: Math.random() < 0.5 ? -1 : 1,
+                        justBuilt: false,
+                        isBuilder: false
+                    });
+                }
+            }
+
+            // Spawn a builder human (2 voxels: pink head, yellow shirt) - builds at edges
+            spawnBuilderHuman() {
+                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                
+                if (this.isEmpty(mx, my) && this.isEmpty(mx, my - 1)) {
+                    const humanId = this.nextHumanId++;
+                    this.set(mx, my, MATERIAL.HUMAN_BODY_BUILDER);
+                    this.set(mx, my - 1, MATERIAL.HUMAN_HEAD);
+                    
+                    this.humans.push({
+                        id: humanId,
+                        headX: mx,
+                        headY: my - 1,
+                        bodyX: mx,
+                        bodyY: my,
+                        alive: true,
+                        vx: 0,
+                        vy: 0,
+                        direction: Math.random() < 0.5 ? -1 : 1,
+                        justBuilt: false,
+                        isBuilder: true
                     });
                 }
             }
@@ -1480,7 +1512,8 @@
             if (e.key === '4') game.spawnMaterial(MATERIAL.METAL);
             if (e.key === '5') game.spawnMaterial(MATERIAL.LAVA);
             if (e.key === '6') game.spawnMaterial(MATERIAL.ACID);
-            if (e.key === '7') game.spawnHuman(); // Spawn human
+            if (e.key === '7') game.spawnHuman(); // Normal human (blue)
+            if (e.key === 'b' || e.key === 'B') game.spawnBuilderHuman(); // Builder human (yellow shirt)
             
             // New materials
             if (e.key === '8') game.spawnMaterial(MATERIAL.SNOW);
