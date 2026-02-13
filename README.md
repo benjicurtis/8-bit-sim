@@ -15,6 +15,10 @@ A pixel-perfect destruction sandbox with Neal.fun-inspired cellular automata phy
 
 | Input | Action |
 |-------|--------|
+| `S` | **Survival Mode** – You become a human voxel! Arrow keys to move, jump 2 blocks, right-click to build |
+| `←` `→` | Move left/right (Survival) |
+| `↑` or `Space` | Jump 2 voxels high (Survival) |
+| `Right-click` | Place concrete block at cursor (Survival) |
 | `MOUSE CLICK + DRAG` | Destroy voxels at cursor |
 | `R` | Rebuild the world |
 | `H` | Hide/Show UI (clean view) |
@@ -43,7 +47,16 @@ A pixel-perfect destruction sandbox with Neal.fun-inspired cellular automata phy
 
 ## 🌟 Features Implemented
 
-### ✅ Smart Builder Humans (NEW!)
+### ✅ Survival Mode (NEW!)
+Press **S** to become the human voxel! You control a 2-block-tall character in the voxel world:
+- **Arrow keys** (← →) to move left and right
+- **Up** or **Space** to jump 2 voxels high
+- **Right-click** to place concrete blocks and build the land around you
+- Climb 1-block steps automatically
+- **Survive** – avoid acid, lava, and fire (they're fatal!)
+- Press **R** to rebuild the world and respawn
+
+### ✅ Smart Builder Humans
 Humans now exhibit lemming-like construction behavior with advanced building mechanics:
 - **Patrol Mode**: Walk back and forth between edges of solid ground
 - **Auto-Builder**: Deploy **sticky concrete blocks** when reaching edges or gaps
