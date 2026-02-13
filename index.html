@@ -211,6 +211,11 @@
                 <input type="range" id="voxelSizeSlider" min="1" max="8" value="3" step="1">
                 <div class="setting-note">1mm = tiny | 8mm = huge</div>
             </div>
+            <div class="setting-item">
+                <label>Place Amount: <span class="setting-value" id="placeAmountDisplay">20</span></label>
+                <input type="range" id="placeAmountSlider" min="1" max="50" value="20" step="1">
+                <div class="setting-note">Radius when placing (1 = single voxel | 50 = large blob)</div>
+            </div>
         </div>
 
         <div id="controls">
@@ -238,7 +243,8 @@
             height: 720,
             pixelSize: 3, // Size of each voxel particle in mm (1-8mm)
             gravity: 0.25,
-            destroyRadius: 25
+            destroyRadius: 25,
+            spawnRadius: 20 // How many voxels placed when spawning (radius of placement circle)
         };
 
         // Set canvas size
@@ -1197,7 +1203,7 @@
             spawnMaterial(material) {
                 const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
                 const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
-                const radius = 20;
+                const radius = CONFIG.spawnRadius;
 
                 for (let dx = -radius; dx <= radius; dx++) {
                     for (let dy = -radius; dy <= radius; dy++) {
@@ -1522,6 +1528,16 @@
             
             // Generate new buildings
             game.generateBuildings();
+        });
+
+        // Place amount slider (how many voxels when placing materials)
+        const placeAmountSlider = document.getElementById('placeAmountSlider');
+        const placeAmountDisplay = document.getElementById('placeAmountDisplay');
+        
+        placeAmountSlider.addEventListener('input', (e) => {
+            const newRadius = parseInt(e.target.value);
+            CONFIG.spawnRadius = newRadius;
+            placeAmountDisplay.textContent = newRadius;
         });
 
         canvas.addEventListener('mousemove', (e) => {
