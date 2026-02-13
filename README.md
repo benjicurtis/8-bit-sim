@@ -44,6 +44,7 @@ A pixel-perfect destruction sandbox with Neal.fun-inspired cellular automata phy
 | `S` | Spawn fuse (burnable - carries fire along its length for chain ignition) |
 | `.` | Spawn rubber (bouncy block - deflects lead and pellets) |
 | ` (backtick) | Spawn antimatter (purple powder - ignite with fire for purple/blue blast!) |
+| `-` | Spawn antimetal (blocks antimatter blast - immune to vaporization) |
 | `C` | Spawn bacteria (reproduces near nutrients, dies from heat/acid) |
 | `D` | Spawn mercury (dense toxic liquid metal) |
 
@@ -146,6 +147,7 @@ Humans now exhibit lemming-like construction behavior with advanced building mec
 
 **Special:**
 - **Antimatter** → Purple powder (like gunpowder). Ignite with **fire** (E) or **lava** (5) - creates a purple and blue blast! 4-voxel core vaporizes everything, outer radius converts to glowing purple-blue blast that rises.
+- **Antimetal** → Dense dark metal that blocks antimatter blast. Immune to vaporization and conversion - build shields to protect structures from antimatter explosions!
 - **Ice** → Solid frozen material, melts into water near heat sources
 - **Mercury** → Dense liquid metal with real-life properties:
   - One of the densest liquids - sinks through water, oil, and other fluids

@@ -238,7 +238,7 @@
             <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Solid</div>
             <div style="margin-top: 2px;"><span class="key">1</span> Concrete <span class="key">2</span> Dust <span class="key">4</span> Metal <span class="key">8</span> Snow <span class="key">E</span> Fire <span class="key">Y</span> Ice <span class="key">U</span> Sand <span class="key">O</span> Gravel</div>
             <div style="margin-top: 2px;"><span class="key">P</span> Wood <span class="key">G</span> Gunpowder <span class="key">J</span> Stone <span class="key">K</span> Ember <span class="key">F</span> Feces</div>
-            <div style="margin-top: 2px;"><span class="key">V</span> Lead Brick <span class="key">M</span> Lead Ball <span class="key">N</span> Glue Metal <span class="key">A</span> Pellets <span class="key">S</span> Fuse <span class="key">.</span> Rubber <span class="key">Z</span> Milk <span class="key">`</span> Antimatter (ignite w/ fire)</div>
+            <div style="margin-top: 2px;"><span class="key">V</span> Lead Brick <span class="key">M</span> Lead Ball <span class="key">N</span> Glue Metal <span class="key">A</span> Pellets <span class="key">S</span> Fuse <span class="key">.</span> Rubber <span class="key">Z</span> Milk <span class="key">`</span> Antimatter (ignite w/ fire) <span class="key">-</span> Antimetal (blocks blast)</div>
             <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Life</div>
             <div style="margin-top: 2px;"><span class="key">7</span> Human <span class="key">B</span> Builder <span class="key">T</span> Plant <span class="key">L</span> Flies <span class="key">X</span> Worm <span class="key">C</span> Bacteria</div>
         </div>
@@ -315,7 +315,8 @@
             FUSE: 37,        // Burnable solid - carries fire along its length for chain ignition
             RUBBER: 38,      // Bouncy block - deflects lead and pellets
             ANTIMATTER: 39,  // Purple powder - ignite with fire for purple/blue blast!
-            ANTIMATTER_BLAST: 40  // Purple-blue blast from antimatter explosion (rises, destroys)
+            ANTIMATTER_BLAST: 40,  // Purple-blue blast from antimatter explosion (rises, destroys)
+            ANTIMETAL: 41  // Dense metal - blocks antimatter blast (immune to vaporization)
         };
 
         // Material Properties
@@ -360,7 +361,8 @@
             [MATERIAL.FUSE]: { color: '#4a3728', density: 2, strength: 1, flow: false, shadeBase: [74, 55, 40], flammable: true, isFuse: true, static: true },
             [MATERIAL.RUBBER]: { color: '#2d2d2d', density: 3, strength: 3, flow: false, shadeBase: [45, 45, 50], bouncy: true },
             [MATERIAL.ANTIMATTER]: { color: '#8b008b', density: 3, strength: 0, flow: true, shadeBase: [139, 0, 139], explosive: true },
-            [MATERIAL.ANTIMATTER_BLAST]: { color: '#8a2be2', density: 0.3, strength: 0, flow: true, shadeBase: [120, 80, 255], burns: true, rises: true }
+            [MATERIAL.ANTIMATTER_BLAST]: { color: '#8a2be2', density: 0.3, strength: 0, flow: true, shadeBase: [120, 80, 255], burns: true, rises: true },
+            [MATERIAL.ANTIMETAL]: { color: '#2a2a3a', density: 12, strength: 10, flow: false, shadeBase: [42, 42, 58], blocksAntimatter: true }
         };
 
         // Game State
@@ -996,6 +998,21 @@
                         ball.vy *= -1.5;
                         continue;
                     }
+                    const hitsAntimatter = newVoxels.some(({ x, y }) => {
+                        const m = this.get(x, y);
+                        return m === MATERIAL.ANTIMATTER || m === MATERIAL.ANTIMATTER_BLAST;
+                    }) || voxels.some(({ x, y }) => {
+                        const neighbors = [[x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]];
+                        return neighbors.some(([nx, ny]) => {
+                            const m = this.get(nx, ny);
+                            return m === MATERIAL.ANTIMATTER || m === MATERIAL.ANTIMATTER_BLAST;
+                        });
+                    });
+                    if (hitsAntimatter) {
+                        for (const { x, y } of voxels) this.set(x, y, MATERIAL.GRAVEL);
+                        this.leadBalls.splice(i, 1);
+                        continue;
+                    }
                     const hitsHuman = newVoxels.some(({ x, y }) => {
                         const m = this.get(x, y);
                         return m === MATERIAL.HUMAN_HEAD || m === MATERIAL.HUMAN_BODY || m === MATERIAL.HUMAN_BODY_BUILDER;
@@ -1253,8 +1270,10 @@
                                                 const dist = Math.sqrt((bx - blastEx) ** 2 + (by - blastEy) ** 2);
                                                 const bIdx = this.getIndex(bx, by);
                                                 if (bIdx === -1) continue;
+                                                const targetMat = this.get(bx, by);
+                                                if (targetMat === MATERIAL.ANTIMETAL) continue; // Antimetal blocks blast
                                                 if (dist <= 4) newGrid[bIdx] = MATERIAL.EMPTY;
-                                                else if (dist <= 12 && this.get(bx, by) !== MATERIAL.EMPTY) newGrid[bIdx] = MATERIAL.ANTIMATTER_BLAST;
+                                                else if (dist <= 12 && targetMat !== MATERIAL.EMPTY) newGrid[bIdx] = MATERIAL.ANTIMATTER_BLAST;
                                             }
                                         }
                                         this.launchLeadBallsNear(blastEx, blastEy, 12, true);
@@ -1375,8 +1394,10 @@
                                                 const dist = Math.sqrt((bx - blastEx) ** 2 + (by - blastEy) ** 2);
                                                 const bIdx = this.getIndex(bx, by);
                                                 if (bIdx === -1) continue;
+                                                const targetMat = this.get(bx, by);
+                                                if (targetMat === MATERIAL.ANTIMETAL) continue; // Antimetal blocks blast
                                                 if (dist <= 4) newGrid[bIdx] = MATERIAL.EMPTY;
-                                                else if (dist <= 12 && this.get(bx, by) !== MATERIAL.EMPTY) newGrid[bIdx] = MATERIAL.ANTIMATTER_BLAST;
+                                                else if (dist <= 12 && targetMat !== MATERIAL.EMPTY) newGrid[bIdx] = MATERIAL.ANTIMATTER_BLAST;
                                             }
                                         }
                                         this.launchLeadBallsNear(blastEx, blastEy, 12, true);
@@ -1449,8 +1470,10 @@
                                             const dist = Math.sqrt((bx - blastEx) ** 2 + (by - blastEy) ** 2);
                                             const bIdx = this.getIndex(bx, by);
                                             if (bIdx === -1) continue;
+                                            const targetMat = this.get(bx, by);
+                                            if (targetMat === MATERIAL.ANTIMETAL) continue; // Antimetal blocks blast
                                             if (dist <= 4) newGrid[bIdx] = MATERIAL.EMPTY;
-                                            else if (dist <= 12 && this.get(bx, by) !== MATERIAL.EMPTY) newGrid[bIdx] = MATERIAL.ANTIMATTER_BLAST;
+                                            else if (dist <= 12 && targetMat !== MATERIAL.EMPTY) newGrid[bIdx] = MATERIAL.ANTIMATTER_BLAST;
                                         }
                                     }
                                     this.launchLeadBallsNear(blastEx, blastEy, 12, true);
@@ -2402,6 +2425,7 @@
             if (e.key === 's' || e.key === 'S') game.spawnMaterial(MATERIAL.FUSE);
             if (e.key === '.' || e.key === '>') game.spawnMaterial(MATERIAL.RUBBER);
             if (e.key === '`' || e.key === '~') game.spawnMaterial(MATERIAL.ANTIMATTER);
+            if (e.key === '-' || e.key === '_') game.spawnMaterial(MATERIAL.ANTIMETAL);
         });
 
         // Voxel size slider
