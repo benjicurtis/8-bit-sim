@@ -128,7 +128,8 @@
             border-radius: 8px;
             font-size: 14px;
             backdrop-filter: blur(10px);
-            min-width: 200px;
+            min-width: 240px;
+            pointer-events: auto;
             transition: opacity 0.3s ease, visibility 0.3s ease;
         }
         
@@ -152,6 +153,8 @@
             margin-bottom: 5px;
             color: #aaa;
             font-size: 12px;
+            white-space: nowrap;
+            overflow: visible;
         }
 
         .setting-item input[type="range"] {
@@ -208,8 +211,8 @@
             <h3>⚙️ Settings</h3>
             <div class="setting-item">
                 <label>Voxel Size: <span class="setting-value" id="voxelSizeDisplay">3mm</span></label>
-                <input type="range" id="voxelSizeSlider" min="1" max="8" value="3" step="1">
-                <div class="setting-note">1mm = tiny | 8mm = huge</div>
+                <input type="range" id="voxelSizeSlider" min="2" max="8" value="3" step="1">
+                <div class="setting-note">2mm = small (smooth) | 8mm = huge. Avoid 1mm — causes severe lag</div>
             </div>
             <div class="setting-item">
                 <label>Place Amount: <span class="setting-value" id="placeAmountDisplay">20</span></label>
