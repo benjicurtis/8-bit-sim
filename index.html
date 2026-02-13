@@ -1001,13 +1001,14 @@
                         return m === MATERIAL.HUMAN_HEAD || m === MATERIAL.HUMAN_BODY || m === MATERIAL.HUMAN_BODY_BUILDER;
                     });
 
-                    // Block at walls unless launched by antimatter (antimatter-launched balls phase through)
-                    const WALL_MATERIALS = [MATERIAL.CONCRETE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.STONE, MATERIAL.WOOD];
-                    const hitsWall = newVoxels.some(({ x, y }) => {
+                    // Block at any solid/liquid unless launched by antimatter (antimatter-launched balls phase through)
+                    const hitsSolid = newVoxels.some(({ x, y }) => {
                         const m = this.get(x, y);
-                        return m !== MATERIAL.EMPTY && WALL_MATERIALS.includes(m);
+                        if (m === MATERIAL.EMPTY) return false;
+                        if (m === MATERIAL.LEAD && voxels.some(v => v.x === x && v.y === y)) return false; // own voxel overlap
+                        return true;
                     });
-                    if (hitsWall && !ball.antimatterLaunched) {
+                    if (hitsSolid && !ball.antimatterLaunched) {
                         ball.vx = 0;
                         ball.vy = 0;
                         continue;
