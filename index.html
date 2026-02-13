@@ -260,7 +260,7 @@
             width: 1280,
             height: 720,
             pixelSize: 3, // Size of each voxel particle in mm (1-8mm)
-            gravity: 0.25,
+            gravity: 1.0,
             destroyRadius: 25,
             spawnRadius: 20 // How many voxels placed when spawning (radius of placement circle)
         };
@@ -376,6 +376,7 @@
                 this.nextLeadBallId = 0;
                 this.worms = []; // Track worm entities (1 pink particle each)
                 this.nextWormId = 0;
+                this.screenShake = 0; // For satisfying impact feedback
             }
 
             // Reinitialize grid when voxel size changes
@@ -547,7 +548,8 @@
                         this.set(human.headX, human.headY, MATERIAL.HUMAN_HEAD);
                         this.set(human.bodyX, human.bodyY, bodyMat);
                     } else {
-                        // On ground - Builder AI behavior
+                        // On ground - satisfying thud when landing from a fall
+                        if (human.vy > 3) this.screenShake = Math.min(12, this.screenShake + human.vy);
                         human.vy = 0;
                         
                         // Try to walk in current direction
@@ -892,18 +894,21 @@
                         return m === MATERIAL.SLIME || m === MATERIAL.HONEY;
                     });
                     if (hitsSlimeOrHoney) {
+                        if (speed > 3) this.screenShake = Math.min(15, this.screenShake + speed);
                         ball.vx *= -1.35;
                         ball.vy *= -1.35;
                         continue;
                     }
                     const hitsGlueMetal = newVoxels.some(({ x, y }) => this.get(x, y) === MATERIAL.GLUE_METAL);
                     if (hitsGlueMetal) {
+                        if (speed > 3) this.screenShake = Math.min(15, this.screenShake + speed);
                         ball.vx = 0;
                         ball.vy = 0;
                         continue;
                     }
                     const hitsLeadBrick = newVoxels.some(({ x, y }) => this.get(x, y) === MATERIAL.LEAD_BRICK);
                     if (hitsLeadBrick) {
+                        if (speed > 3) this.screenShake = Math.min(15, this.screenShake + speed);
                         ball.vx = 0;
                         ball.vy = 0;
                         continue;
@@ -913,6 +918,7 @@
                         return m === MATERIAL.HUMAN_HEAD || m === MATERIAL.HUMAN_BODY || m === MATERIAL.HUMAN_BODY_BUILDER;
                     });
 
+                    if (speed > 3) this.screenShake = Math.min(15, this.screenShake + speed); // Crash feedback
                     if (hitsHuman && speed > 2) {
                         for (const h of this.humans) {
                             if (!h.alive) continue;
@@ -1560,6 +1566,33 @@
                         }
 
                         if (!moved) {
+                            // Splash/crash when landing with speed - satisfying impact!
+                            const blockBelow = !emptyIn(newGrid, x, y + 1);
+                            const fallSpeed = newVY;
+                            if (blockBelow && fallSpeed > 2 && material !== MATERIAL.STEAM && material !== MATERIAL.FIRE && material !== MATERIAL.EMBER) {
+                                const splashCount = Math.min(5, Math.floor(fallSpeed * 1.2));
+                                const splashSpots = [[x, y - 1], [x - 1, y], [x + 1, y], [x - 1, y - 1], [x + 1, y - 1], [x - 2, y], [x + 2, y]];
+                                let spawned = 0;
+                                const splashMat = (material === MATERIAL.LIQUID || material === MATERIAL.LAVA || material === MATERIAL.ACID || 
+                                    material === MATERIAL.OIL || material === MATERIAL.BLOOD || material === MATERIAL.MILK || material === MATERIAL.MERCURY) ? material : MATERIAL.DUST;
+                                const speedScale = Math.min(4, fallSpeed * 0.8);
+                                for (const [sx, sy] of splashSpots) {
+                                    if (spawned >= splashCount) break;
+                                    if (emptyIn(newGrid, sx, sy)) {
+                                        const si = this.getIndex(sx, sy);
+                                        if (si !== -1) {
+                                            newGrid[si] = splashMat;
+                                            const angle = -Math.PI/2 + (Math.random() - 0.5) * Math.PI * 0.9; // Upward splash arc
+                                            const mag = speedScale * (0.4 + Math.random() * 0.6);
+                                            newVelX[si] = Math.cos(angle) * mag;
+                                            newVelY[si] = Math.sin(angle) * mag;
+                                            if (splashMat === MATERIAL.DUST) this.particleAge[si] = Date.now();
+                                            spawned++;
+                                        }
+                                    }
+                                }
+                                if (fallSpeed > 4) this.screenShake = Math.min(12, this.screenShake + fallSpeed * 0.8);
+                            }
                             newVelY[idx] = 0;
                             newVelX[idx] = 0;
                     }
@@ -1808,8 +1841,19 @@
 
             // Render the game
             render() {
+                // Screen shake from impacts - satisfying crash feedback
+                if (this.screenShake > 0) {
+                    this.screenShake *= 0.85;
+                    if (this.screenShake < 0.3) this.screenShake = 0;
+                }
+                const shakeX = this.screenShake > 0 ? (Math.random() - 0.5) * 2 * this.screenShake : 0;
+                const shakeY = this.screenShake > 0 ? (Math.random() - 0.5) * 2 * this.screenShake : 0;
+
                 // CLEAR EVERYTHING - no trails, no artifacts
                 ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
+                
+                ctx.save();
+                if (shakeX !== 0 || shakeY !== 0) ctx.translate(shakeX, shakeY);
                 
                 // Sky background gradient
                 const gradient = ctx.createLinearGradient(0, 0, 0, CONFIG.height);
@@ -1910,6 +1954,8 @@
                     ctx.arc(mx, my, 3, 0, Math.PI * 2);
                     ctx.fill();
                 }
+
+                ctx.restore();
 
                 // Update UI
                 this.countParticles();
