@@ -238,6 +238,7 @@
             <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Solid</div>
             <div style="margin-top: 2px;"><span class="key">1</span> Concrete <span class="key">2</span> Dust <span class="key">4</span> Metal <span class="key">8</span> Snow <span class="key">E</span> Fire <span class="key">Y</span> Ice <span class="key">U</span> Sand <span class="key">O</span> Gravel</div>
             <div style="margin-top: 2px;"><span class="key">P</span> Wood <span class="key">G</span> Gunpowder <span class="key">J</span> Stone <span class="key">K</span> Ember <span class="key">F</span> Feces</div>
+            <div style="margin-top: 2px;"><span class="key">M</span> Lead Ball <span class="key">N</span> Glue Metal</div>
             <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Life</div>
             <div style="margin-top: 2px;"><span class="key">7</span> Human <span class="key">B</span> Builder <span class="key">T</span> Plant <span class="key">L</span> Flies</div>
         </div>
@@ -302,7 +303,9 @@
             STONE: 24,       // Heavy solid, rugged
             EMBER: 25,       // Hot glowing particles that rise
             FEECES: 27,      // Brown solid, attracts flies
-            FLY: 28          // Life form - buzzes toward feces
+            FLY: 28,         // Life form - buzzes toward feces
+            LEAD: 29,        // Heavy ball - sticks together, launched by gunpowder, kills humans on impact
+            GLUE_METAL: 30   // Sticky metal - adjacent blocks won't fall (like slime/honey)
         };
 
         // Material Properties
@@ -335,7 +338,9 @@
             [MATERIAL.STONE]: { color: '#696969', density: 9, strength: 6, flow: false, shadeBase: [105, 105, 105] },
             [MATERIAL.EMBER]: { color: '#ff6b35', density: 0.4, strength: 0, flow: true, shadeBase: [255, 107, 53], rises: true },
             [MATERIAL.FEECES]: { color: '#5d4037', density: 4, strength: 1, flow: false, shadeBase: [93, 64, 55], attractsFlies: true },
-            [MATERIAL.FLY]: { color: '#1a1a1a', density: 0.2, strength: 0, flow: false, shadeBase: [26, 26, 26], isFly: true }
+            [MATERIAL.FLY]: { color: '#1a1a1a', density: 0.2, strength: 0, flow: false, shadeBase: [26, 26, 26], isFly: true },
+            [MATERIAL.LEAD]: { color: '#36454f', density: 12, strength: 6, flow: false, shadeBase: [54, 69, 79], isLead: true },
+            [MATERIAL.GLUE_METAL]: { color: '#708090', density: 7, strength: 4, flow: false, shadeBase: [112, 128, 144], sticky: true }
         };
 
         // Game State
@@ -357,6 +362,8 @@
                 this.nextHumanId = 0;
                 this.flies = [];  // Track fly entities (1 voxel each)
                 this.nextFlyId = 0;
+                this.leadBalls = []; // Track lead balls (connected voxel clusters)
+                this.nextLeadBallId = 0;
             }
 
             // Reinitialize grid when voxel size changes
@@ -372,6 +379,8 @@
                 this.nextHumanId = 0;
                 this.flies = [];
                 this.nextFlyId = 0;
+                this.leadBalls = [];
+                this.nextLeadBallId = 0;
                 this.generateBuildings();
             }
 
@@ -759,11 +768,109 @@
                 }
             }
 
+            // Lead ball shape: rough sphere pattern (big ball, ~13 voxels)
+            getLeadBallShape() {
+                const voxels = [];
+                for (let dy = -2; dy <= 2; dy++) {
+                    for (let dx = -2; dx <= 2; dx++) {
+                        const d = Math.sqrt(dx * dx + dy * dy);
+                        if (d <= 2.2) voxels.push({ x: dx, y: dy });
+                    }
+                }
+                return voxels;
+            }
+
+            // Launch lead balls within explosion radius (gunpowder explosion)
+            launchLeadBallsNear(ex, ey, radius) {
+                for (const ball of this.leadBalls) {
+                    let minDist = radius + 1;
+                    for (const v of ball.voxels) {
+                        const dist = Math.sqrt((ball.cx + v.x - ex) ** 2 + (ball.cy + v.y - ey) ** 2);
+                        if (dist < minDist) minDist = dist;
+                    }
+                    if (minDist <= radius) {
+                        const dx = ball.cx - ex, dy = ball.cy - ey;
+                        const mag = Math.sqrt(dx * dx + dy * dy) || 1;
+                        const force = 6 + (radius - minDist) * 0.8;
+                        ball.vx += (dx / mag) * force;
+                        ball.vy += (dy / mag) * force;
+                    }
+                }
+            }
+
+            // Update lead balls - move as connected unit, gravity, kill humans on impact
+            updateLeadBalls() {
+                const shape = this._leadShape || (this._leadShape = this.getLeadBallShape());
+                for (let i = this.leadBalls.length - 1; i >= 0; i--) {
+                    const ball = this.leadBalls[i];
+                    const voxels = ball.voxels.map(v => ({ x: ball.cx + v.x, y: ball.cy + v.y }));
+
+                    let exists = voxels.every(({ x, y }) => this.get(x, y) === MATERIAL.LEAD);
+                    if (!exists) {
+                        for (const { x, y } of voxels) {
+                            if (this.get(x, y) === MATERIAL.LEAD) this.set(x, y, MATERIAL.GRAVEL);
+                        }
+                        this.leadBalls.splice(i, 1);
+                        continue;
+                    }
+
+                    ball.vy += CONFIG.gravity;
+                    ball.vx *= 0.98;
+                    ball.vy *= 0.98;
+
+                    const moveX = Math.round(ball.vx);
+                    const moveY = Math.round(ball.vy);
+                    if (moveX === 0 && moveY === 0) continue;
+
+                    const newVoxels = voxels.map(({ x, y }) => ({ x: x + moveX, y: y + moveY }));
+                    const canMove = newVoxels.every(({ x, y }) => {
+                        const m = this.get(x, y);
+                        return m === MATERIAL.EMPTY || m === MATERIAL.LEAD || m === MATERIAL.HUMAN_HEAD || m === MATERIAL.HUMAN_BODY || m === MATERIAL.HUMAN_BODY_BUILDER;
+                    });
+
+                    if (!canMove) {
+                        ball.vx *= -0.3;
+                        ball.vy *= -0.3;
+                        continue;
+                    }
+
+                    const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+                    const hitsHuman = newVoxels.some(({ x, y }) => {
+                        const m = this.get(x, y);
+                        return m === MATERIAL.HUMAN_HEAD || m === MATERIAL.HUMAN_BODY || m === MATERIAL.HUMAN_BODY_BUILDER;
+                    });
+
+                    if (hitsHuman && speed > 2) {
+                        for (const h of this.humans) {
+                            if (!h.alive) continue;
+                            const touched = newVoxels.some(({ x, y }) =>
+                                (x === h.headX && y === h.headY) || (x === h.bodyX && y === h.bodyY));
+                            if (touched) {
+                                this.set(h.headX, h.headY, MATERIAL.DEAD_HUMAN);
+                                this.set(h.bodyX, h.bodyY, MATERIAL.DEAD_HUMAN);
+                                h.alive = false;
+                            }
+                        }
+                        ball.vx *= 0.5;
+                        ball.vy *= 0.5;
+                    }
+
+                    for (const { x, y } of voxels) this.set(x, y, MATERIAL.EMPTY);
+                    for (const { x, y } of newVoxels) {
+                        if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT)
+                            this.set(x, y, MATERIAL.LEAD);
+                    }
+                    ball.cx += moveX;
+                    ball.cy += moveY;
+                }
+            }
+
             // Physics simulation (cellular automata)
             simulate() {
                 // Update humans first (they move as units)
                 this.updateHumans();
                 this.updateFlies();
+                this.updateLeadBalls();
                 
                 const newGrid = [...this.grid];
                 const newVelX = [...this.velocityX];
@@ -807,6 +914,9 @@
                         
                         // Skip flies - they're handled separately as life-form entities
                         if (material === MATERIAL.FLY) continue;
+                        
+                        // Skip lead - handled as connected ball entities
+                        if (material === MATERIAL.LEAD) continue;
                         
                         // Skip dead humans - they don't move (static red voxels)
                         if (material === MATERIAL.DEAD_HUMAN) continue;
@@ -867,6 +977,7 @@
                                             }
                                         }
                                         newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
+                                        this.launchLeadBallsNear(nx, ny, explosionRadius);
                                         break; // One explosion per lava voxel
                                     } else if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY || neighborMat === MATERIAL.HUMAN_BODY_BUILDER) && Math.random() < 0.15) {
                                         // Humans burn to dust
@@ -947,6 +1058,7 @@
                                             }
                                         }
                                         newGrid[nIdx] = MATERIAL.FIRE;
+                                        this.launchLeadBallsNear(nx, ny, explosionRadius);
                                         break; // One explosion per fire voxel
                                     } else if (neighborMat === MATERIAL.OIL && Math.random() < 0.3) {
                                         newGrid[nIdx] = MATERIAL.FIRE;
@@ -1275,10 +1387,10 @@
                         // Solid materials check for support
                         else {
                             // SLIME/HONEY GLUE: Any block touching slime or honey is stuck - won't fall (floating metal!)
-                            const touchingSticky = this.get(x, y - 1) === MATERIAL.SLIME || this.get(x, y - 1) === MATERIAL.HONEY ||
-                                                  this.get(x, y + 1) === MATERIAL.SLIME || this.get(x, y + 1) === MATERIAL.HONEY ||
-                                                  this.get(x - 1, y) === MATERIAL.SLIME || this.get(x - 1, y) === MATERIAL.HONEY ||
-                                                  this.get(x + 1, y) === MATERIAL.SLIME || this.get(x + 1, y) === MATERIAL.HONEY;
+                            const touchingSticky = this.get(x, y - 1) === MATERIAL.SLIME || this.get(x, y - 1) === MATERIAL.HONEY || this.get(x, y - 1) === MATERIAL.GLUE_METAL ||
+                                                  this.get(x, y + 1) === MATERIAL.SLIME || this.get(x, y + 1) === MATERIAL.HONEY || this.get(x, y + 1) === MATERIAL.GLUE_METAL ||
+                                                  this.get(x - 1, y) === MATERIAL.SLIME || this.get(x - 1, y) === MATERIAL.HONEY || this.get(x - 1, y) === MATERIAL.GLUE_METAL ||
+                                                  this.get(x + 1, y) === MATERIAL.SLIME || this.get(x + 1, y) === MATERIAL.HONEY || this.get(x + 1, y) === MATERIAL.GLUE_METAL;
                             
                             // STICKY BLOCKS: Human-built blocks are sticky; PLANTS need ground support
                             const isHumanBuilt = this.humanBuiltBlocks[idx];
@@ -1523,6 +1635,30 @@
                 }
             }
 
+            // Spawn a lead ball (sticky cluster, launched by gunpowder, kills humans on impact)
+            spawnLeadBall() {
+                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                const shape = this._leadShape || (this._leadShape = this.getLeadBallShape());
+                const allEmpty = shape.every(v => this.isEmpty(mx + v.x, my + v.y));
+                if (allEmpty) {
+                    for (const v of shape) this.set(mx + v.x, my + v.y, MATERIAL.LEAD);
+                    this.leadBalls.push({
+                        id: this.nextLeadBallId++,
+                        cx: mx,
+                        cy: my,
+                        voxels: shape,
+                        vx: 0,
+                        vy: 0
+                    });
+                }
+            }
+
+            // Spawn glue metal (sticky metal - adjacent blocks won't fall)
+            spawnGlueMetal() {
+                this.spawnMaterial(MATERIAL.GLUE_METAL);
+            }
+
             // Count active particles
             countParticles() {
                 this.particleCount = this.grid.filter(m => m !== MATERIAL.EMPTY).length;
@@ -1682,6 +1818,8 @@
                 game.nextHumanId = 0;
                 game.flies = [];
                 game.nextFlyId = 0;
+                game.leadBalls = [];
+                game.nextLeadBallId = 0;
                 game.generateBuildings();
             }
             
@@ -1735,6 +1873,8 @@
             if (e.key === 'k' || e.key === 'K') game.spawnMaterial(MATERIAL.EMBER);
             if (e.key === 'f' || e.key === 'F') game.spawnFeces();
             if (e.key === 'l' || e.key === 'L') game.spawnFly();
+            if (e.key === 'm' || e.key === 'M') game.spawnLeadBall();
+            if (e.key === 'n' || e.key === 'N') game.spawnGlueMetal();
         });
 
         // Voxel size slider
@@ -1764,6 +1904,8 @@
             game.nextHumanId = 0;
             game.flies = [];
             game.nextFlyId = 0;
+            game.leadBalls = [];
+            game.nextLeadBallId = 0;
             
             // Generate new buildings
             game.generateBuildings();
