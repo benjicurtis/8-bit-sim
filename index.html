@@ -204,137 +204,6 @@
             opacity: 1;
             visibility: visible;
         }
-        
-        /* Tabbed menu - right side overlay */
-        #tabbedUI.hidden {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
-        #tabbedUI {
-            cursor: default;
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-            min-width: 300px;
-            max-width: min(380px, 90vw);
-            background: rgba(0, 0, 0, 0.85);
-            border-radius: 10px;
-            padding: 12px 16px;
-            backdrop-filter: blur(12px);
-            font-size: 12px;
-            pointer-events: auto;
-            overflow: visible;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.4);
-        }
-        #tabbedUI .tab-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-            margin-bottom: 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 8px;
-        }
-        #tabbedUI .tab-btn {
-            padding: 6px 10px;
-            font-size: 11px;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 6px;
-            color: #aaa;
-            cursor: pointer;
-        }
-        #tabbedUI .tab-btn.active {
-            background: rgba(78, 205, 196, 0.25);
-            color: #4ecdc4;
-            border-color: #4ecdc4;
-        }
-        #tabbedUI .tab-content {
-            display: none;
-            white-space: normal;
-            word-wrap: break-word;
-        }
-        #tabbedUI .tab-content.active {
-            display: block;
-        }
-        #tabbedUI .tab-content h3 {
-            font-size: 14px;
-            margin-bottom: 8px;
-            color: #4ecdc4;
-        }
-        #tabbedUI .tab-content > div {
-            margin: 4px 0;
-            line-height: 1.5;
-        }
-        #tabbedUI .key {
-            display: inline-block;
-            background: rgba(78, 205, 196, 0.2);
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin: 0 1px;
-            color: #4ecdc4;
-            font-weight: bold;
-        }
-        
-        /* Custom cursor overlay - DOM-based, no canvas trail */
-        #cursorOverlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 9999;
-            visibility: hidden;
-        }
-        #cursorOverlay .cursor-visual {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 1px;
-            height: 1px;
-        }
-        #cursorOverlay .cursor-ring {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            left: -25px;
-            top: -25px;
-            border: 2px solid rgba(255,255,255,0.7);
-            border-radius: 50%;
-        }
-        #cursorOverlay.active .cursor-ring {
-            border-color: rgba(255, 80, 80, 0.9);
-        }
-        #cursorOverlay .cursor-cross-h {
-            position: absolute;
-            width: 20px;
-            height: 2px;
-            left: -10px;
-            top: -1px;
-            background: rgba(255,255,255,0.6);
-        }
-        #cursorOverlay .cursor-cross-v {
-            position: absolute;
-            width: 2px;
-            height: 20px;
-            left: -1px;
-            top: -10px;
-            background: rgba(255,255,255,0.6);
-        }
-        #cursorOverlay .cursor-dot {
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            left: -3px;
-            top: -3px;
-            background: rgba(255,255,255,0.8);
-            border-radius: 50%;
-        }
-        #cursorOverlay.active .cursor-dot {
-            background: rgba(255, 60, 60, 0.9);
-        }
     </style>
 </head>
 <body>
@@ -360,7 +229,6 @@
                 <h3>Liquid</h3>
                 <div><span class="key">3</span> Water <span class="key">5</span> Lava <span class="key">6</span> Acid <span class="key">9</span> Oil</div>
                 <div><span class="key">0</span> Steam <span class="key">Q</span> Blood <span class="key">W</span> Slime <span class="key">I</span> Honey</div>
-                <div style="margin-top: 6px; color: #6a8; font-size: 10px;">Ecosystem: Water+Lava→Steam+Stone • Water evaporates near fire • Steam condenses to rain at top</div>
             </div>
             <div id="tab-solid" class="tab-content">
                 <h3>Solid</h3>
@@ -371,7 +239,6 @@
             <div id="tab-life" class="tab-content">
                 <h3>Life</h3>
                 <div><span class="key">7</span> Human <span class="key">B</span> Builder <span class="key">T</span> Plant <span class="key">L</span> Flies</div>
-                <div style="margin-top: 6px; color: #6a8; font-size: 10px;">Ecosystem: Plants grow faster near water/feces • Humans trample plants • Flies seek feces, blood, honey • Dead humans decay to feces • Flies reproduce near feces</div>
             </div>
             <div id="tab-settings" class="tab-content">
                 <h3>Settings</h3>
@@ -389,15 +256,6 @@
         </div>
         
         <div id="uiToggleIndicator">Press H to show UI</div>
-        
-        <div id="cursorOverlay">
-            <div class="cursor-visual">
-                <div class="cursor-ring"></div>
-                <div class="cursor-cross-h"></div>
-                <div class="cursor-cross-v"></div>
-                <div class="cursor-dot"></div>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -636,15 +494,10 @@
                         }
                     }
                     
-                    // If acid touches human, convert to static red voxels (decay over time)
+                    // If acid touches human, convert to static red voxels
                     if (touchingAcid) {
-                        const headIdx = this.getIndex(human.headX, human.headY);
-                        const bodyIdx = this.getIndex(human.bodyX, human.bodyY);
                         this.set(human.headX, human.headY, MATERIAL.DEAD_HUMAN);
                         this.set(human.bodyX, human.bodyY, MATERIAL.DEAD_HUMAN);
-                        const now = Date.now();
-                        if (headIdx !== -1) this.particleAge[headIdx] = now;
-                        if (bodyIdx !== -1) this.particleAge[bodyIdx] = now;
                         human.alive = false;
                         continue;
                     }
@@ -691,11 +544,9 @@
                         const nextX = human.bodyX + human.direction;
                         const nextHeadX = human.headX + human.direction;
                         
-                        // Check what's ahead (plants are passable - humans trample them)
-                        const nextBodyMat = this.get(nextX, human.bodyY);
-                        const nextHeadMat = this.get(nextHeadX, human.headY);
-                        const canMoveBody = this.isEmpty(nextX, human.bodyY) || nextBodyMat === MATERIAL.PLANT;
-                        const canMoveHead = this.isEmpty(nextHeadX, human.headY) || nextHeadMat === MATERIAL.PLANT;
+                        // Check what's ahead
+                        const canMoveBody = this.isEmpty(nextX, human.bodyY);
+                        const canMoveHead = this.isEmpty(nextHeadX, human.headY);
                         const groundAhead = this.get(nextX, human.bodyY + 1);
                         const hasGround = groundAhead !== MATERIAL.EMPTY;
                         
@@ -827,18 +678,6 @@
                             // Normal walking - path is clear
                             human.justBuilt = false;
                             
-                            // Ecosystem: humans trample plants they walk on
-                            if (nextBodyMat === MATERIAL.PLANT) {
-                                const tidx = this.getIndex(nextX, human.bodyY);
-                                if (tidx !== -1) this.particleAge[tidx] = Date.now();
-                                this.set(nextX, human.bodyY, MATERIAL.DUST);
-                            }
-                            if (nextHeadMat === MATERIAL.PLANT) {
-                                const tidx = this.getIndex(nextHeadX, human.headY);
-                                if (tidx !== -1) this.particleAge[tidx] = Date.now();
-                                this.set(nextHeadX, human.headY, MATERIAL.DUST);
-                            }
-                            
                             // 3% chance to randomly change direction while walking (adds unpredictability)
                             if (Math.random() < 0.03) {
                                 human.direction *= -1;
@@ -859,20 +698,16 @@
                 }
             }
 
-            // Find nearest attractant for flies (feces, blood, honey, dead humans) within range
-            findNearestFlyAttractant(flyX, flyY, range) {
-                const attractants = [MATERIAL.FEECES, MATERIAL.BLOOD, MATERIAL.HONEY, MATERIAL.DEAD_HUMAN];
+            // Find nearest feces within range (returns [x,y] or null)
+            findNearestFeces(flyX, flyY, range) {
                 let nearest = null;
                 let nearestDist = range + 1;
                 for (let gy = Math.max(0, flyY - range); gy <= Math.min(GRID_HEIGHT - 1, flyY + range); gy++) {
                     for (let gx = Math.max(0, flyX - range); gx <= Math.min(GRID_WIDTH - 1, flyX + range); gx++) {
-                        const m = this.get(gx, gy);
-                        if (attractants.includes(m)) {
+                        if (this.get(gx, gy) === MATERIAL.FEECES) {
                             const dist = Math.sqrt((gx - flyX) ** 2 + (gy - flyY) ** 2);
-                            // Feces is strongest attractant, then blood, honey, dead human
-                            const strength = m === MATERIAL.FEECES ? 1 : m === MATERIAL.BLOOD ? 1.2 : m === MATERIAL.HONEY ? 1.1 : 0.9;
-                            if (dist * strength < nearestDist) {
-                                nearestDist = dist * strength;
+                            if (dist < nearestDist) {
+                                nearestDist = dist;
                                 nearest = [gx, gy];
                             }
                         }
@@ -908,13 +743,13 @@
                         continue;
                     }
 
-                    const attractant = this.findNearestFlyAttractant(fly.x, fly.y, FEECES_ATTRACT_RANGE);
+                    const feces = this.findNearestFeces(fly.x, fly.y, FEECES_ATTRACT_RANGE);
                     let moveX = 0, moveY = 0;
 
-                    if (attractant) {
-                        // Move toward attractant (feces, blood, honey, dead human)
-                        const dx = attractant[0] - fly.x;
-                        const dy = attractant[1] - fly.y;
+                    if (feces) {
+                        // Move toward feces (flies buzz downward toward it)
+                        const dx = feces[0] - fly.x;
+                        const dy = feces[1] - fly.y;
                         if (Math.abs(dx) > Math.abs(dy)) {
                             moveX = dx > 0 ? 1 : -1;
                         } else {
@@ -934,21 +769,6 @@
                         fly.x = newX;
                         fly.y = newY;
                         this.set(fly.x, fly.y, MATERIAL.FLY);
-                    }
-                    
-                    // Ecosystem: flies reproduce when buzzing near feces (eggs hatch)
-                    const nearFeces = this.get(fly.x-1, fly.y) === MATERIAL.FEECES || this.get(fly.x+1, fly.y) === MATERIAL.FEECES ||
-                                      this.get(fly.x, fly.y-1) === MATERIAL.FEECES || this.get(fly.x, fly.y+1) === MATERIAL.FEECES;
-                    if ((onAttractant || nearFeces) && Math.random() < 0.002 && this.flies.length < 80) {
-                        const spawnOffsets = [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,-1],[-1,1],[1,1]];
-                        for (const [ox, oy] of spawnOffsets) {
-                            const sx = fly.x + ox, sy = fly.y + oy;
-                            if (sx >= 0 && sx < GRID_WIDTH && sy >= 0 && sy < GRID_HEIGHT && this.isEmpty(sx, sy)) {
-                                this.set(sx, sy, MATERIAL.FLY);
-                                this.flies.push({ id: this.nextFlyId++, x: sx, y: sy, alive: true });
-                                break;
-                            }
-                        }
                     }
                 }
             }
@@ -970,16 +790,6 @@
                         if (now - this.particleAge[i] > 2000) {
                             newGrid[i] = MATERIAL.EMPTY;
                             this.particleAge[i] = 0;
-                        }
-                    }
-                }
-                
-                // Ecosystem: dead humans decay to feces after 8 seconds (decomposition)
-                for (let i = 0; i < this.grid.length; i++) {
-                    if (this.grid[i] === MATERIAL.DEAD_HUMAN && this.particleAge[i] > 0) {
-                        if (now - this.particleAge[i] > 8000) {
-                            newGrid[i] = MATERIAL.FEECES;
-                            this.particleAge[i] = 0;  // Reset so feces doesn't inherit timer
                         }
                     }
                 }
@@ -1025,50 +835,25 @@
 
                         let moved = false;
 
-                        // WATER + LAVA = STEAM (ecosystem: elemental reaction)
-                        if (material === MATERIAL.LIQUID) {
-                            const lavaNeighbors = [
-                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
-                            ];
-                            for (const [nx, ny] of lavaNeighbors) {
-                                if (this.get(nx, ny) === MATERIAL.LAVA && Math.random() < 0.15) {
-                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.STONE; // Lava cools to stone
-                                    newGrid[idx] = MATERIAL.STEAM; // Water becomes steam
-                                    break;
-                                }
-                            }
-                            // Water evaporates near fire
-                            for (const [nx, ny] of lavaNeighbors) {
-                                if ((this.get(nx, ny) === MATERIAL.FIRE || this.get(nx, ny) === MATERIAL.LAVA) && Math.random() < 0.03) {
-                                    newGrid[idx] = MATERIAL.STEAM;
-                                    break;
-                                }
-                            }
-                        }
-
-                        // LAVA: Burns and melts weaker materials, cools when surrounded by water
+                        // LAVA: Burns and melts weaker materials
                         if (material === MATERIAL.LAVA) {
                             const neighbors = [
                                 [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
                             ];
                             
-                            // Cool to stone when touching lots of water/steam
-                            let coolNeighbors = 0;
-                            for (const [nx, ny] of neighbors) {
-                                const nm = this.get(nx, ny);
-                                if (nm === MATERIAL.LIQUID || nm === MATERIAL.STEAM) coolNeighbors++;
-                            }
-                            if (coolNeighbors >= 2 && Math.random() < 0.1) {
-                                newGrid[idx] = MATERIAL.STONE;
-                            }
-                            
                             for (const [nx, ny] of neighbors) {
                                 const neighborMat = this.get(nx, ny);
-                                // Burns dust, glass, humans and converts them to lava or dust
+                                const nIdx = this.getIndex(nx, ny);
+                                // WATER + LAVA = Stone + Steam (classic!)
+                                if (neighborMat === MATERIAL.LIQUID && Math.random() < 0.4) {
+                                    newGrid[nIdx] = MATERIAL.STONE;
+                                    newGrid[idx] = MATERIAL.STEAM; // Lava cools to steam
+                                    break;
+                                }
+                                // Burns dust, glass, wood
                                 if ((neighborMat === MATERIAL.DUST || neighborMat === MATERIAL.GLASS || neighborMat === MATERIAL.WOOD) && Math.random() < 0.2) {
-                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.LAVA;
+                                    newGrid[nIdx] = MATERIAL.LAVA;
                                 } else if (neighborMat === MATERIAL.GUNPOWDER) {
-                                    // LAVA + GUNPOWDER = GIANT EXPLOSION
                                     const explosionRadius = 8;
                                     for (let ex = nx - explosionRadius; ex <= nx + explosionRadius; ex++) {
                                         for (let ey = ny - explosionRadius; ey <= ny + explosionRadius; ey++) {
@@ -1081,11 +866,18 @@
                                             }
                                         }
                                     }
-                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
-                                    break; // One explosion per lava voxel
+                                    newGrid[nIdx] = MATERIAL.FIRE;
+                                    break;
                                 } else if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY || neighborMat === MATERIAL.HUMAN_BODY_BUILDER) && Math.random() < 0.15) {
-                                    // Humans burn to dust
-                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.DUST;
+                                    newGrid[nIdx] = MATERIAL.DUST;
+                                } else if ((neighborMat === MATERIAL.ICE || neighborMat === MATERIAL.SNOW) && Math.random() < 0.5) {
+                                    newGrid[nIdx] = MATERIAL.LIQUID; // Ice/snow melts
+                                    newGrid[idx] = MATERIAL.STONE; // Lava cools to stone
+                                    break;
+                                } else if (neighborMat === MATERIAL.SAND && Math.random() < 0.15) {
+                                    newGrid[nIdx] = MATERIAL.GLASS; // Sand + lava = glass!
+                                } else if (neighborMat === MATERIAL.GRAVEL && Math.random() < 0.1) {
+                                    newGrid[nIdx] = MATERIAL.LAVA; // Gravel melts into lava
                                 }
                             }
                         }
@@ -1104,9 +896,7 @@
                                     // Slime and honey resist acid - don't erode
                                     // Humans touched by acid turn into unmoving red voxels
                                     if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY || neighborMat === MATERIAL.HUMAN_BODY_BUILDER) && Math.random() < 0.7) {
-                                        const deadIdx = this.getIndex(nx, ny);
-                                        newGrid[deadIdx] = MATERIAL.DEAD_HUMAN;
-                                        this.particleAge[deadIdx] = now;
+                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.DEAD_HUMAN;
                                     }
                                     // Everything else dissolves - no remains, instant vanish!
                                     else if (Math.random() < 0.7) {
@@ -1137,6 +927,19 @@
                                 const neighborMat = this.get(nx, ny);
                                 const nIdx = this.getIndex(nx, ny);
                                 
+                                // WATER puts out fire!
+                                if (neighborMat === MATERIAL.LIQUID && Math.random() < 0.5) {
+                                    newGrid[idx] = MATERIAL.STEAM; // Fire + water = steam
+                                    newGrid[nIdx] = MATERIAL.EMPTY; // Water consumed
+                                    break;
+                                }
+                                // ICE/SNOW puts out fire (cooling)
+                                if ((neighborMat === MATERIAL.ICE || neighborMat === MATERIAL.SNOW) && Math.random() < 0.4) {
+                                    newGrid[idx] = MATERIAL.EMPTY; // Fire extinguished
+                                    newGrid[nIdx] = MATERIAL.LIQUID; // Ice/snow melts
+                                    break;
+                                }
+                                
                                 // GUNPOWDER + FIRE = GIANT EXPLOSION
                                 if (neighborMat === MATERIAL.GUNPOWDER) {
                                     const explosionRadius = 8;
@@ -1155,12 +958,20 @@
                                     break; // One explosion per fire voxel
                                 } else if (neighborMat === MATERIAL.OIL && Math.random() < 0.3) {
                                     newGrid[nIdx] = MATERIAL.FIRE;
+                                } else if (neighborMat === MATERIAL.BLOOD && Math.random() < 0.25) {
+                                    newGrid[nIdx] = MATERIAL.DUST; // Blood dries/burns
+                                } else if (neighborMat === MATERIAL.HONEY && Math.random() < 0.2) {
+                                    newGrid[nIdx] = MATERIAL.FIRE;
+                                } else if (neighborMat === MATERIAL.FEECES && Math.random() < 0.3) {
+                                    newGrid[nIdx] = MATERIAL.FIRE;
                                 } else if (neighborMat === MATERIAL.PLANT && Math.random() < 0.2) {
                                     newGrid[nIdx] = MATERIAL.FIRE;
                                 } else if (neighborMat === MATERIAL.WOOD && Math.random() < 0.25) {
                                     newGrid[nIdx] = MATERIAL.FIRE;
                                 } else if (neighborMat === MATERIAL.ICE && Math.random() < 0.1) {
                                     newGrid[nIdx] = MATERIAL.LIQUID;
+                                } else if (neighborMat === MATERIAL.SNOW && Math.random() < 0.15) {
+                                    newGrid[nIdx] = MATERIAL.LIQUID; // Snow melts
                                 }
                             }
                             
@@ -1181,17 +992,7 @@
                         }
 
                         if (material === MATERIAL.PLANT) {
-                            // Ecosystem: growth rate boosted by water (moisture) and feces (fertilizer)
-                            let growthRate = 0.008;
-                            const plantNeighbors = [
-                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
-                            ];
-                            for (const [nx, ny] of plantNeighbors) {
-                                const nm = this.get(nx, ny);
-                                if (nm === MATERIAL.LIQUID) growthRate *= 1.8;  // Water nourishes
-                                if (nm === MATERIAL.FEECES || nm === MATERIAL.BLOOD) growthRate *= 1.5;  // Fertilizer
-                            }
-                            if (Math.random() < growthRate) {
+                            if (Math.random() < 0.008) {
                                 const hasGroundBelow = !emptyIn(newGrid, x, y + 1);
                                 const growthChoices = [];
                                 
@@ -1296,19 +1097,149 @@
                             }
                         }
 
-                        // BLOOD: Acts like water but thicker
+                        // WATER (LIQUID): Reacts with hot/cold materials
+                        if (material === MATERIAL.LIQUID) {
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            for (const [nx, ny] of neighbors) {
+                                const neighborMat = this.get(nx, ny);
+                                const nIdx = this.getIndex(nx, ny);
+                                if ((neighborMat === MATERIAL.LAVA || neighborMat === MATERIAL.FIRE) && Math.random() < 0.35) {
+                                    newGrid[idx] = MATERIAL.STEAM; // Water boils to steam
+                                    break;
+                                }
+                                if ((neighborMat === MATERIAL.ICE || neighborMat === MATERIAL.SNOW) && Math.random() < 0.08) {
+                                    newGrid[idx] = MATERIAL.ICE; // Water freezes next to ice/snow
+                                    break;
+                                }
+                            }
+                        }
+
+                        // EMBER: Hot - can ignite flammable materials
+                        if (material === MATERIAL.EMBER) {
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            for (const [nx, ny] of neighbors) {
+                                const neighborMat = this.get(nx, ny);
+                                const nIdx = this.getIndex(nx, ny);
+                                if ((neighborMat === MATERIAL.OIL || neighborMat === MATERIAL.WOOD || neighborMat === MATERIAL.GUNPOWDER) && Math.random() < 0.2) {
+                                    newGrid[nIdx] = MATERIAL.FIRE;
+                                    newGrid[idx] = MATERIAL.FIRE; // Ember ignites and becomes fire
+                                    break;
+                                }
+                                if (neighborMat === MATERIAL.PLANT && Math.random() < 0.15) {
+                                    newGrid[nIdx] = MATERIAL.FIRE;
+                                    newGrid[idx] = MATERIAL.FIRE;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // STEAM: Condenses on cold surfaces
+                        if (material === MATERIAL.STEAM) {
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            for (const [nx, ny] of neighbors) {
+                                const neighborMat = this.get(nx, ny);
+                                if ((neighborMat === MATERIAL.ICE || neighborMat === MATERIAL.SNOW) && Math.random() < 0.25) {
+                                    newGrid[idx] = MATERIAL.LIQUID; // Steam condenses to water
+                                    break;
+                                }
+                            }
+                        }
+
+                        // BLOOD: Burns like organic matter
+                        if (material === MATERIAL.BLOOD) {
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            for (const [nx, ny] of neighbors) {
+                                const neighborMat = this.get(nx, ny);
+                                if ((neighborMat === MATERIAL.FIRE || neighborMat === MATERIAL.LAVA || neighborMat === MATERIAL.EMBER) && Math.random() < 0.3) {
+                                    newGrid[idx] = MATERIAL.DUST;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // SLIME: Dries/burns near extreme heat
+                        if (material === MATERIAL.SLIME) {
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            for (const [nx, ny] of neighbors) {
+                                const neighborMat = this.get(nx, ny);
+                                if ((neighborMat === MATERIAL.LAVA) && Math.random() < 0.15) {
+                                    newGrid[idx] = MATERIAL.DUST;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // HONEY: Caramelizes/burns near fire
+                        if (material === MATERIAL.HONEY) {
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            for (const [nx, ny] of neighbors) {
+                                const neighborMat = this.get(nx, ny);
+                                if ((neighborMat === MATERIAL.FIRE || neighborMat === MATERIAL.LAVA) && Math.random() < 0.25) {
+                                    newGrid[idx] = MATERIAL.FIRE;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // FEECES: Burns (organic)
+                        if (material === MATERIAL.FEECES) {
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            for (const [nx, ny] of neighbors) {
+                                const neighborMat = this.get(nx, ny);
+                                if ((neighborMat === MATERIAL.FIRE || neighborMat === MATERIAL.LAVA || neighborMat === MATERIAL.EMBER) && Math.random() < 0.35) {
+                                    newGrid[idx] = MATERIAL.FIRE;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // GUNPOWDER + ACID: Fizzles/detonates
+                        if (material === MATERIAL.GUNPOWDER) {
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            for (const [nx, ny] of neighbors) {
+                                const neighborMat = this.get(nx, ny);
+                                if (neighborMat === MATERIAL.ACID && Math.random() < 0.4) {
+                                    const explosionRadius = 5;
+                                    for (let ex = nx - explosionRadius; ex <= nx + explosionRadius; ex++) {
+                                        for (let ey = ny - explosionRadius; ey <= ny + explosionRadius; ey++) {
+                                            const dist = Math.sqrt((ex - nx) ** 2 + (ey - ny) ** 2);
+                                            if (dist <= explosionRadius && this.get(ex, ey) === MATERIAL.GUNPOWDER) {
+                                                newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
+                                            }
+                                        }
+                                    }
+                                    newGrid[idx] = MATERIAL.FIRE;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // SAND + WATER: Could make wet sand (optional - sand already flows)
+                        // STONE stays solid, CONCRETE stays solid
+                        // STEAM: Rises (handled in flow section with special logic)
                         // SLIME: Very slow viscous liquid (handled in flow)
-                        // SAND: Fast-falling particles (handled in flow)
 
                         // Flow behavior for dust and liquids
                         if (props.flow) {
                             // STEAM, FIRE, and EMBER rise instead of fall
                             if (material === MATERIAL.STEAM || material === MATERIAL.FIRE || material === MATERIAL.EMBER) {
-                                // Ecosystem: steam condenses to water at top (water cycle)
-                                if (material === MATERIAL.STEAM && y < GRID_HEIGHT * 0.2 && Math.random() < 0.02) {
-                                    newGrid[idx] = MATERIAL.LIQUID;
-                                    moved = true;
-                                } else if (emptyIn(newGrid, x, y - 1)) {
+                                if (emptyIn(newGrid, x, y - 1)) {
                                     const targetIdx = this.getIndex(x, y - 1);
                                     newGrid[targetIdx] = material;
                                     newGrid[idx] = MATERIAL.EMPTY;
@@ -1748,6 +1679,36 @@
                 }
                 ctx.putImageData(this._imageData, 0, 0);
 
+                // Draw cursor
+                if (this.mouse.isInCanvas) {
+                    const mx = this.mouse.x;
+                    const my = this.mouse.y;
+                    
+                    // Outer circle
+                    ctx.strokeStyle = this.mouse.down ? 'rgba(255, 80, 80, 0.9)' : 'rgba(255, 255, 255, 0.7)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(mx, my, CONFIG.destroyRadius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    // Crosshair lines
+                    ctx.strokeStyle = this.mouse.down ? 'rgba(255, 80, 80, 0.8)' : 'rgba(255, 255, 255, 0.6)';
+                    ctx.lineWidth = 2;
+                    const crossSize = 10;
+                    ctx.beginPath();
+                    ctx.moveTo(mx - crossSize, my);
+                    ctx.lineTo(mx + crossSize, my);
+                    ctx.moveTo(mx, my - crossSize);
+                    ctx.lineTo(mx, my + crossSize);
+                    ctx.stroke();
+                    
+                    // Center dot
+                    ctx.fillStyle = this.mouse.down ? 'rgba(255, 60, 60, 0.9)' : 'rgba(255, 255, 255, 0.8)';
+                    ctx.beginPath();
+                    ctx.arc(mx, my, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
                 ctx.restore();
 
                 // Update UI
@@ -1890,19 +1851,8 @@
             });
         });
 
-        // Cursor overlay (DOM-based, no trail)
-        const cursorOverlay = document.getElementById('cursorOverlay');
-        const cursorVisual = cursorOverlay.querySelector('.cursor-visual');
-        function updateCursor(e) {
-            cursorVisual.style.left = e.clientX + 'px';
-            cursorVisual.style.top = e.clientY + 'px';
-        }
-        function updateCursorVisibility() {
-            cursorOverlay.style.visibility = game.mouse.isInCanvas ? 'visible' : 'hidden';
-            cursorOverlay.classList.toggle('active', game.mouse.down);
-        }
-        document.addEventListener('mousemove', (e) => {
-            updateCursor(e);
+        canvas.addEventListener('mousemove', (e) => {
+            e.preventDefault();
             const rect = canvas.getBoundingClientRect();
             const scale = Math.min(rect.width / CONFIG.width, rect.height / CONFIG.height);
             const offsetX = (rect.width - CONFIG.width * scale) / 2;
@@ -1912,37 +1862,32 @@
             game.mouse.x = (dx / scale);
             game.mouse.y = (dy / scale);
             game.mouse.isInCanvas = dx >= 0 && dx <= CONFIG.width * scale && dy >= 0 && dy <= CONFIG.height * scale;
-            updateCursorVisibility();
         });
 
         canvas.addEventListener('mouseenter', (e) => {
             e.preventDefault();
             game.mouse.isInCanvas = true;
-            updateCursorVisibility();
         });
 
         canvas.addEventListener('mouseleave', (e) => {
             e.preventDefault();
             game.mouse.isInCanvas = false;
             game.mouse.down = false;
-            updateCursorVisibility();
         });
 
         canvas.addEventListener('mousedown', (e) => {
-            e.preventDefault();
+            e.preventDefault(); // Prevent default click behavior
             game.mouse.down = true;
-            updateCursorVisibility();
         });
 
         canvas.addEventListener('mouseup', (e) => {
-            e.preventDefault();
+            e.preventDefault(); // Prevent default click behavior
             game.mouse.down = false;
-            updateCursorVisibility();
         });
 
+        // Global mouseup to catch releases outside canvas
         window.addEventListener('mouseup', (e) => {
             game.mouse.down = false;
-            updateCursorVisibility();
         });
 
         canvas.addEventListener('contextmenu', (e) => {
