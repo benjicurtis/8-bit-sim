@@ -47,7 +47,7 @@
             cursor: none !important;
         }
 
-        #settings input[type="range"] {
+        #tabbedUI input[type="range"] {
             cursor: pointer !important;
         }
 
@@ -210,36 +210,49 @@
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
         
-        <div id="ui">
-            <h1>💥 VOXEL FURY 🧱</h1>
-            <div class="stat"><span class="label">Voxels:</span> <span id="particleCount">0</span></div>
-            <div class="stat"><span class="label">Destroyed:</span> <span id="destructionPercent">0</span>%</div>
-            <div class="stat"><span class="label">FPS:</span> <span id="fps">60</span></div>
-        </div>
-
-        <div id="settings">
-            <h3>⚙️ Settings</h3>
-            <div class="setting-item">
-                <label>Voxel Size: <span class="setting-value" id="voxelSizeDisplay">3mm</span></label>
-                <input type="range" id="voxelSizeSlider" min="2" max="8" value="3" step="1">
-                <div class="setting-note">2–8mm. Smaller = more detail but slower</div>
+        <div id="tabbedUI">
+            <div class="tab-bar">
+                <button class="tab-btn active" data-tab="stats">Stats</button>
+                <button class="tab-btn" data-tab="liquid">Liquid</button>
+                <button class="tab-btn" data-tab="solid">Solid</button>
+                <button class="tab-btn" data-tab="life">Life</button>
+                <button class="tab-btn" data-tab="settings">Settings</button>
             </div>
-            <div class="setting-item">
-                <label>Place Amount: <span class="setting-value" id="placeAmountDisplay">20</span></label>
-                <input type="range" id="placeAmountSlider" min="1" max="50" value="20" step="1">
-                <div class="setting-note">Radius when placing (1 = single voxel | 50 = large blob)</div>
+            <div id="tab-stats" class="tab-content active">
+                <h3>💥 VOXEL FURY 🧱</h3>
+                <div><span class="label">Voxels:</span> <span id="particleCount">0</span></div>
+                <div><span class="label">Destroyed:</span> <span id="destructionPercent">0</span>%</div>
+                <div><span class="label">FPS:</span> <span id="fps">60</span></div>
+                <div style="margin-top: 6px; color: #888; font-size: 10px;"><span class="key">CLICK+DRAG</span> Destroy | <span class="key">R</span> Rebuild | <span class="key">H</span> Hide</div>
             </div>
-        </div>
-
-        <div id="controls">
-            <div><span class="key">CLICK+DRAG</span> Destroy | <span class="key">R</span> Rebuild | <span class="key">H</span> Hide UI</div>
-            <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Liquid</div>
-            <div style="margin-top: 2px;"><span class="key">3</span> Water <span class="key">5</span> Lava <span class="key">6</span> Acid <span class="key">9</span> Oil <span class="key">0</span> Steam <span class="key">Q</span> Blood <span class="key">W</span> Slime <span class="key">I</span> Honey</div>
-            <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Solid</div>
-            <div style="margin-top: 2px;"><span class="key">1</span> Concrete <span class="key">2</span> Dust <span class="key">4</span> Metal <span class="key">8</span> Snow <span class="key">E</span> Fire <span class="key">Y</span> Ice <span class="key">U</span> Sand <span class="key">O</span> Gravel</div>
-            <div style="margin-top: 2px;"><span class="key">P</span> Wood <span class="key">G</span> Gunpowder <span class="key">J</span> Stone <span class="key">K</span> Ember <span class="key">F</span> Feces</div>
-            <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Life</div>
-            <div style="margin-top: 2px;"><span class="key">7</span> Human <span class="key">B</span> Builder <span class="key">T</span> Plant <span class="key">L</span> Flies</div>
+            <div id="tab-liquid" class="tab-content">
+                <h3>Liquid</h3>
+                <div><span class="key">3</span> Water <span class="key">5</span> Lava <span class="key">6</span> Acid <span class="key">9</span> Oil</div>
+                <div><span class="key">0</span> Steam <span class="key">Q</span> Blood <span class="key">W</span> Slime <span class="key">I</span> Honey</div>
+            </div>
+            <div id="tab-solid" class="tab-content">
+                <h3>Solid</h3>
+                <div><span class="key">1</span> Concrete <span class="key">2</span> Dust <span class="key">4</span> Metal <span class="key">8</span> Snow</div>
+                <div><span class="key">E</span> Fire <span class="key">Y</span> Ice <span class="key">U</span> Sand <span class="key">O</span> Gravel</div>
+                <div><span class="key">P</span> Wood <span class="key">G</span> Gunpowder <span class="key">J</span> Stone <span class="key">K</span> Ember <span class="key">F</span> Feces</div>
+            </div>
+            <div id="tab-life" class="tab-content">
+                <h3>Life</h3>
+                <div><span class="key">7</span> Human <span class="key">B</span> Builder <span class="key">T</span> Plant <span class="key">L</span> Flies</div>
+            </div>
+            <div id="tab-settings" class="tab-content">
+                <h3>Settings</h3>
+                <div class="setting-item">
+                    <label>Voxel Size: <span class="setting-value" id="voxelSizeDisplay">3mm</span></label>
+                    <input type="range" id="voxelSizeSlider" min="2" max="8" value="3" step="1">
+                    <div class="setting-note">2–8mm. Smaller = more detail but slower</div>
+                </div>
+                <div class="setting-item">
+                    <label>Place Amount: <span class="setting-value" id="placeAmountDisplay">20</span></label>
+                    <input type="range" id="placeAmountSlider" min="1" max="50" value="20" step="1">
+                    <div class="setting-note">Radius when placing (1–50)</div>
+                </div>
+            </div>
         </div>
         
         <div id="uiToggleIndicator">Press H to show UI</div>
@@ -357,6 +370,7 @@
                 this.nextHumanId = 0;
                 this.flies = [];  // Track fly entities (1 voxel each)
                 this.nextFlyId = 0;
+                this.screenShake = 0;  // Juice: decay each frame
             }
 
             // Reinitialize grid when voxel size changes
@@ -1270,14 +1284,15 @@
                             
                             if (material !== MATERIAL.EMPTY) {
                                 const destroyChance = 1.0 - (dist / radius) * 0.6;
-                                if (Math.random() < destroyChance) {
+                                    if (Math.random() < destroyChance) {
                                     const idx = this.getIndex(x, y);
-                                    if (Math.random() < 0.5) {
+                                    this.screenShake = Math.min(8, this.screenShake + 1.5);
+                                    if (Math.random() < 0.7) {
                                         this.set(x, y, MATERIAL.DUST);
                                         const angle = Math.atan2(dy, dx);
-                                        this.velocityX[idx] = Math.cos(angle) * (4 + Math.random() * 2);
-                                        this.velocityY[idx] = Math.sin(angle) * (4 + Math.random() * 2);
-                                        // Set timestamp for debris to disappear after 2 seconds
+                                        const force = 5 + Math.random() * 3;
+                                        this.velocityX[idx] = Math.cos(angle) * force;
+                                        this.velocityY[idx] = Math.sin(angle) * force;
                                         this.particleAge[idx] = now;
                                     } else {
                                         this.set(x, y, MATERIAL.EMPTY);
@@ -1432,79 +1447,73 @@
                 }
             }
 
-            // Render the game
+            // Render the game - ImageData batch rendering + screen shake
             render() {
-                // CLEAR EVERYTHING - no trails, no artifacts
-                ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
-                
-                // Sky background gradient
-                const gradient = ctx.createLinearGradient(0, 0, 0, CONFIG.height);
-                gradient.addColorStop(0, '#87ceeb');
-                gradient.addColorStop(1, '#b8d8eb');
-                ctx.fillStyle = gradient;
+                this.screenShake *= 0.88;
+                const shakeX = (Math.random() - 0.5) * this.screenShake;
+                const shakeY = (Math.random() - 0.5) * this.screenShake;
+                ctx.save();
+                ctx.translate(shakeX, shakeY);
+
+                ctx.clearRect(-5, -5, CONFIG.width + 10, CONFIG.height + 10);
+                if (!this._skyGradient) {
+                    this._skyGradient = ctx.createLinearGradient(0, 0, 0, CONFIG.height);
+                    this._skyGradient.addColorStop(0, '#87ceeb');
+                    this._skyGradient.addColorStop(1, '#b8d8eb');
+                }
+                ctx.fillStyle = this._skyGradient;
                 ctx.fillRect(0, 0, CONFIG.width, CONFIG.height);
 
-                // Plant color palette: 0=green, 1=brown, 2=yellow, 3=red, 4=pink, 5=orange, 6=magenta
-                const PLANT_COLORS = [
-                    [34, 139, 34],   // 0: forest green (leaves)
-                    [139, 90, 43],   // 1: saddle brown (stems)
-                    [255, 255, 0],   // 2: yellow (flower)
-                    [255, 80, 80],   // 3: coral red (flower)
-                    [255, 182, 193], // 4: light pink (flower)
-                    [255, 165, 0],   // 5: orange (flower)
-                    [255, 0, 255]    // 6: magenta (flower)
-                ];
-
+                const PLANT_COLORS = [[34,139,34],[139,90,43],[255,255,0],[255,80,80],[255,182,193],[255,165,0],[255,0,255]];
                 const t = Date.now();
                 const ps = CONFIG.pixelSize;
+                const w = CONFIG.width, h = CONFIG.height;
+                if (!this._imageData || this._imageData.width !== w || this._imageData.height !== h) {
+                    this._imageData = ctx.createImageData(w, h);
+                }
+                const data = this._imageData.data;
+                const grid = this.grid, plantType = this.plantType;
+                const gi = (gx, gy) => (gy < 0 || gy >= GRID_HEIGHT || gx < 0 || gx >= GRID_WIDTH) ? -1 : gy * GRID_WIDTH + gx;
+                const empty = v => v === -1 || grid[v] === MATERIAL.EMPTY;
+
                 for (let y = 0; y < GRID_HEIGHT; y++) {
                     for (let x = 0; x < GRID_WIDTH; x++) {
-                        const material = this.get(x, y);
+                        const material = grid[gi(x, y)];
                         if (material === MATERIAL.EMPTY) continue;
 
                         const props = MATERIAL_PROPS[material];
                         let base = props.shadeBase;
-                        if (material === MATERIAL.PLANT) {
-                            const pType = this.plantType[this.getIndex(x, y)] || 0;
-                            base = PLANT_COLORS[Math.min(pType, 6)];
-                        }
+                        if (material === MATERIAL.PLANT) base = PLANT_COLORS[Math.min(plantType[gi(x, y)] || 0, 6)];
 
-                        const hasTop = !this.isEmpty(x, y - 1);
-                        const hasBottom = !this.isEmpty(x, y + 1);
-                        const hasLeft = !this.isEmpty(x - 1, y);
-                        const hasRight = !this.isEmpty(x + 1, y);
+                        const hasTop = !empty(gi(x, y - 1));
+                        const hasBottom = !empty(gi(x, y + 1));
+                        const hasLeft = !empty(gi(x - 1, y));
+                        const hasRight = !empty(gi(x + 1, y));
+                        let shade = (hasTop ? 0 : 20) + (hasLeft ? 0 : 10) + ((hasBottom && !hasTop) ? 8 : 0) - (hasRight ? 10 : 0) - (hasBottom ? 15 : 0);
 
-                        let shade = 0;
-                        if (!hasTop) shade += 20;
-                        if (!hasLeft) shade += 10;
-                        if (hasBottom && !hasTop) shade += 8;
-                        if (!hasRight) shade -= 10;
-                        if (!hasBottom) shade -= 15;
-
-                        let noise = (((x * 31 + y * 17) % 101) / 101 - 0.5) * 12;
-                        if (material === MATERIAL.LAVA) noise += Math.sin(t * 0.003 + x * 0.5 + y * 0.5) * 15;
-                        else if (material === MATERIAL.ACID) noise += Math.sin(t * 0.008 + x + y) * 25;
-                        else if (material === MATERIAL.FIRE) noise += Math.sin(t * 0.01 + x + y * 2) * 40;
-                        else if (material === MATERIAL.SLIME) noise += Math.sin(t * 0.002 + x * 0.3 + y * 0.3) * 10;
-                        else if (material === MATERIAL.EMBER) noise += Math.sin(t * 0.012 + x + y * 2) * 35;
-                        else if (material === MATERIAL.HONEY) noise += Math.sin(x * 0.4 + y * 0.6) * 8;
-                        else if (material === MATERIAL.FLY) noise += Math.sin(t * 0.02 + x * 2 + y * 2) * 15;
-                        else if (material === MATERIAL.PLANT) {
-                            const pType = this.plantType[this.getIndex(x, y)] || 0;
-                            noise += pType >= 2 ? Math.sin(x * 0.5 + y * 0.8) * 8
-                                : Math.sin(x * 0.7 + y * 1.3) * 15 + Math.cos(x * 1.1 + y * 0.9) * 10;
-                        }
+                        let noise = (((x * 31 + y * 17) % 101) / 101 - 0.5) * 10;
+                        if (material === MATERIAL.LAVA) noise += Math.sin(t * 0.004 + x * 0.3) * 20;
+                        else if (material === MATERIAL.ACID) noise += Math.sin(t * 0.01 + x + y) * 30;
+                        else if (material === MATERIAL.FIRE) noise += Math.sin(t * 0.012 + x + y * 2) * 45;
+                        else if (material === MATERIAL.EMBER) noise += Math.sin(t * 0.015 + x + y) * 30;
 
                         const r = Math.max(0, Math.min(255, base[0] + shade + noise));
                         const g = Math.max(0, Math.min(255, base[1] + shade + noise));
                         const b = Math.max(0, Math.min(255, base[2] + shade + noise));
+                        const a = material === MATERIAL.STEAM ? 128 : 255;
 
-                        ctx.fillStyle = material === MATERIAL.STEAM ? `rgba(${r},${g},${b},0.5)` : `rgb(${r},${g},${b})`;
-                        ctx.fillRect(x * ps, y * ps, ps, ps);
+                        const px0 = x * ps, py0 = y * ps;
+                        for (let dy = 0; dy < ps; dy++) {
+                            for (let dx = 0; dx < ps; dx++) {
+                                const pi = ((py0 + dy) * w + (px0 + dx)) * 4;
+                                data[pi] = r; data[pi + 1] = g; data[pi + 2] = b; data[pi + 3] = a;
+                            }
+                        }
                     }
                 }
+                ctx.putImageData(this._imageData, 0, 0);
 
-                // Draw SINGLE custom cursor - ONLY when mouse is actually in canvas
+                // Draw cursor
                 if (this.mouse.isInCanvas) {
                     const mx = this.mouse.x;
                     const my = this.mouse.y;
@@ -1533,6 +1542,8 @@
                     ctx.arc(mx, my, 3, 0, Math.PI * 2);
                     ctx.fill();
                 }
+
+                ctx.restore();
 
                 // Update UI
                 this.countParticles();
@@ -1578,20 +1589,14 @@
             // Toggle UI visibility
             if (e.key === 'h' || e.key === 'H') {
                 uiVisible = !uiVisible;
-                const uiElement = document.getElementById('ui');
-                const controlsElement = document.getElementById('controls');
-                const settingsElement = document.getElementById('settings');
+                const tabbedUI = document.getElementById('tabbedUI');
                 const indicator = document.getElementById('uiToggleIndicator');
                 
                 if (uiVisible) {
-                    uiElement.classList.remove('hidden');
-                    controlsElement.classList.remove('hidden');
-                    settingsElement.classList.remove('hidden');
+                    tabbedUI.classList.remove('hidden');
                     indicator.classList.remove('visible');
                 } else {
-                    uiElement.classList.add('hidden');
-                    controlsElement.classList.add('hidden');
-                    settingsElement.classList.add('hidden');
+                    tabbedUI.classList.add('hidden');
                     indicator.classList.add('visible');
                 }
             }
@@ -1667,6 +1672,17 @@
             const newRadius = parseInt(e.target.value);
             CONFIG.spawnRadius = newRadius;
             placeAmountDisplay.textContent = newRadius;
+        });
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.dataset.tab;
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-' + tabId).classList.add('active');
+            });
         });
 
         canvas.addEventListener('mousemove', (e) => {
