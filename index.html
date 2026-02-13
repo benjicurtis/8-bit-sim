@@ -238,9 +238,9 @@
             <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Solid</div>
             <div style="margin-top: 2px;"><span class="key">1</span> Concrete <span class="key">2</span> Dust <span class="key">4</span> Metal <span class="key">8</span> Snow <span class="key">E</span> Fire <span class="key">Y</span> Ice <span class="key">U</span> Sand <span class="key">O</span> Gravel</div>
             <div style="margin-top: 2px;"><span class="key">P</span> Wood <span class="key">G</span> Gunpowder <span class="key">J</span> Stone <span class="key">K</span> Ember <span class="key">F</span> Feces</div>
-            <div style="margin-top: 2px;"><span class="key">M</span> Lead Ball <span class="key">N</span> Glue Metal</div>
+            <div style="margin-top: 2px;"><span class="key">M</span> Lead Ball <span class="key">N</span> Glue Metal <span class="key">Z</span> Milk</div>
             <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Life</div>
-            <div style="margin-top: 2px;"><span class="key">7</span> Human <span class="key">B</span> Builder <span class="key">T</span> Plant <span class="key">L</span> Flies</div>
+            <div style="margin-top: 2px;"><span class="key">7</span> Human <span class="key">B</span> Builder <span class="key">T</span> Plant <span class="key">L</span> Flies <span class="key">X</span> Worm</div>
         </div>
         
         <div id="uiToggleIndicator">Press H to show UI</div>
@@ -305,7 +305,9 @@
             FEECES: 27,      // Brown solid, attracts flies
             FLY: 28,         // Life form - buzzes toward feces
             LEAD: 29,        // Heavy ball - sticks together, launched by gunpowder, kills humans on impact
-            GLUE_METAL: 30   // Sticky metal - adjacent blocks won't fall (like slime/honey)
+            GLUE_METAL: 30,  // Sticky metal - adjacent blocks won't fall (like slime/honey)
+            MILK: 31,        // White liquid - flows like water
+            WORM: 32         // Life form - 1 pink moving particle
         };
 
         // Material Properties
@@ -340,7 +342,9 @@
             [MATERIAL.FEECES]: { color: '#5d4037', density: 4, strength: 1, flow: false, shadeBase: [93, 64, 55], attractsFlies: true },
             [MATERIAL.FLY]: { color: '#1a1a1a', density: 0.2, strength: 0, flow: false, shadeBase: [26, 26, 26], isFly: true },
             [MATERIAL.LEAD]: { color: '#36454f', density: 12, strength: 6, flow: false, shadeBase: [54, 69, 79], isLead: true },
-            [MATERIAL.GLUE_METAL]: { color: '#708090', density: 7, strength: 4, flow: false, shadeBase: [112, 128, 144], sticky: true }
+            [MATERIAL.GLUE_METAL]: { color: '#708090', density: 7, strength: 4, flow: false, shadeBase: [112, 128, 144], sticky: true },
+            [MATERIAL.MILK]: { color: '#f5f5dc', density: 3, strength: 0, flow: true, shadeBase: [245, 245, 220] },
+            [MATERIAL.WORM]: { color: '#ff69b4', density: 0.3, strength: 0, flow: false, shadeBase: [255, 105, 180], isWorm: true }
         };
 
         // Game State
@@ -364,6 +368,8 @@
                 this.nextFlyId = 0;
                 this.leadBalls = []; // Track lead balls (connected voxel clusters)
                 this.nextLeadBallId = 0;
+                this.worms = []; // Track worm entities (1 pink particle each)
+                this.nextWormId = 0;
             }
 
             // Reinitialize grid when voxel size changes
@@ -381,6 +387,8 @@
                 this.nextFlyId = 0;
                 this.leadBalls = [];
                 this.nextLeadBallId = 0;
+                this.worms = [];
+                this.nextWormId = 0;
                 this.generateBuildings();
             }
 
@@ -768,6 +776,45 @@
                 }
             }
 
+            // Update worms - 1 pink particle that wiggles around
+            updateWorms() {
+                for (let i = this.worms.length - 1; i >= 0; i--) {
+                    const worm = this.worms[i];
+
+                    if (this.get(worm.x, worm.y) !== MATERIAL.WORM) {
+                        this.worms.splice(i, 1);
+                        continue;
+                    }
+
+                    // Die if touching acid, fire, or lava
+                    const neighbors = [[worm.x, worm.y + 1], [worm.x, worm.y - 1], [worm.x - 1, worm.y], [worm.x + 1, worm.y]];
+                    for (const [nx, ny] of neighbors) {
+                        const m = this.get(nx, ny);
+                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA) {
+                            this.set(worm.x, worm.y, MATERIAL.EMPTY);
+                            this.worms.splice(i, 1);
+                            break;
+                        }
+                    }
+                    if (this.worms[i] !== worm) continue;
+
+                    // Wiggle movement: prefer horizontal, sometimes up/down
+                    let moveX = 0, moveY = 0;
+                    if (Math.random() < 0.6) moveX = Math.random() < 0.5 ? -1 : 1;
+                    else if (Math.random() < 0.5) moveY = -1;
+                    else moveY = 1;
+
+                    const newX = worm.x + moveX;
+                    const newY = worm.y + moveY;
+                    if (newX >= 0 && newX < GRID_WIDTH && newY >= 0 && newY < GRID_HEIGHT && this.isEmpty(newX, newY)) {
+                        this.set(worm.x, worm.y, MATERIAL.EMPTY);
+                        worm.x = newX;
+                        worm.y = newY;
+                        this.set(worm.x, worm.y, MATERIAL.WORM);
+                    }
+                }
+            }
+
             // Lead ball shape: rough sphere pattern (big ball, ~13 voxels)
             getLeadBallShape() {
                 const voxels = [];
@@ -823,18 +870,25 @@
                     if (moveX === 0 && moveY === 0) continue;
 
                     const newVoxels = voxels.map(({ x, y }) => ({ x: x + moveX, y: y + moveY }));
-                    const canMove = newVoxels.every(({ x, y }) => {
-                        const m = this.get(x, y);
-                        return m === MATERIAL.EMPTY || m === MATERIAL.LEAD || m === MATERIAL.HUMAN_HEAD || m === MATERIAL.HUMAN_BODY || m === MATERIAL.HUMAN_BODY_BUILDER;
-                    });
-
-                    if (!canMove) {
+                    const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+                    const hitsGunpowder = speed > 2 && newVoxels.some(({ x, y }) => this.get(x, y) === MATERIAL.GUNPOWDER);
+                    if (hitsGunpowder) {
+                        for (const { x, y } of newVoxels) {
+                            if (this.get(x, y) === MATERIAL.GUNPOWDER) this.set(x, y, MATERIAL.FIRE);
+                        }
                         ball.vx *= -0.3;
                         ball.vy *= -0.3;
                         continue;
                     }
-
-                    const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+                    const hitsSlimeOrHoney = newVoxels.some(({ x, y }) => {
+                        const m = this.get(x, y);
+                        return m === MATERIAL.SLIME || m === MATERIAL.HONEY;
+                    });
+                    if (hitsSlimeOrHoney) {
+                        ball.vx *= -1.35;
+                        ball.vy *= -1.35;
+                        continue;
+                    }
                     const hitsHuman = newVoxels.some(({ x, y }) => {
                         const m = this.get(x, y);
                         return m === MATERIAL.HUMAN_HEAD || m === MATERIAL.HUMAN_BODY || m === MATERIAL.HUMAN_BODY_BUILDER;
@@ -870,6 +924,7 @@
                 // Update humans first (they move as units)
                 this.updateHumans();
                 this.updateFlies();
+                this.updateWorms();
                 this.updateLeadBalls();
                 
                 const newGrid = [...this.grid];
@@ -917,6 +972,9 @@
                         
                         // Skip lead - handled as connected ball entities
                         if (material === MATERIAL.LEAD) continue;
+                        
+                        // Skip worms - handled as life-form entities
+                        if (material === MATERIAL.WORM) continue;
                         
                         // Skip dead humans - they don't move (static red voxels)
                         if (material === MATERIAL.DEAD_HUMAN) continue;
@@ -1372,7 +1430,7 @@
                                 }
                                 else if (material === MATERIAL.LIQUID || material === MATERIAL.LAVA || 
                                          material === MATERIAL.ACID || material === MATERIAL.OIL || 
-                                         material === MATERIAL.BLOOD) {
+                                         material === MATERIAL.BLOOD || material === MATERIAL.MILK) {
                                     const dir = Math.random() < 0.5 ? -1 : 1;
                                     if (emptyIn(newGrid, x + dir, y)) {
                                         const targetIdx = this.getIndex(x + dir, y);
@@ -1659,6 +1717,16 @@
                 this.spawnMaterial(MATERIAL.GLUE_METAL);
             }
 
+            // Spawn a worm (1 pink moving particle)
+            spawnWorm() {
+                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                if (this.isEmpty(mx, my)) {
+                    this.set(mx, my, MATERIAL.WORM);
+                    this.worms.push({ id: this.nextWormId++, x: mx, y: my });
+                }
+            }
+
             // Count active particles
             countParticles() {
                 this.particleCount = this.grid.filter(m => m !== MATERIAL.EMPTY).length;
@@ -1735,6 +1803,7 @@
                         else if (material === MATERIAL.EMBER) noise += Math.sin(t * 0.012 + x + y * 2) * 35;
                         else if (material === MATERIAL.HONEY) noise += Math.sin(x * 0.4 + y * 0.6) * 8;
                         else if (material === MATERIAL.FLY) noise += Math.sin(t * 0.02 + x * 2 + y * 2) * 15;
+                        else if (material === MATERIAL.WORM) noise += Math.sin(t * 0.025 + x * 1.5 + y * 1.5) * 12;
                         else if (material === MATERIAL.PLANT) {
                             const pType = this.plantType[this.getIndex(x, y)] || 0;
                             noise += pType >= 2 ? Math.sin(x * 0.5 + y * 0.8) * 8
@@ -1820,6 +1889,8 @@
                 game.nextFlyId = 0;
                 game.leadBalls = [];
                 game.nextLeadBallId = 0;
+                game.worms = [];
+                game.nextWormId = 0;
                 game.generateBuildings();
             }
             
@@ -1875,6 +1946,8 @@
             if (e.key === 'l' || e.key === 'L') game.spawnFly();
             if (e.key === 'm' || e.key === 'M') game.spawnLeadBall();
             if (e.key === 'n' || e.key === 'N') game.spawnGlueMetal();
+            if (e.key === 'z' || e.key === 'Z') game.spawnMaterial(MATERIAL.MILK);
+            if (e.key === 'x' || e.key === 'X') game.spawnWorm();
         });
 
         // Voxel size slider
@@ -1906,6 +1979,8 @@
             game.nextFlyId = 0;
             game.leadBalls = [];
             game.nextLeadBallId = 0;
+            game.worms = [];
+            game.nextWormId = 0;
             
             // Generate new buildings
             game.generateBuildings();
