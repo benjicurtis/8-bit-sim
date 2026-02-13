@@ -16,19 +16,27 @@
             background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1e 100%);
             color: #fff;
             overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            margin: 0;
+            width: 100vw;
             height: 100vh;
         }
 
         #gameContainer {
             position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
             box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
         }
 
         #gameCanvas {
             display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
             image-rendering: pixelated;
             image-rendering: crisp-edges;
             background: #87ceeb;
@@ -49,12 +57,12 @@
 
         #ui {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 12px;
+            left: 12px;
             background: rgba(0, 0, 0, 0.7);
-            padding: 15px;
+            padding: 10px 12px;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 13px;
             backdrop-filter: blur(10px);
             pointer-events: none;
             transition: opacity 0.3s ease, visibility 0.3s ease;
@@ -83,13 +91,14 @@
 
         #controls {
             position: absolute;
-            bottom: 20px;
+            bottom: 12px;
             left: 50%;
             transform: translateX(-50%);
+            max-width: 90%;
             background: rgba(0, 0, 0, 0.7);
-            padding: 15px 25px;
+            padding: 10px 16px;
             border-radius: 8px;
-            font-size: 12px;
+            font-size: 11px;
             backdrop-filter: blur(10px);
             text-align: center;
             transition: opacity 0.3s ease, visibility 0.3s ease;
@@ -103,9 +112,9 @@
         #controls .key {
             display: inline-block;
             background: rgba(255, 255, 255, 0.1);
-            padding: 4px 8px;
+            padding: 2px 6px;
             border-radius: 4px;
-            margin: 0 2px;
+            margin: 0 1px;
             color: #4ecdc4;
             font-weight: bold;
         }
@@ -121,14 +130,15 @@
 
         #settings {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 12px;
+            right: 12px;
             background: rgba(0, 0, 0, 0.7);
-            padding: 15px;
+            padding: 10px 12px;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 13px;
             backdrop-filter: blur(10px);
-            min-width: 240px;
+            min-width: 220px;
+            max-width: 35vw;
             pointer-events: auto;
             transition: opacity 0.3s ease, visibility 0.3s ease;
         }
@@ -212,7 +222,7 @@
             <div class="setting-item">
                 <label>Voxel Size: <span class="setting-value" id="voxelSizeDisplay">3mm</span></label>
                 <input type="range" id="voxelSizeSlider" min="2" max="8" value="3" step="1">
-                <div class="setting-note">2mm = small (smooth) | 8mm = huge. Avoid 1mm — causes severe lag</div>
+                <div class="setting-note">2–8mm. Smaller = more detail but slower</div>
             </div>
             <div class="setting-item">
                 <label>Place Amount: <span class="setting-value" id="placeAmountDisplay">20</span></label>
@@ -222,10 +232,10 @@
         </div>
 
         <div id="controls">
-            <div><span class="key">CLICK + DRAG</span> Destroy | <span class="key">R</span> Rebuild | <span class="key">H</span> Hide UI</div>
-            <div style="margin-top: 8px;"><span class="key">1</span> Concrete | <span class="key">2</span> Dust | <span class="key">3</span> Water | <span class="key">4</span> Metal | <span class="key">5</span> Lava | <span class="key">6</span> Acid | <span class="key">7</span> Human | <span class="key">B</span> Builder</div>
-            <div style="margin-top: 5px;"><span class="key">8</span> Snow | <span class="key">9</span> Oil | <span class="key">0</span> Steam | <span class="key">Q</span> Blood | <span class="key">W</span> Slime | <span class="key">E</span> Fire | <span class="key">T</span> Plant | <span class="key">Y</span> Ice | <span class="key">U</span> Sand</div>
-            <div style="margin-top: 5px;"><span class="key">I</span> Honey | <span class="key">O</span> Gravel | <span class="key">P</span> Wood | <span class="key">G</span> Gunpowder | <span class="key">J</span> Stone | <span class="key">K</span> Ember</div>
+            <div><span class="key">CLICK+DRAG</span> Destroy | <span class="key">R</span> Rebuild | <span class="key">H</span> Hide UI</div>
+            <div style="margin-top: 4px;"><span class="key">1</span> Concrete <span class="key">2</span> Dust <span class="key">3</span> Water <span class="key">4</span> Metal <span class="key">5</span> Lava <span class="key">6</span> Acid <span class="key">7</span> Human <span class="key">B</span> Builder</div>
+            <div style="margin-top: 2px;"><span class="key">8</span> Snow <span class="key">9</span> Oil <span class="key">0</span> Steam <span class="key">Q</span> Blood <span class="key">W</span> Slime <span class="key">E</span> Fire <span class="key">T</span> Plant <span class="key">Y</span> Ice <span class="key">U</span> Sand</div>
+            <div style="margin-top: 2px;"><span class="key">I</span> Honey <span class="key">O</span> Gravel <span class="key">P</span> Wood <span class="key">G</span> Gunpowder <span class="key">J</span> Stone <span class="key">K</span> Ember</div>
         </div>
         
         <div id="uiToggleIndicator">Press H to show UI</div>
@@ -1538,9 +1548,14 @@
         canvas.addEventListener('mousemove', (e) => {
             e.preventDefault();
             const rect = canvas.getBoundingClientRect();
-            game.mouse.x = e.clientX - rect.left;
-            game.mouse.y = e.clientY - rect.top;
-            game.mouse.isInCanvas = true;
+            const scale = Math.min(rect.width / CONFIG.width, rect.height / CONFIG.height);
+            const offsetX = (rect.width - CONFIG.width * scale) / 2;
+            const offsetY = (rect.height - CONFIG.height * scale) / 2;
+            const dx = e.clientX - rect.left - offsetX;
+            const dy = e.clientY - rect.top - offsetY;
+            game.mouse.x = (dx / scale);
+            game.mouse.y = (dy / scale);
+            game.mouse.isInCanvas = dx >= 0 && dx <= CONFIG.width * scale && dy >= 0 && dy <= CONFIG.height * scale;
         });
 
         canvas.addEventListener('mouseenter', (e) => {
