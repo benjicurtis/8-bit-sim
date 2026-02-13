@@ -889,6 +889,12 @@
                         ball.vy *= -1.35;
                         continue;
                     }
+                    const hitsGlueMetal = newVoxels.some(({ x, y }) => this.get(x, y) === MATERIAL.GLUE_METAL);
+                    if (hitsGlueMetal && speed < 6) {
+                        ball.vx *= -1.2;
+                        ball.vy *= -1.2;
+                        continue;
+                    }
                     const hitsHuman = newVoxels.some(({ x, y }) => {
                         const m = this.get(x, y);
                         return m === MATERIAL.HUMAN_HEAD || m === MATERIAL.HUMAN_BODY || m === MATERIAL.HUMAN_BODY_BUILDER;
