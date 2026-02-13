@@ -220,17 +220,16 @@
             </div>
             <div id="tab-stats" class="tab-content active">
                 <h3>💥 VOXEL FURY 🧱</h3>
-                <div><span class="label">Mode:</span> <span id="gameModeDisplay">Sandbox</span> <span class="key">M</span></div>
                 <div><span class="label">Voxels:</span> <span id="particleCount">0</span></div>
                 <div><span class="label">Destroyed:</span> <span id="destructionPercent">0</span>%</div>
                 <div><span class="label">FPS:</span> <span id="fps">60</span></div>
-                <div id="sandboxControls" style="margin-top: 6px; color: #888; font-size: 10px;"><span class="key">CLICK+DRAG</span> Destroy | <span class="key">R</span> Rebuild | <span class="key">H</span> Hide</div>
-                <div id="survivalControls" style="margin-top: 6px; color: #888; font-size: 10px; display: none;"><span class="key">←→</span> Move | <span class="key">↑</span>/<span class="key">Space</span> Jump (2 blocks) | <span class="key">E</span>/<span class="key">R-Click</span> Build | <span class="key">R</span> Respawn | <span class="key">M</span> Mode</div>
+                <div style="margin-top: 6px; color: #888; font-size: 10px;"><span class="key">CLICK+DRAG</span> Destroy | <span class="key">R</span> Rebuild | <span class="key">H</span> Hide</div>
             </div>
             <div id="tab-liquid" class="tab-content">
                 <h3>Liquid</h3>
                 <div><span class="key">3</span> Water <span class="key">5</span> Lava <span class="key">6</span> Acid <span class="key">9</span> Oil</div>
                 <div><span class="key">0</span> Steam <span class="key">Q</span> Blood <span class="key">W</span> Slime <span class="key">I</span> Honey</div>
+                <div style="margin-top: 6px; color: #6a8; font-size: 10px;">Ecosystem: Water+Lava→Steam+Stone • Water evaporates near fire • Steam condenses to rain at top</div>
             </div>
             <div id="tab-solid" class="tab-content">
                 <h3>Solid</h3>
@@ -241,6 +240,7 @@
             <div id="tab-life" class="tab-content">
                 <h3>Life</h3>
                 <div><span class="key">7</span> Human <span class="key">B</span> Builder <span class="key">T</span> Plant <span class="key">L</span> Flies</div>
+                <div style="margin-top: 6px; color: #6a8; font-size: 10px;">Ecosystem: Plants grow faster near water/feces • Humans trample plants • Flies seek feces, blood, honey • Dead humans decay to feces • Flies reproduce near feces</div>
             </div>
             <div id="tab-settings" class="tab-content">
                 <h3>Settings</h3>
@@ -362,10 +362,7 @@
                 this.particleAge = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0); // Track when debris was created
                 this.humanBuiltBlocks = new Array(GRID_WIDTH * GRID_HEIGHT).fill(false); // Track blocks placed by humans (sticky)
                 this.plantType = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0); // 0=green leaf, 1=brown stem, 2+=flower colors
-                this.mouse = { x: -1000, y: -1000, down: false, isInCanvas: false };
-                this.gameMode = 'sandbox';
-                this.player = null;
-                this.keys = { left: false, right: false, up: false };
+                this.mouse = { x: -1000, y: -1000, down: false, isInCanvas: false }; // Start off-screen to prevent initial cursor
                 this.particleCount = 0;
                 this.initialParticles = 0;
                 this.fps = 60;
@@ -387,17 +384,11 @@
                 this.particleAge = new Array(newSize).fill(0);
                 this.humanBuiltBlocks = new Array(newSize).fill(false);
                 this.plantType = new Array(newSize).fill(0);
-                this.humans = [];
+                this.humans = []; // Clear all humans
                 this.nextHumanId = 0;
                 this.flies = [];
                 this.nextFlyId = 0;
-                this.player = null;
-                if (this.gameMode === 'survival') {
-                    this.generateSurvivalWorld();
-                    this.spawnPlayer();
-                } else {
-                    this.generateBuildings();
-                }
+                this.generateBuildings();
             }
 
             getIndex(x, y) {
@@ -478,134 +469,6 @@
                 this.initialParticles = this.particleCount;
             }
 
-            // Survival mode: flat world to build on
-            generateSurvivalWorld() {
-                const groundLevel = GRID_HEIGHT - 12;
-                for (let x = 0; x < GRID_WIDTH; x++) {
-                    for (let y = groundLevel; y < GRID_HEIGHT; y++) {
-                        this.set(x, y, MATERIAL.CONCRETE);
-                    }
-                }
-                this.countParticles();
-                this.initialParticles = this.particleCount;
-            }
-
-            spawnPlayer() {
-                const groundLevel = GRID_HEIGHT - 12;
-                const px = Math.floor(GRID_WIDTH / 2);
-                const bodyY = groundLevel - 1;
-                const headY = bodyY - 1;
-                this.set(px, bodyY, MATERIAL.HUMAN_BODY);
-                this.set(px, headY, MATERIAL.HUMAN_HEAD);
-                this.player = {
-                    headX: px, headY,
-                    bodyX: px, bodyY,
-                    jumpFramesLeft: 0
-                };
-            }
-
-            // Player movement: arrow keys, jump 2 voxels
-            updatePlayer() {
-                if (!this.player) return;
-                const p = this.player;
-                const bodyMat = MATERIAL.HUMAN_BODY;
-
-                if (this.get(p.headX, p.headY) !== MATERIAL.HUMAN_HEAD || this.get(p.bodyX, p.bodyY) !== MATERIAL.HUMAN_BODY) {
-                    this.player = null;
-                    return;
-                }
-
-                const onGround = !this.isEmpty(p.bodyX, p.bodyY + 1);
-
-                if (onGround && (this.keys.up) && p.jumpFramesLeft === 0) {
-                    p.jumpFramesLeft = 2;
-                }
-
-                if (p.jumpFramesLeft > 0) {
-                    const canRise = this.isEmpty(p.headX, p.headY - 1);
-                    if (canRise) {
-                        this.set(p.headX, p.headY, MATERIAL.EMPTY);
-                        this.set(p.bodyX, p.bodyY, MATERIAL.EMPTY);
-                        p.headY--;
-                        p.bodyY--;
-                        this.set(p.headX, p.headY, MATERIAL.HUMAN_HEAD);
-                        this.set(p.bodyX, p.bodyY, bodyMat);
-                        p.jumpFramesLeft--;
-                    } else {
-                        p.jumpFramesLeft = 0;
-                    }
-                } else if (onGround) {
-                    let move = 0;
-                    if (this.keys.left) move = -1;
-                    if (this.keys.right) move = 1;
-                    if (move !== 0) {
-                        const nextBodyX = p.bodyX + move;
-                        const nextHeadX = p.headX + move;
-                        const canMoveFlat = this.isEmpty(nextBodyX, p.bodyY) && this.isEmpty(nextHeadX, p.headY);
-                        const hasGround = !this.isEmpty(nextBodyX, p.bodyY + 1);
-                        const canClimb = !this.isEmpty(nextBodyX, p.bodyY) && this.isEmpty(nextBodyX, p.bodyY - 1) &&
-                            this.isEmpty(nextBodyX, p.bodyY - 2) && !this.isEmpty(nextBodyX, p.bodyY + 1);
-                        if (canMoveFlat && hasGround) {
-                            this.set(p.headX, p.headY, MATERIAL.EMPTY);
-                            this.set(p.bodyX, p.bodyY, MATERIAL.EMPTY);
-                            p.headX = nextHeadX;
-                            p.bodyX = nextBodyX;
-                            this.set(p.headX, p.headY, MATERIAL.HUMAN_HEAD);
-                            this.set(p.bodyX, p.bodyY, bodyMat);
-                        } else if (canClimb) {
-                            this.set(p.headX, p.headY, MATERIAL.EMPTY);
-                            this.set(p.bodyX, p.bodyY, MATERIAL.EMPTY);
-                            p.bodyX = nextBodyX;
-                            p.bodyY--;
-                            p.headX = nextHeadX;
-                            p.headY--;
-                            this.set(p.headX, p.headY, MATERIAL.HUMAN_HEAD);
-                            this.set(p.bodyX, p.bodyY, bodyMat);
-                        }
-                    }
-                } else {
-                    const canFall = this.isEmpty(p.bodyX, p.bodyY + 1);
-                    if (canFall) {
-                        this.set(p.headX, p.headY, MATERIAL.EMPTY);
-                        this.set(p.bodyX, p.bodyY, MATERIAL.EMPTY);
-                        p.headY++;
-                        p.bodyY++;
-                        this.set(p.headX, p.headY, MATERIAL.HUMAN_HEAD);
-                        this.set(p.bodyX, p.bodyY, bodyMat);
-                    } else if (p.jumpFramesLeft === 0) {
-                        let move = 0;
-                        if (this.keys.left) move = -1;
-                        if (this.keys.right) move = 1;
-                        if (move !== 0) {
-                            const nextBodyX = p.bodyX + move;
-                            const nextHeadX = p.headX + move;
-                            if (this.isEmpty(nextBodyX, p.bodyY) && this.isEmpty(nextHeadX, p.headY)) {
-                                this.set(p.headX, p.headY, MATERIAL.EMPTY);
-                                this.set(p.bodyX, p.bodyY, MATERIAL.EMPTY);
-                                p.headX = nextHeadX;
-                                p.bodyX = nextBodyX;
-                                this.set(p.headX, p.headY, MATERIAL.HUMAN_HEAD);
-                                this.set(p.bodyX, p.bodyY, bodyMat);
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Place block at cursor (survival build)
-            placeBlockAtCursor() {
-                if (!this.player) return;
-                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
-                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
-                if (!this.isEmpty(mx, my)) return;
-                const idx = this.getIndex(mx, my);
-                if (idx === -1) return;
-                if ((mx === this.player.headX && my === this.player.headY) ||
-                    (mx === this.player.bodyX && my === this.player.bodyY)) return;
-                this.set(mx, my, MATERIAL.CONCRETE);
-                this.humanBuiltBlocks[idx] = true;
-            }
-
             // Update humans - they move as connected entities
             updateHumans() {
                 for (let i = this.humans.length - 1; i >= 0; i--) {
@@ -633,10 +496,15 @@
                         }
                     }
                     
-                    // If acid touches human, convert to static red voxels
+                    // If acid touches human, convert to static red voxels (decay over time)
                     if (touchingAcid) {
+                        const headIdx = this.getIndex(human.headX, human.headY);
+                        const bodyIdx = this.getIndex(human.bodyX, human.bodyY);
                         this.set(human.headX, human.headY, MATERIAL.DEAD_HUMAN);
                         this.set(human.bodyX, human.bodyY, MATERIAL.DEAD_HUMAN);
+                        const now = Date.now();
+                        if (headIdx !== -1) this.particleAge[headIdx] = now;
+                        if (bodyIdx !== -1) this.particleAge[bodyIdx] = now;
                         human.alive = false;
                         continue;
                     }
@@ -683,9 +551,11 @@
                         const nextX = human.bodyX + human.direction;
                         const nextHeadX = human.headX + human.direction;
                         
-                        // Check what's ahead
-                        const canMoveBody = this.isEmpty(nextX, human.bodyY);
-                        const canMoveHead = this.isEmpty(nextHeadX, human.headY);
+                        // Check what's ahead (plants are passable - humans trample them)
+                        const nextBodyMat = this.get(nextX, human.bodyY);
+                        const nextHeadMat = this.get(nextHeadX, human.headY);
+                        const canMoveBody = this.isEmpty(nextX, human.bodyY) || nextBodyMat === MATERIAL.PLANT;
+                        const canMoveHead = this.isEmpty(nextHeadX, human.headY) || nextHeadMat === MATERIAL.PLANT;
                         const groundAhead = this.get(nextX, human.bodyY + 1);
                         const hasGround = groundAhead !== MATERIAL.EMPTY;
                         
@@ -817,6 +687,18 @@
                             // Normal walking - path is clear
                             human.justBuilt = false;
                             
+                            // Ecosystem: humans trample plants they walk on
+                            if (nextBodyMat === MATERIAL.PLANT) {
+                                const tidx = this.getIndex(nextX, human.bodyY);
+                                if (tidx !== -1) this.particleAge[tidx] = Date.now();
+                                this.set(nextX, human.bodyY, MATERIAL.DUST);
+                            }
+                            if (nextHeadMat === MATERIAL.PLANT) {
+                                const tidx = this.getIndex(nextHeadX, human.headY);
+                                if (tidx !== -1) this.particleAge[tidx] = Date.now();
+                                this.set(nextHeadX, human.headY, MATERIAL.DUST);
+                            }
+                            
                             // 3% chance to randomly change direction while walking (adds unpredictability)
                             if (Math.random() < 0.03) {
                                 human.direction *= -1;
@@ -837,16 +719,20 @@
                 }
             }
 
-            // Find nearest feces within range (returns [x,y] or null)
-            findNearestFeces(flyX, flyY, range) {
+            // Find nearest attractant for flies (feces, blood, honey, dead humans) within range
+            findNearestFlyAttractant(flyX, flyY, range) {
+                const attractants = [MATERIAL.FEECES, MATERIAL.BLOOD, MATERIAL.HONEY, MATERIAL.DEAD_HUMAN];
                 let nearest = null;
                 let nearestDist = range + 1;
                 for (let gy = Math.max(0, flyY - range); gy <= Math.min(GRID_HEIGHT - 1, flyY + range); gy++) {
                     for (let gx = Math.max(0, flyX - range); gx <= Math.min(GRID_WIDTH - 1, flyX + range); gx++) {
-                        if (this.get(gx, gy) === MATERIAL.FEECES) {
+                        const m = this.get(gx, gy);
+                        if (attractants.includes(m)) {
                             const dist = Math.sqrt((gx - flyX) ** 2 + (gy - flyY) ** 2);
-                            if (dist < nearestDist) {
-                                nearestDist = dist;
+                            // Feces is strongest attractant, then blood, honey, dead human
+                            const strength = m === MATERIAL.FEECES ? 1 : m === MATERIAL.BLOOD ? 1.2 : m === MATERIAL.HONEY ? 1.1 : 0.9;
+                            if (dist * strength < nearestDist) {
+                                nearestDist = dist * strength;
                                 nearest = [gx, gy];
                             }
                         }
@@ -882,13 +768,13 @@
                         continue;
                     }
 
-                    const feces = this.findNearestFeces(fly.x, fly.y, FEECES_ATTRACT_RANGE);
+                    const attractant = this.findNearestFlyAttractant(fly.x, fly.y, FEECES_ATTRACT_RANGE);
                     let moveX = 0, moveY = 0;
 
-                    if (feces) {
-                        // Move toward feces (flies buzz downward toward it)
-                        const dx = feces[0] - fly.x;
-                        const dy = feces[1] - fly.y;
+                    if (attractant) {
+                        // Move toward attractant (feces, blood, honey, dead human)
+                        const dx = attractant[0] - fly.x;
+                        const dy = attractant[1] - fly.y;
                         if (Math.abs(dx) > Math.abs(dy)) {
                             moveX = dx > 0 ? 1 : -1;
                         } else {
@@ -909,14 +795,27 @@
                         fly.y = newY;
                         this.set(fly.x, fly.y, MATERIAL.FLY);
                     }
+                    
+                    // Ecosystem: flies reproduce when buzzing near feces (eggs hatch)
+                    const nearFeces = this.get(fly.x-1, fly.y) === MATERIAL.FEECES || this.get(fly.x+1, fly.y) === MATERIAL.FEECES ||
+                                      this.get(fly.x, fly.y-1) === MATERIAL.FEECES || this.get(fly.x, fly.y+1) === MATERIAL.FEECES;
+                    if ((onAttractant || nearFeces) && Math.random() < 0.002 && this.flies.length < 80) {
+                        const spawnOffsets = [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,-1],[-1,1],[1,1]];
+                        for (const [ox, oy] of spawnOffsets) {
+                            const sx = fly.x + ox, sy = fly.y + oy;
+                            if (sx >= 0 && sx < GRID_WIDTH && sy >= 0 && sy < GRID_HEIGHT && this.isEmpty(sx, sy)) {
+                                this.set(sx, sy, MATERIAL.FLY);
+                                this.flies.push({ id: this.nextFlyId++, x: sx, y: sy, alive: true });
+                                break;
+                            }
+                        }
+                    }
                 }
             }
 
             // Physics simulation (cellular automata)
             simulate() {
-                if (this.gameMode === 'survival') {
-                    this.updatePlayer();
-                }
+                // Update humans first (they move as units)
                 this.updateHumans();
                 this.updateFlies();
                 
@@ -931,6 +830,16 @@
                         if (now - this.particleAge[i] > 2000) {
                             newGrid[i] = MATERIAL.EMPTY;
                             this.particleAge[i] = 0;
+                        }
+                    }
+                }
+                
+                // Ecosystem: dead humans decay to feces after 8 seconds (decomposition)
+                for (let i = 0; i < this.grid.length; i++) {
+                    if (this.grid[i] === MATERIAL.DEAD_HUMAN && this.particleAge[i] > 0) {
+                        if (now - this.particleAge[i] > 8000) {
+                            newGrid[i] = MATERIAL.FEECES;
+                            this.particleAge[i] = 0;  // Reset so feces doesn't inherit timer
                         }
                     }
                 }
@@ -976,12 +885,42 @@
 
                         let moved = false;
 
-                        // LAVA: Burns and melts weaker materials
+                        // WATER + LAVA = STEAM (ecosystem: elemental reaction)
+                        if (material === MATERIAL.LIQUID) {
+                            const lavaNeighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            for (const [nx, ny] of lavaNeighbors) {
+                                if (this.get(nx, ny) === MATERIAL.LAVA && Math.random() < 0.15) {
+                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.STONE; // Lava cools to stone
+                                    newGrid[idx] = MATERIAL.STEAM; // Water becomes steam
+                                    break;
+                                }
+                            }
+                            // Water evaporates near fire
+                            for (const [nx, ny] of lavaNeighbors) {
+                                if ((this.get(nx, ny) === MATERIAL.FIRE || this.get(nx, ny) === MATERIAL.LAVA) && Math.random() < 0.03) {
+                                    newGrid[idx] = MATERIAL.STEAM;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // LAVA: Burns and melts weaker materials, cools when surrounded by water
                         if (material === MATERIAL.LAVA) {
-                            // Lava destroys weaker materials (not metal or concrete)
                             const neighbors = [
                                 [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
                             ];
+                            
+                            // Cool to stone when touching lots of water/steam
+                            let coolNeighbors = 0;
+                            for (const [nx, ny] of neighbors) {
+                                const nm = this.get(nx, ny);
+                                if (nm === MATERIAL.LIQUID || nm === MATERIAL.STEAM) coolNeighbors++;
+                            }
+                            if (coolNeighbors >= 2 && Math.random() < 0.1) {
+                                newGrid[idx] = MATERIAL.STONE;
+                            }
                             
                             for (const [nx, ny] of neighbors) {
                                 const neighborMat = this.get(nx, ny);
@@ -1025,7 +964,9 @@
                                     // Slime and honey resist acid - don't erode
                                     // Humans touched by acid turn into unmoving red voxels
                                     if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY || neighborMat === MATERIAL.HUMAN_BODY_BUILDER) && Math.random() < 0.7) {
-                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.DEAD_HUMAN;
+                                        const deadIdx = this.getIndex(nx, ny);
+                                        newGrid[deadIdx] = MATERIAL.DEAD_HUMAN;
+                                        this.particleAge[deadIdx] = now;
                                     }
                                     // Everything else dissolves - no remains, instant vanish!
                                     else if (Math.random() < 0.7) {
@@ -1100,7 +1041,17 @@
                         }
 
                         if (material === MATERIAL.PLANT) {
-                            if (Math.random() < 0.008) {
+                            // Ecosystem: growth rate boosted by water (moisture) and feces (fertilizer)
+                            let growthRate = 0.008;
+                            const plantNeighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            for (const [nx, ny] of plantNeighbors) {
+                                const nm = this.get(nx, ny);
+                                if (nm === MATERIAL.LIQUID) growthRate *= 1.8;  // Water nourishes
+                                if (nm === MATERIAL.FEECES || nm === MATERIAL.BLOOD) growthRate *= 1.5;  // Fertilizer
+                            }
+                            if (Math.random() < growthRate) {
                                 const hasGroundBelow = !emptyIn(newGrid, x, y + 1);
                                 const growthChoices = [];
                                 
@@ -1205,7 +1156,6 @@
                             }
                         }
 
-                        // STEAM: Rises (handled in flow section with special logic)
                         // BLOOD: Acts like water but thicker
                         // SLIME: Very slow viscous liquid (handled in flow)
                         // SAND: Fast-falling particles (handled in flow)
@@ -1214,7 +1164,11 @@
                         if (props.flow) {
                             // STEAM, FIRE, and EMBER rise instead of fall
                             if (material === MATERIAL.STEAM || material === MATERIAL.FIRE || material === MATERIAL.EMBER) {
-                                if (emptyIn(newGrid, x, y - 1)) {
+                                // Ecosystem: steam condenses to water at top (water cycle)
+                                if (material === MATERIAL.STEAM && y < GRID_HEIGHT * 0.2 && Math.random() < 0.02) {
+                                    newGrid[idx] = MATERIAL.LIQUID;
+                                    moved = true;
+                                } else if (emptyIn(newGrid, x, y - 1)) {
                                     const targetIdx = this.getIndex(x, y - 1);
                                     newGrid[targetIdx] = material;
                                     newGrid[idx] = MATERIAL.EMPTY;
@@ -1424,10 +1378,6 @@
                             const material = this.get(x, y);
                             
                             if (material !== MATERIAL.EMPTY) {
-                                if (this.gameMode === 'survival' && this.player &&
-                                    ((x === this.player.headX && y === this.player.headY) ||
-                                     (x === this.player.bodyX && y === this.player.bodyY)))
-                                    continue;
                                 const destroyChance = 1.0 - (dist / radius) * 0.6;
                                     if (Math.random() < destroyChance) {
                                     const idx = this.getIndex(x, y);
@@ -1710,43 +1660,6 @@
             }
         }
 
-        // Mode switch and UI helpers
-        function setGameMode(mode) {
-            game.gameMode = mode;
-            document.getElementById('gameModeDisplay').textContent = mode === 'survival' ? 'Survival' : 'Sandbox';
-            const sandboxCtrls = document.getElementById('sandboxControls');
-            const survivalCtrls = document.getElementById('survivalControls');
-            if (mode === 'survival') {
-                sandboxCtrls.style.display = 'none';
-                survivalCtrls.style.display = 'block';
-                game.grid.fill(MATERIAL.EMPTY);
-                game.velocityX.fill(0);
-                game.velocityY.fill(0);
-                game.particleAge.fill(0);
-                game.humanBuiltBlocks.fill(false);
-                game.plantType.fill(0);
-                game.humans = [];
-                game.flies = [];
-                game.generateSurvivalWorld();
-                game.spawnPlayer();
-            } else {
-                sandboxCtrls.style.display = 'block';
-                survivalCtrls.style.display = 'none';
-                game.grid.fill(MATERIAL.EMPTY);
-                game.velocityX.fill(0);
-                game.velocityY.fill(0);
-                game.particleAge.fill(0);
-                game.humanBuiltBlocks.fill(false);
-                game.plantType.fill(0);
-                game.humans = [];
-                game.flies = [];
-                game.player = null;
-                game.generateBuildings();
-            }
-            game.countParticles();
-            game.initialParticles = game.particleCount;
-        }
-
         // Initialize game
         const game = new Game();
         game.generateBuildings();
@@ -1756,28 +1669,12 @@
 
         // Input handling
         window.addEventListener('keydown', (e) => {
-            if (game.gameMode === 'survival') {
-                if (e.key === 'ArrowLeft') { game.keys.left = true; e.preventDefault(); }
-                if (e.key === 'ArrowRight') { game.keys.right = true; e.preventDefault(); }
-                if (e.key === 'ArrowUp' || e.key === ' ') { game.keys.up = true; e.preventDefault(); }
-                if (e.key === 'e' || e.key === 'E') { game.placeBlockAtCursor(); e.preventDefault(); }
-                if (e.key === 'm' || e.key === 'M') { setGameMode('sandbox'); e.preventDefault(); }
-                if (e.key === 'r' || e.key === 'R') {
-                    game.grid.fill(MATERIAL.EMPTY);
-                    game.humanBuiltBlocks.fill(false);
-                    game.plantType.fill(0);
-                    game.generateSurvivalWorld();
-                    game.spawnPlayer();
-                    e.preventDefault();
-                }
-                return;
-            }
-            if (e.key === 'm' || e.key === 'M') { setGameMode('survival'); e.preventDefault(); return; }
+            // Rebuild
             if (e.key === 'r' || e.key === 'R') {
                 game.grid.fill(MATERIAL.EMPTY);
-                game.humanBuiltBlocks.fill(false);
-                game.plantType.fill(0);
-                game.humans = [];
+                game.humanBuiltBlocks.fill(false); // Clear sticky blocks
+                game.plantType.fill(0); // Clear plant colors
+                game.humans = []; // Clear all humans
                 game.nextHumanId = 0;
                 game.flies = [];
                 game.nextFlyId = 0;
@@ -1843,6 +1740,7 @@
             GRID_WIDTH = Math.floor(CONFIG.width / CONFIG.pixelSize);
             GRID_HEIGHT = Math.floor(CONFIG.height / CONFIG.pixelSize);
             
+            // FULL RESET: Clear everything and rebuild from scratch
             game._simOrder = null;
             game.grid = new Array(GRID_WIDTH * GRID_HEIGHT).fill(MATERIAL.EMPTY);
             game.velocityX = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
@@ -1852,17 +1750,13 @@
             game.plantType = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
             game.particleCount = 0;
             game.initialParticles = 0;
-            game.humans = [];
+            game.humans = []; // Clear all humans
             game.nextHumanId = 0;
             game.flies = [];
             game.nextFlyId = 0;
-            game.player = null;
-            if (game.gameMode === 'survival') {
-                game.generateSurvivalWorld();
-                game.spawnPlayer();
-            } else {
-                game.generateBuildings();
-            }
+            
+            // Generate new buildings
+            game.generateBuildings();
         });
 
         // Place amount slider (how many voxels when placing materials)
@@ -1926,14 +1820,7 @@
         });
 
         canvas.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            if (game.gameMode === 'survival') game.placeBlockAtCursor();
-        });
-
-        window.addEventListener('keyup', (e) => {
-            if (e.key === 'ArrowLeft') game.keys.left = false;
-            if (e.key === 'ArrowRight') game.keys.right = false;
-            if (e.key === 'ArrowUp' || e.key === ' ') game.keys.up = false;
+            e.preventDefault(); // Prevent right-click menu
         });
 
         // Continuous destruction while mouse held
