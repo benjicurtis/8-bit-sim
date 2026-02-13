@@ -238,7 +238,7 @@
             <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Solid</div>
             <div style="margin-top: 2px;"><span class="key">1</span> Concrete <span class="key">2</span> Dust <span class="key">4</span> Metal <span class="key">8</span> Snow <span class="key">E</span> Fire <span class="key">Y</span> Ice <span class="key">U</span> Sand <span class="key">O</span> Gravel</div>
             <div style="margin-top: 2px;"><span class="key">P</span> Wood <span class="key">G</span> Gunpowder <span class="key">J</span> Stone <span class="key">K</span> Ember <span class="key">F</span> Feces</div>
-            <div style="margin-top: 2px;"><span class="key">M</span> Lead Ball <span class="key">N</span> Glue Metal <span class="key">Z</span> Milk</div>
+            <div style="margin-top: 2px;"><span class="key">V</span> Lead Brick <span class="key">M</span> Lead Ball <span class="key">N</span> Glue Metal <span class="key">Z</span> Milk</div>
             <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Life</div>
             <div style="margin-top: 2px;"><span class="key">7</span> Human <span class="key">B</span> Builder <span class="key">T</span> Plant <span class="key">L</span> Flies <span class="key">X</span> Worm</div>
         </div>
@@ -307,7 +307,8 @@
             LEAD: 29,        // Heavy ball - sticks together, launched by gunpowder, kills humans on impact
             GLUE_METAL: 30,  // Sticky metal - adjacent blocks won't fall (like slime/honey)
             MILK: 31,        // White liquid - flows like water
-            WORM: 32         // Life form - 1 pink moving particle
+            WORM: 32,        // Life form - 1 pink moving particle
+            LEAD_BRICK: 33   // Like concrete but immune to lead ball destruction
         };
 
         // Material Properties
@@ -344,7 +345,8 @@
             [MATERIAL.LEAD]: { color: '#36454f', density: 12, strength: 6, flow: false, shadeBase: [54, 69, 79], isLead: true },
             [MATERIAL.GLUE_METAL]: { color: '#708090', density: 7, strength: 4, flow: false, shadeBase: [112, 128, 144], sticky: true },
             [MATERIAL.MILK]: { color: '#f5f5dc', density: 3, strength: 0, flow: true, shadeBase: [245, 245, 220] },
-            [MATERIAL.WORM]: { color: '#ff69b4', density: 0.3, strength: 0, flow: false, shadeBase: [255, 105, 180], isWorm: true }
+            [MATERIAL.WORM]: { color: '#ff69b4', density: 0.3, strength: 0, flow: false, shadeBase: [255, 105, 180], isWorm: true },
+            [MATERIAL.LEAD_BRICK]: { color: '#3d4f5c', density: 9, strength: 6, flow: false, shadeBase: [61, 79, 92] }
         };
 
         // Game State
@@ -895,6 +897,12 @@
                         ball.vy *= -1.2;
                         continue;
                     }
+                    const hitsLeadBrick = newVoxels.some(({ x, y }) => this.get(x, y) === MATERIAL.LEAD_BRICK);
+                    if (hitsLeadBrick) {
+                        ball.vx *= -1.2;
+                        ball.vy *= -1.2;
+                        continue;
+                    }
                     const hitsHuman = newVoxels.some(({ x, y }) => {
                         const m = this.get(x, y);
                         return m === MATERIAL.HUMAN_HEAD || m === MATERIAL.HUMAN_BODY || m === MATERIAL.HUMAN_BODY_BUILDER;
@@ -1065,7 +1073,7 @@
                                     let corrodeChance = 0.7;
                                     if (neighborMat === MATERIAL.STONE) corrodeChance = 0.06;
                                     else if (neighborMat === MATERIAL.METAL) corrodeChance = 0.12;
-                                    else if (neighborMat === MATERIAL.CONCRETE) corrodeChance = 0.45;
+                                    else if (neighborMat === MATERIAL.CONCRETE || neighborMat === MATERIAL.LEAD_BRICK) corrodeChance = 0.45;
                                     if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY || neighborMat === MATERIAL.HUMAN_BODY_BUILDER) && Math.random() < 0.7) {
                                         newGrid[this.getIndex(nx, ny)] = MATERIAL.DEAD_HUMAN;
                                     }
@@ -1948,6 +1956,7 @@
             if (e.key === 'g' || e.key === 'G') game.spawnMaterial(MATERIAL.GUNPOWDER);
             if (e.key === 'j' || e.key === 'J') game.spawnMaterial(MATERIAL.STONE);
             if (e.key === 'k' || e.key === 'K') game.spawnMaterial(MATERIAL.EMBER);
+            if (e.key === 'v' || e.key === 'V') game.spawnMaterial(MATERIAL.LEAD_BRICK);
             if (e.key === 'f' || e.key === 'F') game.spawnFeces();
             if (e.key === 'l' || e.key === 'L') game.spawnFly();
             if (e.key === 'm' || e.key === 'M') game.spawnLeadBall();
