@@ -828,30 +828,50 @@
                                 [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
                             ];
                             
+                            // WATER + LAVA = Stone (molten rock cools when quenched)
+                            let lavaQuenched = false;
                             for (const [nx, ny] of neighbors) {
-                                const neighborMat = this.get(nx, ny);
-                                // Burns dust, glass, humans and converts them to lava or dust
-                                if ((neighborMat === MATERIAL.DUST || neighborMat === MATERIAL.GLASS || neighborMat === MATERIAL.WOOD) && Math.random() < 0.2) {
-                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.LAVA;
-                                } else if (neighborMat === MATERIAL.GUNPOWDER) {
-                                    // LAVA + GUNPOWDER = GIANT EXPLOSION
-                                    const explosionRadius = 8;
-                                    for (let ex = nx - explosionRadius; ex <= nx + explosionRadius; ex++) {
-                                        for (let ey = ny - explosionRadius; ey <= ny + explosionRadius; ey++) {
-                                            const dist = Math.sqrt((ex - nx) ** 2 + (ey - ny) ** 2);
-                                            if (dist <= explosionRadius && this.get(ex, ey) === MATERIAL.GUNPOWDER) {
-                                                newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
-                                            }
-                                            if (dist <= explosionRadius * 0.6 && (this.get(ex, ey) === MATERIAL.DUST || this.get(ex, ey) === MATERIAL.WOOD || this.get(ex, ey) === MATERIAL.PLANT)) {
-                                                if (Math.random() < 0.7) newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
+                                if (this.get(nx, ny) === MATERIAL.LIQUID) {
+                                    newGrid[idx] = MATERIAL.STONE;
+                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.STEAM;
+                                    lavaQuenched = true;
+                                    break;
+                                }
+                            }
+                            if (!lavaQuenched) {
+                                for (const [nx, ny] of neighbors) {
+                                    const neighborMat = this.get(nx, ny);
+                                    // SAND + LAVA = Glass (silica melts and forms glass)
+                                    if (neighborMat === MATERIAL.SAND && Math.random() < 0.25) {
+                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.GLASS;
+                                    }
+                                    // METAL + LAVA: Metal melts (high heat melts metals)
+                                    else if (neighborMat === MATERIAL.METAL && Math.random() < 0.08) {
+                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.LAVA;
+                                    }
+                                    // Burns dust, glass, humans and converts them to lava or dust
+                                    else if ((neighborMat === MATERIAL.DUST || neighborMat === MATERIAL.GLASS || neighborMat === MATERIAL.WOOD) && Math.random() < 0.2) {
+                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.LAVA;
+                                    } else if (neighborMat === MATERIAL.GUNPOWDER) {
+                                        // LAVA + GUNPOWDER = GIANT EXPLOSION
+                                        const explosionRadius = 8;
+                                        for (let ex = nx - explosionRadius; ex <= nx + explosionRadius; ex++) {
+                                            for (let ey = ny - explosionRadius; ey <= ny + explosionRadius; ey++) {
+                                                const dist = Math.sqrt((ex - nx) ** 2 + (ey - ny) ** 2);
+                                                if (dist <= explosionRadius && this.get(ex, ey) === MATERIAL.GUNPOWDER) {
+                                                    newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
+                                                }
+                                                if (dist <= explosionRadius * 0.6 && (this.get(ex, ey) === MATERIAL.DUST || this.get(ex, ey) === MATERIAL.WOOD || this.get(ex, ey) === MATERIAL.PLANT)) {
+                                                    if (Math.random() < 0.7) newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
+                                                }
                                             }
                                         }
+                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
+                                        break; // One explosion per lava voxel
+                                    } else if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY || neighborMat === MATERIAL.HUMAN_BODY_BUILDER) && Math.random() < 0.15) {
+                                        // Humans burn to dust
+                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.DUST;
                                     }
-                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
-                                    break; // One explosion per lava voxel
-                                } else if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY || neighborMat === MATERIAL.HUMAN_BODY_BUILDER) && Math.random() < 0.15) {
-                                    // Humans burn to dust
-                                    newGrid[this.getIndex(nx, ny)] = MATERIAL.DUST;
                                 }
                             }
                         }
@@ -867,14 +887,15 @@
                             for (const [nx, ny] of neighbors) {
                                 const neighborMat = this.get(nx, ny);
                                 if (neighborMat !== MATERIAL.EMPTY && neighborMat !== MATERIAL.ACID && neighborMat !== MATERIAL.DEAD_HUMAN && neighborMat !== MATERIAL.SLIME && neighborMat !== MATERIAL.HONEY) {
-                                    // Slime and honey resist acid - don't erode
-                                    // Humans touched by acid turn into unmoving red voxels
+                                    let corrodeChance = 0.7;
+                                    if (neighborMat === MATERIAL.STONE) corrodeChance = 0.06;
+                                    else if (neighborMat === MATERIAL.METAL) corrodeChance = 0.12;
+                                    else if (neighborMat === MATERIAL.CONCRETE) corrodeChance = 0.45;
                                     if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY || neighborMat === MATERIAL.HUMAN_BODY_BUILDER) && Math.random() < 0.7) {
                                         newGrid[this.getIndex(nx, ny)] = MATERIAL.DEAD_HUMAN;
                                     }
-                                    // Everything else dissolves - no remains, instant vanish!
-                                    else if (Math.random() < 0.7) {
-                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.EMPTY;
+                                    else if (Math.random() < corrodeChance) {
+                                        newGrid[this.getIndex(nx, ny)] = neighborMat === MATERIAL.METAL ? MATERIAL.DUST : MATERIAL.EMPTY;
                                     }
                                 }
                             }
@@ -897,55 +918,75 @@
                                 [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
                             ];
                             
+                            // WATER extinguishes FIRE - produces steam
+                            let fireExtinguished = false;
                             for (const [nx, ny] of neighbors) {
-                                const neighborMat = this.get(nx, ny);
-                                const nIdx = this.getIndex(nx, ny);
-                                
-                                // GUNPOWDER + FIRE = GIANT EXPLOSION
-                                if (neighborMat === MATERIAL.GUNPOWDER) {
-                                    const explosionRadius = 8;
-                                    for (let ex = nx - explosionRadius; ex <= nx + explosionRadius; ex++) {
-                                        for (let ey = ny - explosionRadius; ey <= ny + explosionRadius; ey++) {
-                                            const dist = Math.sqrt((ex - nx) ** 2 + (ey - ny) ** 2);
-                                            if (dist <= explosionRadius && this.get(ex, ey) === MATERIAL.GUNPOWDER) {
-                                                newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
-                                            }
-                                            if (dist <= explosionRadius * 0.6 && (this.get(ex, ey) === MATERIAL.DUST || this.get(ex, ey) === MATERIAL.WOOD || this.get(ex, ey) === MATERIAL.PLANT)) {
-                                                if (Math.random() < 0.7) newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
+                                if (this.get(nx, ny) === MATERIAL.LIQUID) {
+                                    newGrid[idx] = MATERIAL.STEAM;
+                                    fireExtinguished = true;
+                                    break;
+                                }
+                            }
+                            if (!fireExtinguished) {
+                                for (const [nx, ny] of neighbors) {
+                                    const neighborMat = this.get(nx, ny);
+                                    const nIdx = this.getIndex(nx, ny);
+                                    
+                                    // GUNPOWDER + FIRE = GIANT EXPLOSION
+                                    if (neighborMat === MATERIAL.GUNPOWDER) {
+                                        const explosionRadius = 8;
+                                        for (let ex = nx - explosionRadius; ex <= nx + explosionRadius; ex++) {
+                                            for (let ey = ny - explosionRadius; ey <= ny + explosionRadius; ey++) {
+                                                const dist = Math.sqrt((ex - nx) ** 2 + (ey - ny) ** 2);
+                                                if (dist <= explosionRadius && this.get(ex, ey) === MATERIAL.GUNPOWDER) {
+                                                    newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
+                                                }
+                                                if (dist <= explosionRadius * 0.6 && (this.get(ex, ey) === MATERIAL.DUST || this.get(ex, ey) === MATERIAL.WOOD || this.get(ex, ey) === MATERIAL.PLANT)) {
+                                                    if (Math.random() < 0.7) newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
+                                                }
                                             }
                                         }
-                                    }
-                                    newGrid[nIdx] = MATERIAL.FIRE;
-                                    break; // One explosion per fire voxel
-                                } else if (neighborMat === MATERIAL.OIL && Math.random() < 0.3) {
-                                    newGrid[nIdx] = MATERIAL.FIRE;
-                                } else if (neighborMat === MATERIAL.PLANT && Math.random() < 0.2) {
-                                    newGrid[nIdx] = MATERIAL.FIRE;
-                                } else if (neighborMat === MATERIAL.WOOD && Math.random() < 0.25) {
-                                    newGrid[nIdx] = MATERIAL.FIRE;
-                                } else if (neighborMat === MATERIAL.ICE && Math.random() < 0.1) {
-                                    newGrid[nIdx] = MATERIAL.LIQUID;
-                                }
-                            }
-                            
-                            if (Math.random() < 0.008) {
-                                const emberDirs = [[x, y - 1], [x - 1, y - 1], [x + 1, y - 1], [x - 1, y], [x + 1, y]];
-                                for (const [ex, ey] of emberDirs) {
-                                    if (emptyIn(newGrid, ex, ey) && Math.random() < 0.5) {
-                                        newGrid[this.getIndex(ex, ey)] = MATERIAL.EMBER;
-                                        break;
+                                        newGrid[nIdx] = MATERIAL.FIRE;
+                                        break; // One explosion per fire voxel
+                                    } else if (neighborMat === MATERIAL.OIL && Math.random() < 0.3) {
+                                        newGrid[nIdx] = MATERIAL.FIRE;
+                                    } else if (neighborMat === MATERIAL.BLOOD && Math.random() < 0.2) {
+                                        newGrid[nIdx] = MATERIAL.FIRE;
+                                    } else if (neighborMat === MATERIAL.FEECES && Math.random() < 0.08) {
+                                        newGrid[nIdx] = MATERIAL.FIRE;
+                                    } else if (neighborMat === MATERIAL.PLANT && Math.random() < 0.2) {
+                                        newGrid[nIdx] = MATERIAL.FIRE;
+                                    } else if (neighborMat === MATERIAL.WOOD) {
+                                        const woodWet = this.get(nx, ny - 1) === MATERIAL.LIQUID || this.get(nx, ny + 1) === MATERIAL.LIQUID ||
+                                            this.get(nx - 1, ny) === MATERIAL.LIQUID || this.get(nx + 1, ny) === MATERIAL.LIQUID;
+                                        if (Math.random() < (woodWet ? 0.06 : 0.25)) newGrid[nIdx] = MATERIAL.FIRE;
+                                    } else if (neighborMat === MATERIAL.ICE && Math.random() < 0.1) {
+                                        newGrid[nIdx] = MATERIAL.LIQUID;
                                     }
                                 }
-                            }
-                            
-                            // Fire dies out randomly
-                            if (Math.random() < 0.05) {
-                                newGrid[idx] = MATERIAL.STEAM;
+                                
+                                if (Math.random() < 0.008) {
+                                    const emberDirs = [[x, y - 1], [x - 1, y - 1], [x + 1, y - 1], [x - 1, y], [x + 1, y]];
+                                    for (const [ex, ey] of emberDirs) {
+                                        if (emptyIn(newGrid, ex, ey) && Math.random() < 0.5) {
+                                            newGrid[this.getIndex(ex, ey)] = MATERIAL.EMBER;
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                // Fire dies out randomly
+                                if (Math.random() < 0.05) {
+                                    newGrid[idx] = MATERIAL.STEAM;
+                                }
                             }
                         }
 
                         if (material === MATERIAL.PLANT) {
-                            if (Math.random() < 0.008) {
+                            const hasWater = this.get(x, y - 1) === MATERIAL.LIQUID || this.get(x, y + 1) === MATERIAL.LIQUID ||
+                                this.get(x - 1, y) === MATERIAL.LIQUID || this.get(x + 1, y) === MATERIAL.LIQUID;
+                            const growthChance = hasWater ? 0.014 : 0.008;
+                            if (Math.random() < growthChance) {
                                 const hasGroundBelow = !emptyIn(newGrid, x, y + 1);
                                 const growthChoices = [];
                                 
@@ -1035,6 +1076,34 @@
                             }
                         }
 
+                        // GUNPOWDER + WATER: Becomes inert (wet gunpowder doesn't explode)
+                        if (material === MATERIAL.GUNPOWDER) {
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            for (const [nx, ny] of neighbors) {
+                                if (this.get(nx, ny) === MATERIAL.LIQUID) {
+                                    newGrid[idx] = MATERIAL.DUST;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // WATER: Freezes when surrounded by ice/snow (cold transfers)
+                        if (material === MATERIAL.LIQUID) {
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            let coldCount = 0;
+                            for (const [nx, ny] of neighbors) {
+                                const n = this.get(nx, ny);
+                                if (n === MATERIAL.ICE || n === MATERIAL.SNOW) coldCount++;
+                            }
+                            if (coldCount >= 2 && Math.random() < 0.08) {
+                                newGrid[idx] = MATERIAL.ICE;
+                            }
+                        }
+
                         // OIL: Ignites near fire
                         if (material === MATERIAL.OIL) {
                             const neighbors = [
@@ -1047,6 +1116,25 @@
                                     newGrid[idx] = MATERIAL.FIRE; // Oil catches fire!
                                     break;
                                 }
+                            }
+                        }
+
+                        // STEAM: Condenses to water when near cold (ice, snow) or at top of screen
+                        if (material === MATERIAL.STEAM) {
+                            const neighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
+                            ];
+                            const atTop = y < GRID_HEIGHT * 0.1;
+                            let nearCold = false;
+                            for (const [nx, ny] of neighbors) {
+                                const n = this.get(nx, ny);
+                                if (n === MATERIAL.ICE || n === MATERIAL.SNOW) {
+                                    nearCold = true;
+                                    break;
+                                }
+                            }
+                            if ((nearCold || atTop) && Math.random() < 0.15) {
+                                newGrid[idx] = MATERIAL.LIQUID;
                             }
                         }
 
@@ -1244,8 +1332,30 @@
                         if (!moved) {
                             newVelY[idx] = 0;
                             newVelX[idx] = 0;
+                    }
+                }
+                // Density-based liquid layering: swap vertical pairs where heavier is above lighter
+                for (let py = 0; py < GRID_HEIGHT - 1; py++) {
+                    for (let px = 0; px < GRID_WIDTH; px++) {
+                        const uIdx = this.getIndex(px, py);
+                        const dIdx = this.getIndex(px, py + 1);
+                        if (uIdx === -1 || dIdx === -1) continue;
+                        const upper = newGrid[uIdx];
+                        const lower = newGrid[dIdx];
+                        const upProps = MATERIAL_PROPS[upper];
+                        const loProps = MATERIAL_PROPS[lower];
+                        if (upper !== MATERIAL.EMPTY && lower !== MATERIAL.EMPTY &&
+                            upProps && upProps.flow && loProps && loProps.flow &&
+                            !upProps.rises && !loProps.rises &&
+                            (upProps.density || 0) > (loProps.density || 0) && Math.random() < 0.4) {
+                            newGrid[uIdx] = lower;
+                            newGrid[dIdx] = upper;
+                            const vx = newVelX[uIdx], vy = newVelY[uIdx];
+                            newVelX[uIdx] = newVelX[dIdx]; newVelY[uIdx] = newVelY[dIdx];
+                            newVelX[dIdx] = vx; newVelY[dIdx] = vy;
                         }
                     }
+                }
                 this.grid = newGrid;
                 this.velocityX = newVelX;
                 this.velocityY = newVelY;
