@@ -238,7 +238,7 @@
             <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Solid</div>
             <div style="margin-top: 2px;"><span class="key">1</span> Concrete <span class="key">2</span> Dust <span class="key">4</span> Metal <span class="key">8</span> Snow <span class="key">E</span> Fire <span class="key">Y</span> Ice <span class="key">U</span> Sand <span class="key">O</span> Gravel</div>
             <div style="margin-top: 2px;"><span class="key">P</span> Wood <span class="key">G</span> Gunpowder <span class="key">J</span> Stone <span class="key">K</span> Ember <span class="key">F</span> Feces</div>
-            <div style="margin-top: 2px;"><span class="key">V</span> Lead Brick <span class="key">M</span> Lead Ball <span class="key">N</span> Glue Metal <span class="key">Z</span> Milk</div>
+            <div style="margin-top: 2px;"><span class="key">V</span> Lead Brick <span class="key">M</span> Lead Ball <span class="key">N</span> Glue Metal <span class="key">A</span> Pellets <span class="key">S</span> Fuse <span class="key">.</span> Rubber <span class="key">Z</span> Milk</div>
             <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Life</div>
             <div style="margin-top: 2px;"><span class="key">7</span> Human <span class="key">B</span> Builder <span class="key">T</span> Plant <span class="key">L</span> Flies <span class="key">X</span> Worm <span class="key">C</span> Bacteria</div>
         </div>
@@ -260,7 +260,7 @@
             width: 1280,
             height: 720,
             pixelSize: 3, // Size of each voxel particle in mm (1-8mm)
-            gravity: 1.0,
+            gravity: 0.5,
             destroyRadius: 25,
             spawnRadius: 20 // How many voxels placed when spawning (radius of placement circle)
         };
@@ -310,7 +310,10 @@
             WORM: 32,        // Life form - 1 pink moving particle
             LEAD_BRICK: 33,  // Like concrete but immune to lead ball destruction
             BACTERIA: 34,    // Life form - reproduces near nutrients, dies from heat/acid
-            MERCURY: 35      // Dense liquid metal - sinks through other liquids, toxic
+            MERCURY: 35,     // Dense liquid metal - sinks through other liquids, toxic
+            PELLET: 36,      // Light shot - small, launched in spread for shotgun contraptions
+            FUSE: 37,        // Burnable solid - carries fire along its length for chain ignition
+            RUBBER: 38       // Bouncy block - deflects lead and pellets
         };
 
         // Material Properties
@@ -350,7 +353,10 @@
             [MATERIAL.WORM]: { color: '#ff69b4', density: 0.3, strength: 0, flow: false, shadeBase: [255, 105, 180], isWorm: true },
             [MATERIAL.LEAD_BRICK]: { color: '#3d4f5c', density: 9, strength: 6, flow: false, shadeBase: [61, 79, 92] },
             [MATERIAL.BACTERIA]: { color: '#7cfc00', density: 1, strength: 0, flow: false, shadeBase: [124, 252, 0], grows: true },
-            [MATERIAL.MERCURY]: { color: '#b8b8b8', density: 14, strength: 0, flow: true, shadeBase: [184, 184, 184], toxic: true }
+            [MATERIAL.MERCURY]: { color: '#b8b8b8', density: 14, strength: 0, flow: true, shadeBase: [184, 184, 184], toxic: true },
+            [MATERIAL.PELLET]: { color: '#8b7355', density: 4, strength: 2, flow: false, shadeBase: [139, 115, 85], isPellet: true },
+            [MATERIAL.FUSE]: { color: '#4a3728', density: 2, strength: 1, flow: false, shadeBase: [74, 55, 40], flammable: true, isFuse: true },
+            [MATERIAL.RUBBER]: { color: '#2d2d2d', density: 3, strength: 3, flow: false, shadeBase: [45, 45, 50], bouncy: true }
         };
 
         // Game State
@@ -374,9 +380,10 @@
                 this.nextFlyId = 0;
                 this.leadBalls = []; // Track lead balls (connected voxel clusters)
                 this.nextLeadBallId = 0;
+                this.pelletBalls = []; // Track pellet shots (small projectiles, spread launch)
+                this.nextPelletId = 0;
                 this.worms = []; // Track worm entities (1 pink particle each)
                 this.nextWormId = 0;
-                this.screenShake = 0; // For satisfying impact feedback
             }
 
             // Reinitialize grid when voxel size changes
@@ -394,6 +401,8 @@
                 this.nextFlyId = 0;
                 this.leadBalls = [];
                 this.nextLeadBallId = 0;
+                this.pelletBalls = [];
+                this.nextPelletId = 0;
                 this.worms = [];
                 this.nextWormId = 0;
                 this.generateBuildings();
@@ -533,13 +542,19 @@
                     // Apply gravity
                     human.vy += CONFIG.gravity;
                     
-                    // Check if can fall
-                    const canFall = this.isEmpty(human.bodyX, human.bodyY + 1);
+                    // Check if can fall (sink in water and acid too)
+                    const below = this.get(human.bodyX, human.bodyY + 1);
+                    const canFall = below === MATERIAL.EMPTY || below === MATERIAL.LIQUID || below === MATERIAL.ACID;
                     
                     if (canFall && human.vy > 0) {
-                        // Move both voxels down together (falling)
+                        // Move both voxels down together (falling/sinking)
                         const bodyMat = human.isBuilder ? MATERIAL.HUMAN_BODY_BUILDER : MATERIAL.HUMAN_BODY;
-                        this.set(human.headX, human.headY, MATERIAL.EMPTY);
+                        // When sinking into liquid/acid, displace it upward to where head was
+                        if (below === MATERIAL.LIQUID || below === MATERIAL.ACID) {
+                            this.set(human.headX, human.headY, below); // Liquid rises to fill head space
+                        } else {
+                            this.set(human.headX, human.headY, MATERIAL.EMPTY);
+                        }
                         this.set(human.bodyX, human.bodyY, MATERIAL.EMPTY);
                         
                         human.headY += 1;
@@ -548,8 +563,7 @@
                         this.set(human.headX, human.headY, MATERIAL.HUMAN_HEAD);
                         this.set(human.bodyX, human.bodyY, bodyMat);
                     } else {
-                        // On ground - satisfying thud when landing from a fall
-                        if (human.vy > 3) this.screenShake = Math.min(12, this.screenShake + human.vy);
+                        // On ground - Builder AI behavior
                         human.vy = 0;
                         
                         // Try to walk in current direction
@@ -836,6 +850,23 @@
                 return voxels;
             }
 
+            // Launch pellets within explosion radius - SPREAD pattern (shotgun style)
+            launchPelletsNear(ex, ey, radius) {
+                for (const ball of this.pelletBalls) {
+                    const dist = Math.sqrt((ball.cx - ex) ** 2 + (ball.cy - ey) ** 2);
+                    if (dist <= radius) {
+                        const dx = ball.cx - ex, dy = ball.cy - ey;
+                        const mag = Math.sqrt(dx * dx + dy * dy) || 1;
+                        const baseForce = 5 + (radius - dist) * 0.6;
+                        const spread = (Math.random() - 0.5) * 0.8;
+                        const angle = Math.atan2(dy, dx) + spread;
+                        const force = baseForce * (0.8 + Math.random() * 0.4);
+                        ball.vx += Math.cos(angle) * force;
+                        ball.vy += Math.sin(angle) * force;
+                    }
+                }
+            }
+
             // Launch lead balls within explosion radius (gunpowder explosion)
             launchLeadBallsNear(ex, ey, radius) {
                 for (const ball of this.leadBalls) {
@@ -894,23 +925,27 @@
                         return m === MATERIAL.SLIME || m === MATERIAL.HONEY;
                     });
                     if (hitsSlimeOrHoney) {
-                        if (speed > 3) this.screenShake = Math.min(15, this.screenShake + speed);
                         ball.vx *= -1.35;
                         ball.vy *= -1.35;
                         continue;
                     }
                     const hitsGlueMetal = newVoxels.some(({ x, y }) => this.get(x, y) === MATERIAL.GLUE_METAL);
                     if (hitsGlueMetal) {
-                        if (speed > 3) this.screenShake = Math.min(15, this.screenShake + speed);
                         ball.vx = 0;
                         ball.vy = 0;
                         continue;
                     }
                     const hitsLeadBrick = newVoxels.some(({ x, y }) => this.get(x, y) === MATERIAL.LEAD_BRICK);
                     if (hitsLeadBrick) {
-                        if (speed > 3) this.screenShake = Math.min(15, this.screenShake + speed);
                         ball.vx = 0;
                         ball.vy = 0;
+                        continue;
+                    }
+                    const hitsRubber = newVoxels.some(({ x, y }) => this.get(x, y) === MATERIAL.RUBBER);
+                    if (hitsRubber) {
+                        if (speed > 2) this.screenShake = Math.min(12, this.screenShake + speed * 0.8);
+                        ball.vx *= -1.5;
+                        ball.vy *= -1.5;
                         continue;
                     }
                     const hitsHuman = newVoxels.some(({ x, y }) => {
@@ -918,7 +953,6 @@
                         return m === MATERIAL.HUMAN_HEAD || m === MATERIAL.HUMAN_BODY || m === MATERIAL.HUMAN_BODY_BUILDER;
                     });
 
-                    if (speed > 3) this.screenShake = Math.min(15, this.screenShake + speed); // Crash feedback
                     if (hitsHuman && speed > 2) {
                         for (const h of this.humans) {
                             if (!h.alive) continue;
@@ -944,6 +978,83 @@
                 }
             }
 
+            // Update pellets - single-voxel projectiles, lighter than lead, bounce off rubber
+            updatePellets() {
+                for (let i = this.pelletBalls.length - 1; i >= 0; i--) {
+                    const ball = this.pelletBalls[i];
+                    const px = ball.cx, py = ball.cy;
+                    if (this.get(px, py) !== MATERIAL.PELLET) {
+                        this.pelletBalls.splice(i, 1);
+                        continue;
+                    }
+                    ball.vy += CONFIG.gravity * 1.2;
+                    ball.vx *= 0.98;
+                    ball.vy *= 0.98;
+                    const moveX = Math.round(ball.vx);
+                    const moveY = Math.round(ball.vy);
+                    if (moveX === 0 && moveY === 0) continue;
+                    const newX = px + moveX, newY = py + moveY;
+                    const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+                    const targetMat = this.get(newX, newY);
+                    const hitsGunpowder = speed > 2 && targetMat === MATERIAL.GUNPOWDER;
+                    if (hitsGunpowder) {
+                        this.set(newX, newY, MATERIAL.FIRE);
+                        ball.vx *= -0.3;
+                        ball.vy *= -0.3;
+                        continue;
+                    }
+                    const hitsSlimeOrHoney = targetMat === MATERIAL.SLIME || targetMat === MATERIAL.HONEY;
+                    if (hitsSlimeOrHoney) {
+                        if (speed > 3) this.screenShake = Math.min(12, this.screenShake + speed * 0.8);
+                        ball.vx *= -1.2;
+                        ball.vy *= -1.2;
+                        continue;
+                    }
+                    const hitsGlueMetal = targetMat === MATERIAL.GLUE_METAL;
+                    if (hitsGlueMetal) {
+                        ball.vx = 0;
+                        ball.vy = 0;
+                        continue;
+                    }
+                    const hitsLeadBrick = targetMat === MATERIAL.LEAD_BRICK;
+                    if (hitsLeadBrick) {
+                        ball.vx = 0;
+                        ball.vy = 0;
+                        continue;
+                    }
+                    const hitsRubber = targetMat === MATERIAL.RUBBER;
+                    if (hitsRubber) {
+                        if (speed > 2) this.screenShake = Math.min(10, this.screenShake + speed * 0.6);
+                        ball.vx *= -1.6;
+                        ball.vy *= -1.6;
+                        continue;
+                    }
+                    const hitsHuman = targetMat === MATERIAL.HUMAN_HEAD || targetMat === MATERIAL.HUMAN_BODY || targetMat === MATERIAL.HUMAN_BODY_BUILDER;
+                    if (hitsHuman && speed > 2) {
+                        for (const h of this.humans) {
+                            if (!h.alive) continue;
+                            if ((newX === h.headX && newY === h.headY) || (newX === h.bodyX && newY === h.bodyY)) {
+                                this.set(h.headX, h.headY, MATERIAL.DEAD_HUMAN);
+                                this.set(h.bodyX, h.bodyY, MATERIAL.DEAD_HUMAN);
+                                h.alive = false;
+                            }
+                        }
+                        ball.vx *= 0.5;
+                        ball.vy *= 0.5;
+                    }
+                    if (targetMat !== MATERIAL.EMPTY && !hitsHuman) {
+                        this.set(px, py, MATERIAL.DUST);
+                        this.pelletBalls.splice(i, 1);
+                        continue;
+                    }
+                    this.set(px, py, MATERIAL.EMPTY);
+                    if (newX >= 0 && newX < GRID_WIDTH && newY >= 0 && newY < GRID_HEIGHT)
+                        this.set(newX, newY, MATERIAL.PELLET);
+                    ball.cx = newX;
+                    ball.cy = newY;
+                }
+            }
+
             // Physics simulation (cellular automata)
             simulate() {
                 // Update humans first (they move as units)
@@ -951,6 +1062,7 @@
                 this.updateFlies();
                 this.updateWorms();
                 this.updateLeadBalls();
+                this.updatePellets();
                 
                 const newGrid = [...this.grid];
                 const newVelX = [...this.velocityX];
@@ -997,6 +1109,9 @@
                         
                         // Skip lead - handled as connected ball entities
                         if (material === MATERIAL.LEAD) continue;
+                        
+                        // Skip pellets - handled as projectile entities
+                        if (material === MATERIAL.PELLET) continue;
                         
                         // Skip worms - handled as life-form entities
                         if (material === MATERIAL.WORM) continue;
@@ -1045,6 +1160,8 @@
                                     // Burns dust, glass, humans and converts them to lava or dust
                                     else if ((neighborMat === MATERIAL.DUST || neighborMat === MATERIAL.GLASS || neighborMat === MATERIAL.WOOD) && Math.random() < 0.2) {
                                         newGrid[this.getIndex(nx, ny)] = MATERIAL.LAVA;
+                                    } else if (neighborMat === MATERIAL.FUSE && Math.random() < 0.95) {
+                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
                                     } else if (neighborMat === MATERIAL.GUNPOWDER) {
                                         // LAVA + GUNPOWDER = GIANT EXPLOSION
                                         const explosionRadius = 8;
@@ -1061,6 +1178,7 @@
                                         }
                                         newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
                                         this.launchLeadBallsNear(nx, ny, explosionRadius);
+                                        this.launchPelletsNear(nx, ny, explosionRadius);
                                         break; // One explosion per lava voxel
                                     } else if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY || neighborMat === MATERIAL.HUMAN_BODY_BUILDER) && Math.random() < 0.15) {
                                         // Humans burn to dust
@@ -1142,7 +1260,10 @@
                                         }
                                         newGrid[nIdx] = MATERIAL.FIRE;
                                         this.launchLeadBallsNear(nx, ny, explosionRadius);
+                                        this.launchPelletsNear(nx, ny, explosionRadius);
                                         break; // One explosion per fire voxel
+                                    } else if (neighborMat === MATERIAL.FUSE) {
+                                        if (Math.random() < 0.92) newGrid[nIdx] = MATERIAL.FIRE;
                                     } else if (neighborMat === MATERIAL.OIL && Math.random() < 0.3) {
                                         newGrid[nIdx] = MATERIAL.FIRE;
                                     } else if (neighborMat === MATERIAL.BLOOD && Math.random() < 0.2) {
@@ -1566,33 +1687,6 @@
                         }
 
                         if (!moved) {
-                            // Splash/crash when landing with speed - satisfying impact!
-                            const blockBelow = !emptyIn(newGrid, x, y + 1);
-                            const fallSpeed = newVY;
-                            if (blockBelow && fallSpeed > 2 && material !== MATERIAL.STEAM && material !== MATERIAL.FIRE && material !== MATERIAL.EMBER) {
-                                const splashCount = Math.min(5, Math.floor(fallSpeed * 1.2));
-                                const splashSpots = [[x, y - 1], [x - 1, y], [x + 1, y], [x - 1, y - 1], [x + 1, y - 1], [x - 2, y], [x + 2, y]];
-                                let spawned = 0;
-                                const splashMat = (material === MATERIAL.LIQUID || material === MATERIAL.LAVA || material === MATERIAL.ACID || 
-                                    material === MATERIAL.OIL || material === MATERIAL.BLOOD || material === MATERIAL.MILK || material === MATERIAL.MERCURY) ? material : MATERIAL.DUST;
-                                const speedScale = Math.min(4, fallSpeed * 0.8);
-                                for (const [sx, sy] of splashSpots) {
-                                    if (spawned >= splashCount) break;
-                                    if (emptyIn(newGrid, sx, sy)) {
-                                        const si = this.getIndex(sx, sy);
-                                        if (si !== -1) {
-                                            newGrid[si] = splashMat;
-                                            const angle = -Math.PI/2 + (Math.random() - 0.5) * Math.PI * 0.9; // Upward splash arc
-                                            const mag = speedScale * (0.4 + Math.random() * 0.6);
-                                            newVelX[si] = Math.cos(angle) * mag;
-                                            newVelY[si] = Math.sin(angle) * mag;
-                                            if (splashMat === MATERIAL.DUST) this.particleAge[si] = Date.now();
-                                            spawned++;
-                                        }
-                                    }
-                                }
-                                if (fallSpeed > 4) this.screenShake = Math.min(12, this.screenShake + fallSpeed * 0.8);
-                            }
                             newVelY[idx] = 0;
                             newVelX[idx] = 0;
                     }
@@ -1786,6 +1880,25 @@
                 }
             }
 
+            // Spawn pellets (shotgun spread - 5-7 light projectiles, launched in spread by gunpowder)
+            spawnPellets() {
+                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                const count = 5 + Math.floor(Math.random() * 3);
+                const spread = [[0,0], [-1,0], [1,0], [-1,-1], [1,-1], [-2,0], [2,0]];
+                for (let i = 0; i < count && i < spread.length; i++) {
+                    const [dx, dy] = spread[i];
+                    const px = mx + dx, py = my + dy;
+                    if (px >= 0 && px < GRID_WIDTH && py >= 0 && py < GRID_HEIGHT && this.isEmpty(px, py)) {
+                        this.set(px, py, MATERIAL.PELLET);
+                        this.pelletBalls.push({
+                            id: this.nextPelletId++,
+                            cx: px, cy: py, vx: 0, vy: 0
+                        });
+                    }
+                }
+            }
+
             // Spawn a lead ball (sticky cluster, launched by gunpowder, kills humans on impact)
             spawnLeadBall() {
                 const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
@@ -1841,19 +1954,8 @@
 
             // Render the game
             render() {
-                // Screen shake from impacts - satisfying crash feedback
-                if (this.screenShake > 0) {
-                    this.screenShake *= 0.85;
-                    if (this.screenShake < 0.3) this.screenShake = 0;
-                }
-                const shakeX = this.screenShake > 0 ? (Math.random() - 0.5) * 2 * this.screenShake : 0;
-                const shakeY = this.screenShake > 0 ? (Math.random() - 0.5) * 2 * this.screenShake : 0;
-
                 // CLEAR EVERYTHING - no trails, no artifacts
                 ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
-                
-                ctx.save();
-                if (shakeX !== 0 || shakeY !== 0) ctx.translate(shakeX, shakeY);
                 
                 // Sky background gradient
                 const gradient = ctx.createLinearGradient(0, 0, 0, CONFIG.height);
@@ -1955,8 +2057,6 @@
                     ctx.fill();
                 }
 
-                ctx.restore();
-
                 // Update UI
                 this.countParticles();
                 document.getElementById('particleCount').textContent = this.particleCount.toLocaleString();
@@ -1997,6 +2097,8 @@
                 game.nextFlyId = 0;
                 game.leadBalls = [];
                 game.nextLeadBallId = 0;
+                game.pelletBalls = [];
+                game.nextPelletId = 0;
                 game.worms = [];
                 game.nextWormId = 0;
                 game.generateBuildings();
@@ -2059,6 +2161,9 @@
             if (e.key === 'x' || e.key === 'X') game.spawnWorm();
             if (e.key === 'c' || e.key === 'C') game.spawnMaterial(MATERIAL.BACTERIA);
             if (e.key === 'd' || e.key === 'D') game.spawnMaterial(MATERIAL.MERCURY);
+            if (e.key === 'a' || e.key === 'A') game.spawnPellets();
+            if (e.key === 's' || e.key === 'S') game.spawnMaterial(MATERIAL.FUSE);
+            if (e.key === '.' || e.key === '>') game.spawnMaterial(MATERIAL.RUBBER);
         });
 
         // Voxel size slider

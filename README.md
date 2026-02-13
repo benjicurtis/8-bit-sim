@@ -40,6 +40,9 @@ A pixel-perfect destruction sandbox with Neal.fun-inspired cellular automata phy
 | `G` | Spawn gunpowder (explodes with fire!) |
 | `J` | Spawn stone (heavy solid) |
 | `K` | Spawn ember (glowing rising particles) |
+| `A` | Spawn pellets (shotgun spread - light projectiles, launched by gunpowder) |
+| `S` | Spawn fuse (burnable - carries fire along its length for chain ignition) |
+| `.` | Spawn rubber (bouncy block - deflects lead and pellets) |
 | `C` | Spawn bacteria (reproduces near nutrients, dies from heat/acid) |
 | `D` | Spawn mercury (dense toxic liquid metal) |
 
