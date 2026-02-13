@@ -234,13 +234,13 @@
         <div id="controls">
             <div><span class="key">CLICK+DRAG</span> Destroy | <span class="key">R</span> Rebuild | <span class="key">H</span> Hide UI</div>
             <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Liquid</div>
-            <div style="margin-top: 2px;"><span class="key">3</span> Water <span class="key">5</span> Lava <span class="key">6</span> Acid <span class="key">9</span> Oil <span class="key">0</span> Steam <span class="key">Q</span> Blood <span class="key">W</span> Slime <span class="key">I</span> Honey</div>
+            <div style="margin-top: 2px;"><span class="key">3</span> Water <span class="key">5</span> Lava <span class="key">6</span> Acid <span class="key">9</span> Oil <span class="key">0</span> Steam <span class="key">Q</span> Blood <span class="key">W</span> Slime <span class="key">I</span> Honey <span class="key">D</span> Mercury</div>
             <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Solid</div>
             <div style="margin-top: 2px;"><span class="key">1</span> Concrete <span class="key">2</span> Dust <span class="key">4</span> Metal <span class="key">8</span> Snow <span class="key">E</span> Fire <span class="key">Y</span> Ice <span class="key">U</span> Sand <span class="key">O</span> Gravel</div>
             <div style="margin-top: 2px;"><span class="key">P</span> Wood <span class="key">G</span> Gunpowder <span class="key">J</span> Stone <span class="key">K</span> Ember <span class="key">F</span> Feces</div>
             <div style="margin-top: 2px;"><span class="key">V</span> Lead Brick <span class="key">M</span> Lead Ball <span class="key">N</span> Glue Metal <span class="key">Z</span> Milk</div>
             <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Life</div>
-            <div style="margin-top: 2px;"><span class="key">7</span> Human <span class="key">B</span> Builder <span class="key">T</span> Plant <span class="key">L</span> Flies <span class="key">X</span> Worm</div>
+            <div style="margin-top: 2px;"><span class="key">7</span> Human <span class="key">B</span> Builder <span class="key">T</span> Plant <span class="key">L</span> Flies <span class="key">X</span> Worm <span class="key">C</span> Bacteria</div>
         </div>
         
         <div id="uiToggleIndicator">Press H to show UI</div>
@@ -308,7 +308,9 @@
             GLUE_METAL: 30,  // Sticky metal - adjacent blocks won't fall (like slime/honey)
             MILK: 31,        // White liquid - flows like water
             WORM: 32,        // Life form - 1 pink moving particle
-            LEAD_BRICK: 33   // Like concrete but immune to lead ball destruction
+            LEAD_BRICK: 33,  // Like concrete but immune to lead ball destruction
+            BACTERIA: 34,    // Life form - reproduces near nutrients, dies from heat/acid
+            MERCURY: 35      // Dense liquid metal - sinks through other liquids, toxic
         };
 
         // Material Properties
@@ -346,7 +348,9 @@
             [MATERIAL.GLUE_METAL]: { color: '#708090', density: 7, strength: 4, flow: false, shadeBase: [112, 128, 144], sticky: true },
             [MATERIAL.MILK]: { color: '#f5f5dc', density: 3, strength: 0, flow: true, shadeBase: [245, 245, 220] },
             [MATERIAL.WORM]: { color: '#ff69b4', density: 0.3, strength: 0, flow: false, shadeBase: [255, 105, 180], isWorm: true },
-            [MATERIAL.LEAD_BRICK]: { color: '#3d4f5c', density: 9, strength: 6, flow: false, shadeBase: [61, 79, 92] }
+            [MATERIAL.LEAD_BRICK]: { color: '#3d4f5c', density: 9, strength: 6, flow: false, shadeBase: [61, 79, 92] },
+            [MATERIAL.BACTERIA]: { color: '#7cfc00', density: 1, strength: 0, flow: false, shadeBase: [124, 252, 0], grows: true },
+            [MATERIAL.MERCURY]: { color: '#b8b8b8', density: 14, strength: 0, flow: true, shadeBase: [184, 184, 184], toxic: true }
         };
 
         // Game State
@@ -492,15 +496,16 @@
                     ];
                     
                     let touchingAcid = false;
+                    let touchingMercury = false;
                     for (const [nx, ny] of neighbors) {
-                        if (this.get(nx, ny) === MATERIAL.ACID) {
-                            touchingAcid = true;
-                            break;
-                        }
+                        const n = this.get(nx, ny);
+                        if (n === MATERIAL.ACID) touchingAcid = true;
+                        if (n === MATERIAL.MERCURY) touchingMercury = true;
+                        if (touchingAcid || touchingMercury) break;
                     }
                     
-                    // If acid touches human, convert to static red voxels
-                    if (touchingAcid) {
+                    // If acid or mercury (toxic) touches human, convert to static red voxels
+                    if (touchingAcid || touchingMercury) {
                         this.set(human.headX, human.headY, MATERIAL.DEAD_HUMAN);
                         this.set(human.bodyX, human.bodyY, MATERIAL.DEAD_HUMAN);
                         human.alive = false;
@@ -605,7 +610,7 @@
                                 // Check if we can build at ground level
                                 const materialAtGroundPos = this.get(buildX, normalBuildY);
                                 const canBuildGround = materialAtGroundPos === MATERIAL.EMPTY || 
-                                    materialAtGroundPos === MATERIAL.ACID || 
+                                    materialAtGroundPos === MATERIAL.ACID || materialAtGroundPos === MATERIAL.MERCURY ||
                                     materialAtGroundPos === MATERIAL.LIQUID ||
                                     materialAtGroundPos === MATERIAL.LAVA ||
                                     materialAtGroundPos === MATERIAL.OIL ||
@@ -629,7 +634,7 @@
                                             const towerY = normalBuildY - h - 1;
                                             const materialAtTowerPos = this.get(buildX, towerY);
                                             if (materialAtTowerPos === MATERIAL.EMPTY || 
-                                                materialAtTowerPos === MATERIAL.ACID || 
+                                                materialAtTowerPos === MATERIAL.ACID || materialAtTowerPos === MATERIAL.MERCURY ||
                                                 materialAtTowerPos === MATERIAL.LIQUID ||
                                                 materialAtTowerPos === MATERIAL.LAVA ||
                                                 materialAtTowerPos === MATERIAL.OIL ||
@@ -649,7 +654,7 @@
                                         const upperBuildY = human.bodyY; // One level up
                                         const materialAtUpperPos = this.get(buildX, upperBuildY);
                                         if (materialAtUpperPos === MATERIAL.EMPTY || 
-                                            materialAtUpperPos === MATERIAL.ACID || 
+                                            materialAtUpperPos === MATERIAL.ACID || materialAtUpperPos === MATERIAL.MERCURY ||
                                             materialAtUpperPos === MATERIAL.LIQUID ||
                                             materialAtUpperPos === MATERIAL.LAVA ||
                                             materialAtUpperPos === MATERIAL.OIL ||
@@ -734,7 +739,7 @@
                     ];
                     for (const [nx, ny] of neighbors) {
                         const m = this.get(nx, ny);
-                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA) {
+                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA || m === MATERIAL.MERCURY) {
                             this.set(fly.x, fly.y, MATERIAL.EMPTY);
                             fly.alive = false;
                             this.flies.splice(i, 1);
@@ -792,7 +797,7 @@
                     const neighbors = [[worm.x, worm.y + 1], [worm.x, worm.y - 1], [worm.x - 1, worm.y], [worm.x + 1, worm.y]];
                     for (const [nx, ny] of neighbors) {
                         const m = this.get(nx, ny);
-                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA) {
+                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA || m === MATERIAL.MERCURY) {
                             this.set(worm.x, worm.y, MATERIAL.EMPTY);
                             this.worms.splice(i, 1);
                             break;
@@ -1069,7 +1074,7 @@
                             
                             for (const [nx, ny] of neighbors) {
                                 const neighborMat = this.get(nx, ny);
-                                if (neighborMat !== MATERIAL.EMPTY && neighborMat !== MATERIAL.ACID && neighborMat !== MATERIAL.DEAD_HUMAN && neighborMat !== MATERIAL.SLIME && neighborMat !== MATERIAL.HONEY) {
+                                if (neighborMat !== MATERIAL.EMPTY && neighborMat !== MATERIAL.ACID && neighborMat !== MATERIAL.DEAD_HUMAN && neighborMat !== MATERIAL.SLIME && neighborMat !== MATERIAL.HONEY && neighborMat !== MATERIAL.MERCURY) {
                                     let corrodeChance = 0.7;
                                     if (neighborMat === MATERIAL.STONE) corrodeChance = 0.06;
                                     else if (neighborMat === MATERIAL.METAL) corrodeChance = 0.12;
@@ -1327,8 +1332,49 @@
                         // SLIME: Very slow viscous liquid (handled in flow)
                         // SAND: Fast-falling particles (handled in flow)
 
-                        // Flow behavior for dust and liquids
-                        if (props.flow) {
+                        // BACTERIA: Reproduces near nutrients (water, blood, milk, feces), dies from heat/acid/mercury
+                        if (material === MATERIAL.BACTERIA) {
+                            // Die from acid, fire, lava, mercury (toxic)
+                            const deadlyNeighbors = [
+                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y],
+                                [x - 1, y + 1], [x + 1, y + 1], [x - 1, y - 1], [x + 1, y - 1]
+                            ];
+                            let willDie = false;
+                            for (const [nx, ny] of deadlyNeighbors) {
+                                const n = this.get(nx, ny);
+                                if (n === MATERIAL.ACID || n === MATERIAL.FIRE || n === MATERIAL.LAVA || n === MATERIAL.MERCURY) {
+                                    willDie = true;
+                                    break;
+                                }
+                            }
+                            if (willDie) {
+                                newGrid[idx] = MATERIAL.EMPTY;
+                            } else {
+                                // Reproduce when near nutrients (water, blood, milk, feces)
+                                const nutrientMats = [MATERIAL.LIQUID, MATERIAL.BLOOD, MATERIAL.MILK, MATERIAL.FEECES];
+                                let hasNutrient = false;
+                                for (const [nx, ny] of [[x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]]) {
+                                    if (nutrientMats.includes(this.get(nx, ny))) {
+                                        hasNutrient = true;
+                                        break;
+                                    }
+                                }
+                                if (hasNutrient && Math.random() < 0.02) {
+                                    const growChoices = [
+                                        [x, y - 1], [x, y + 1], [x - 1, y], [x + 1, y],
+                                        [x - 1, y - 1], [x + 1, y - 1], [x - 1, y + 1], [x + 1, y + 1]
+                                    ].filter(([gx, gy]) => emptyIn(newGrid, gx, gy));
+                                    if (growChoices.length > 0) {
+                                        const [gx, gy] = growChoices[Math.floor(Math.random() * growChoices.length)];
+                                        newGrid[this.getIndex(gx, gy)] = MATERIAL.BACTERIA;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Flow behavior for dust and liquids (skip if particle was transformed, e.g. bacteria killed)
+                        if (newGrid[idx] !== material) { moved = true; } // Already transformed, skip flow
+                        else if (props.flow) {
                             // STEAM, FIRE, and EMBER rise instead of fall
                             if (material === MATERIAL.STEAM || material === MATERIAL.FIRE || material === MATERIAL.EMBER) {
                                 if (emptyIn(newGrid, x, y - 1)) {
@@ -1444,13 +1490,13 @@
                                 }
                                 else if (material === MATERIAL.LIQUID || material === MATERIAL.LAVA || 
                                          material === MATERIAL.ACID || material === MATERIAL.OIL || 
-                                         material === MATERIAL.BLOOD || material === MATERIAL.MILK) {
+                                         material === MATERIAL.BLOOD || material === MATERIAL.MILK || material === MATERIAL.MERCURY) {
                                     const dir = Math.random() < 0.5 ? -1 : 1;
                                     if (emptyIn(newGrid, x + dir, y)) {
                                         const targetIdx = this.getIndex(x + dir, y);
                                         newGrid[targetIdx] = material;
                                         newGrid[idx] = MATERIAL.EMPTY;
-                                        newVelX[targetIdx] = dir * (material === MATERIAL.LAVA ? 1 : 2);
+                                        newVelX[targetIdx] = dir * (material === MATERIAL.LAVA ? 1 : material === MATERIAL.MERCURY ? 1 : 2);
                                         moved = true;
                                     }
                                 }
@@ -1818,6 +1864,8 @@
                         else if (material === MATERIAL.HONEY) noise += Math.sin(x * 0.4 + y * 0.6) * 8;
                         else if (material === MATERIAL.FLY) noise += Math.sin(t * 0.02 + x * 2 + y * 2) * 15;
                         else if (material === MATERIAL.WORM) noise += Math.sin(t * 0.025 + x * 1.5 + y * 1.5) * 12;
+                        else if (material === MATERIAL.MERCURY) noise += Math.sin(t * 0.002 + x * 0.6 + y * 0.6) * 18;
+                        else if (material === MATERIAL.BACTERIA) noise += Math.sin(t * 0.015 + x * 2 + y * 2) * 8;
                         else if (material === MATERIAL.PLANT) {
                             const pType = this.plantType[this.getIndex(x, y)] || 0;
                             noise += pType >= 2 ? Math.sin(x * 0.5 + y * 0.8) * 8
@@ -1963,6 +2011,8 @@
             if (e.key === 'n' || e.key === 'N') game.spawnGlueMetal();
             if (e.key === 'z' || e.key === 'Z') game.spawnMaterial(MATERIAL.MILK);
             if (e.key === 'x' || e.key === 'X') game.spawnWorm();
+            if (e.key === 'c' || e.key === 'C') game.spawnMaterial(MATERIAL.BACTERIA);
+            if (e.key === 'd' || e.key === 'D') game.spawnMaterial(MATERIAL.MERCURY);
         });
 
         // Voxel size slider

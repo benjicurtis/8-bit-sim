@@ -40,6 +40,8 @@ A pixel-perfect destruction sandbox with Neal.fun-inspired cellular automata phy
 | `G` | Spawn gunpowder (explodes with fire!) |
 | `J` | Spawn stone (heavy solid) |
 | `K` | Spawn ember (glowing rising particles) |
+| `C` | Spawn bacteria (reproduces near nutrients, dies from heat/acid) |
+| `D` | Spawn mercury (dense toxic liquid metal) |
 
 ## 🌟 Features Implemented
 
@@ -124,6 +126,10 @@ Humans now exhibit lemming-like construction behavior with advanced building mec
   - Forms dense clusters near other plants
   - Isolated plants die back naturally
   - Each growth pattern is unique and unpredictable
+- **Bacteria** → Microscopic life forms with real-life properties:
+  - Reproduce and spread when near nutrients (water, blood, milk, feces)
+  - Die from heat (fire, lava), acid, and mercury (toxic)
+  - Colonize surfaces and form organic colonies
 - **Human** → AI-controlled builder entities with lemming-like behavior:
   - Walk back and forth on solid surfaces
   - Detect edges and automatically place **sticky concrete blocks** to extend platforms
@@ -136,6 +142,10 @@ Humans now exhibit lemming-like construction behavior with advanced building mec
 
 **Special:**
 - **Ice** → Solid frozen material, melts into water near heat sources
+- **Mercury** → Dense liquid metal with real-life properties:
+  - One of the densest liquids - sinks through water, oil, and other fluids
+  - Silvery metallic appearance with high surface tension
+  - Toxic - kills humans, flies, worms, and bacteria on contact
 
 ### ✅ Procedural Buildings
 - Random building generation
