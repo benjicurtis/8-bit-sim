@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RAMPAGE: VOXEL FURY 🧱💥</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,7 +15,7 @@
         }
 
         body {
-            font-family: 'Courier New', monospace;
+            font-family: 'Press Start 2P', monospace;
             background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1e 100%);
             color: #fff;
             overflow: hidden;
@@ -60,24 +63,62 @@
             top: 12px;
             left: 12px;
             background: rgba(0, 0, 0, 0.7);
-            padding: 10px 12px;
             border-radius: 8px;
             font-size: 13px;
             backdrop-filter: blur(10px);
-            pointer-events: none;
+            pointer-events: auto;
+            cursor: default;
             transition: opacity 0.3s ease, visibility 0.3s ease;
+            min-width: 140px;
         }
         
         #ui.hidden {
             opacity: 0;
             visibility: hidden;
         }
-
-        #ui h1 {
-            font-size: 20px;
-            margin-bottom: 10px;
+        
+        #uiHeader {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        #uiHeader:hover {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px 8px 0 0;
+        }
+        
+        #ui.collapsed #uiHeader {
+            border-radius: 8px;
+        }
+        
+        #ui #uiHeader h1 {
+            font-size: 16px;
+            margin: 0;
             color: #ff6b6b;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        #uiContent {
+            padding: 4px 12px 10px 12px;
+        }
+        
+        #ui.collapsed #uiContent {
+            display: none;
+        }
+        
+        #uiCollapseBtn {
+            font-size: 12px;
+            color: #888;
+            cursor: pointer;
+            padding: 2px 6px;
+        }
+        
+        #uiCollapseBtn:hover {
+            color: #4ecdc4;
         }
 
         #ui .stat {
@@ -272,13 +313,13 @@
             top: 60px;
             right: 12px;
             background: rgba(0, 0, 0, 0.7);
-            padding: 10px 12px;
             border-radius: 8px;
             font-size: 13px;
             backdrop-filter: blur(10px);
             min-width: 220px;
             max-width: 35vw;
             pointer-events: auto;
+            cursor: default;
             transition: opacity 0.3s ease, visibility 0.3s ease;
         }
         
@@ -286,10 +327,47 @@
             opacity: 0;
             visibility: hidden;
         }
+        
+        #settingsHeader {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            cursor: pointer;
+            user-select: none;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        #settingsHeader:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        #settings.collapsed #settingsHeader {
+            border-radius: 8px;
+        }
+        
+        #settingsContent {
+            padding: 8px 12px 12px 12px;
+        }
+        
+        #settings.collapsed #settingsContent {
+            display: none;
+        }
+        
+        #settingsCollapseBtn {
+            font-size: 12px;
+            color: #888;
+            cursor: pointer;
+            padding: 2px 6px;
+        }
+        
+        #settingsCollapseBtn:hover {
+            color: #4ecdc4;
+        }
 
         #settings h3 {
-            font-size: 16px;
-            margin-bottom: 10px;
+            font-size: 14px;
+            margin: 0;
             color: #4ecdc4;
         }
 
@@ -350,14 +428,23 @@
         <canvas id="gameCanvas"></canvas>
         
         <div id="ui">
-            <h1>💥 VOXEL FURY 🧱</h1>
-            <div class="stat"><span class="label">Voxels:</span> <span id="particleCount">0</span></div>
-            <div class="stat"><span class="label">Destroyed:</span> <span id="destructionPercent">0</span>%</div>
-            <div class="stat"><span class="label">FPS:</span> <span id="fps">60</span></div>
+            <div id="uiHeader">
+                <h1>💥 VOXEL FURY 🧱</h1>
+                <span id="uiCollapseBtn">−</span>
+            </div>
+            <div id="uiContent">
+                <div class="stat"><span class="label">Voxels:</span> <span id="particleCount">0</span></div>
+                <div class="stat"><span class="label">Destroyed:</span> <span id="destructionPercent">0</span>%</div>
+                <div class="stat"><span class="label">FPS:</span> <span id="fps">60</span></div>
+            </div>
         </div>
 
         <div id="settings">
-            <h3>⚙️ Settings</h3>
+            <div id="settingsHeader">
+                <h3>⚙️ Settings</h3>
+                <span id="settingsCollapseBtn">−</span>
+            </div>
+            <div id="settingsContent">
             <div class="setting-item">
                 <label>Voxel Size: <span class="setting-value" id="voxelSizeDisplay">3mm</span></label>
                 <input type="range" id="voxelSizeSlider" min="2" max="8" value="3" step="1">
@@ -367,6 +454,7 @@
                 <label>Place Amount: <span class="setting-value" id="placeAmountDisplay">20</span></label>
                 <input type="range" id="placeAmountSlider" min="1" max="50" value="20" step="1">
                 <div class="setting-note">Radius when placing (1 = single voxel | 50 = large blob)</div>
+            </div>
             </div>
         </div>
 
@@ -932,8 +1020,18 @@
                 return nearest;
             }
 
-            // Update flies - they buzz toward feces when nearby
+            // Update flies - they buzz toward feces when nearby, fall with gravity otherwise
             updateFlies() {
+                // Register orphan FLY voxels (placed as material) into flies array - scan every 15 frames
+                if (this.frameCount % 15 === 0) {
+                    for (let y = 0; y < GRID_HEIGHT; y++) {
+                        for (let x = 0; x < GRID_WIDTH; x++) {
+                            if (this.get(x, y) === MATERIAL.FLY && !this.flies.some(f => f.x === x && f.y === y)) {
+                                this.flies.push({ id: this.nextFlyId++, x, y, alive: true });
+                            }
+                        }
+                    }
+                }
                 const FEECES_ATTRACT_RANGE = 18;
                 for (let i = this.flies.length - 1; i >= 0; i--) {
                     const fly = this.flies[i];
@@ -972,10 +1070,9 @@
                             moveY = dy > 0 ? 1 : -1;
                         }
                     } else {
-                        // Random buzz: prefer up, occasionally horizontal
-                        if (Math.random() < 0.4) moveY = -1;
-                        else if (Math.random() < 0.2) moveY = 1;
-                        if (Math.random() < 0.5) moveX = Math.random() < 0.5 ? -1 : 1;
+                        // Gravity-restricted: fall down, occasionally drift sideways
+                        moveY = 1;  // Fall with gravity
+                        if (Math.random() < 0.3) moveX = Math.random() < 0.5 ? -1 : 1;
                     }
 
                     const newX = fly.x + moveX;
@@ -989,8 +1086,18 @@
                 }
             }
 
-            // Update worms - 1 pink particle that wiggles around
+            // Update worms - 1 pink particle that falls/crawls, gravity-restricted
             updateWorms() {
+                // Register orphan WORM voxels (placed as material) into worms array - scan every 15 frames
+                if (this.frameCount % 15 === 0) {
+                    for (let y = 0; y < GRID_HEIGHT; y++) {
+                        for (let x = 0; x < GRID_WIDTH; x++) {
+                            if (this.get(x, y) === MATERIAL.WORM && !this.worms.some(w => w.x === x && w.y === y)) {
+                                this.worms.push({ id: this.nextWormId++, x, y, vx: 0, vy: 0 });
+                            }
+                        }
+                    }
+                }
                 for (let i = this.worms.length - 1; i >= 0; i--) {
                     const worm = this.worms[i];
 
@@ -1119,7 +1226,17 @@
                 }
             }
 
-            // Update lead balls - move as connected unit, gravity, kill humans on impact
+            // Check if position is part of any lead ball (for protection from destruction)
+            isPartOfLeadBall(px, py) {
+                for (const ball of this.leadBalls) {
+                    for (const v of ball.voxels) {
+                        if (ball.cx + v.x === px && ball.cy + v.y === py) return true;
+                    }
+                }
+                return false;
+            }
+
+            // Update lead balls - fixed balls, pixels stuck together, gravity, launched by gunpowder
             updateLeadBalls() {
                 const shape = this._leadShape || (this._leadShape = this.getLeadBallShape());
                 for (let i = this.leadBalls.length - 1; i >= 0; i--) {
@@ -1193,8 +1310,8 @@
                         });
                     });
                     if (hitsAntimatter) {
-                        for (const { x, y } of voxels) this.set(x, y, MATERIAL.GRAVEL);
-                        this.leadBalls.splice(i, 1);
+                        ball.vx = 0;
+                        ball.vy = 0;
                         continue;
                     }
                     const hitsHuman = newVoxels.some(({ x, y }) => {
@@ -1202,14 +1319,14 @@
                         return m === MATERIAL.HUMAN_HEAD || m === MATERIAL.HUMAN_BODY || m === MATERIAL.HUMAN_BODY_BUILDER;
                     });
 
-                    // Block at any solid/liquid unless launched by antimatter (antimatter-launched balls phase through)
+                    // Block at any solid/liquid - lead balls always obey gravity and collision
                     const hitsSolid = newVoxels.some(({ x, y }) => {
                         const m = this.get(x, y);
                         if (m === MATERIAL.EMPTY) return false;
                         if (m === MATERIAL.LEAD && voxels.some(v => v.x === x && v.y === y)) return false; // own voxel overlap
                         return true;
                     });
-                    if (hitsSolid && !ball.antimatterLaunched) {
+                    if (hitsSolid) {
                         ball.vx = 0;
                         ball.vy = 0;
                         continue;
@@ -1455,7 +1572,7 @@
                                                 const bIdx = this.getIndex(bx, by);
                                                 if (bIdx === -1) continue;
                                                 const targetMat = this.get(bx, by);
-                                                if (targetMat === MATERIAL.ANTIMETAL) continue; // Antimetal blocks blast
+                                                if (targetMat === MATERIAL.ANTIMETAL || targetMat === MATERIAL.LEAD) continue;
                                                 if (dist <= 4) newGrid[bIdx] = MATERIAL.EMPTY;
                                                 else if (dist <= 12 && targetMat !== MATERIAL.EMPTY) newGrid[bIdx] = MATERIAL.ANTIMATTER_BLAST;
                                             }
@@ -1498,7 +1615,7 @@
                             
                             for (const [nx, ny] of neighbors) {
                                 const neighborMat = this.get(nx, ny);
-                                if (neighborMat !== MATERIAL.EMPTY && neighborMat !== MATERIAL.ACID && neighborMat !== MATERIAL.DEAD_HUMAN && neighborMat !== MATERIAL.SLIME && neighborMat !== MATERIAL.HONEY && neighborMat !== MATERIAL.MERCURY) {
+                                if (neighborMat !== MATERIAL.EMPTY && neighborMat !== MATERIAL.ACID && neighborMat !== MATERIAL.DEAD_HUMAN && neighborMat !== MATERIAL.SLIME && neighborMat !== MATERIAL.HONEY && neighborMat !== MATERIAL.MERCURY && neighborMat !== MATERIAL.LEAD) {
                                     let corrodeChance = 0.7;
                                     if (neighborMat === MATERIAL.STONE) corrodeChance = 0.06;
                                     else if (neighborMat === MATERIAL.METAL) corrodeChance = 0.12;
@@ -1525,7 +1642,7 @@
                                 const spreadX = x + spreadDir;
                                 const spreadY = y;
                                 const spreadMat = this.get(spreadX, spreadY);
-                                if (spreadMat !== MATERIAL.EMPTY && spreadMat !== MATERIAL.ACID && spreadMat !== MATERIAL.SLIME && spreadMat !== MATERIAL.HONEY) {
+                                if (spreadMat !== MATERIAL.EMPTY && spreadMat !== MATERIAL.ACID && spreadMat !== MATERIAL.SLIME && spreadMat !== MATERIAL.HONEY && spreadMat !== MATERIAL.LEAD) {
                                     newGrid[this.getIndex(spreadX, spreadY)] = MATERIAL.ACID;
                                 }
                             }
@@ -1579,7 +1696,7 @@
                                                 const bIdx = this.getIndex(bx, by);
                                                 if (bIdx === -1) continue;
                                                 const targetMat = this.get(bx, by);
-                                                if (targetMat === MATERIAL.ANTIMETAL) continue; // Antimetal blocks blast
+                                                if (targetMat === MATERIAL.ANTIMETAL || targetMat === MATERIAL.LEAD) continue;
                                                 if (dist <= 4) newGrid[bIdx] = MATERIAL.EMPTY;
                                                 else if (dist <= 12 && targetMat !== MATERIAL.EMPTY) newGrid[bIdx] = MATERIAL.ANTIMATTER_BLAST;
                                             }
@@ -2172,6 +2289,7 @@
                             const material = this.get(x, y);
                             
                             if (material !== MATERIAL.EMPTY) {
+                                if (material === MATERIAL.LEAD && this.isPartOfLeadBall(x, y)) continue;
                                 const destroyChance = 1.0 - (dist / radius) * 0.6;
                                 if (Math.random() < destroyChance) {
                                     const idx = this.getIndex(x, y);
@@ -2631,6 +2749,22 @@
         
         initMaterialMenu();
         updateCurrentMaterialDisplay();
+        
+        // Collapsible UI and Settings
+        let uiCollapsed = false;
+        let settingsCollapsed = false;
+        
+        document.getElementById('uiHeader').addEventListener('click', () => {
+            uiCollapsed = !uiCollapsed;
+            document.getElementById('ui').classList.toggle('collapsed', uiCollapsed);
+            document.getElementById('uiCollapseBtn').textContent = uiCollapsed ? '+' : '−';
+        });
+        
+        document.getElementById('settingsHeader').addEventListener('click', () => {
+            settingsCollapsed = !settingsCollapsed;
+            document.getElementById('settings').classList.toggle('collapsed', settingsCollapsed);
+            document.getElementById('settingsCollapseBtn').textContent = settingsCollapsed ? '+' : '−';
+        });
 
         // Input handling
         window.addEventListener('keydown', (e) => {
