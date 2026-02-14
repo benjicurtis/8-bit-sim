@@ -674,7 +674,12 @@
             Build: [
                 { special: 'bridge', label: 'Bridge', color: '#5a6268' },
                 { special: 'tower', label: 'Tower', color: '#8899aa' },
-                { special: 'arch', label: 'Arch', color: '#696969' }
+                { special: 'arch', label: 'Arch', color: '#696969' },
+                { special: 'stairs', label: 'Stairs', color: '#7a8a94' },
+                { special: 'wall', label: 'Wall', color: '#6b7b6b' },
+                { special: 'platform', label: 'Platform', color: '#8b7355' },
+                { special: 'pyramid', label: 'Pyramid', color: '#5a5a5a' },
+                { special: 'pillar', label: 'Pillar', color: '#a0a8b0' }
             ],
             Life: [
             { special: 'human', label: 'Human', color: '#ff69b4' },
@@ -2711,6 +2716,88 @@
                     }
                 }
             }
+            spawnStairs() {
+                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                // Diagonal staircase - 10 steps going up-left
+                for (let i = 0; i < 10; i++) {
+                    const x = mx + i, y = my - i;
+                    for (let wy = 0; wy <= 1; wy++) {
+                        const gx = x - wy, gy = y + wy;
+                        if (gx >= 0 && gx < GRID_WIDTH && gy >= 0 && gy < GRID_HEIGHT) {
+                            const idx = this.getIndex(gx, gy);
+                            this.set(gx, gy, MATERIAL.CONCRETE);
+                            if (idx >= 0) this.humanBuiltBlocks[idx] = true;
+                        }
+                    }
+                }
+            }
+            spawnWall() {
+                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                // Vertical wall - 3 wide, 15 tall, stone with concrete base
+                const w = 3, h = 15;
+                for (let by = 0; by < h; by++) {
+                    for (let bx = -1; bx <= 1; bx++) {
+                        const x = mx + bx, y = my + by;
+                        if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT) {
+                            const idx = this.getIndex(x, y);
+                            const mat = by < 2 ? MATERIAL.CONCRETE : MATERIAL.STONE;
+                            this.set(x, y, mat);
+                            if (idx >= 0) this.humanBuiltBlocks[idx] = true;
+                        }
+                    }
+                }
+            }
+            spawnPlatform() {
+                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                // Floating wooden platform - 8 wide, 2 thick
+                for (let dx = -4; dx <= 3; dx++) {
+                    for (let dy = 0; dy <= 1; dy++) {
+                        const x = mx + dx, y = my + dy;
+                        if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT) {
+                            const idx = this.getIndex(x, y);
+                            this.set(x, y, MATERIAL.WOOD);
+                            if (idx >= 0) this.humanBuiltBlocks[idx] = true;
+                        }
+                    }
+                }
+            }
+            spawnPyramid() {
+                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                // Small stone pyramid - 5 layers
+                for (let layer = 0; layer < 5; layer++) {
+                    const width = 9 - layer * 2;
+                    const startX = -Math.floor(width / 2);
+                    for (let dx = 0; dx < width; dx++) {
+                        const x = mx + startX + dx, y = my + layer;
+                        if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT) {
+                            const idx = this.getIndex(x, y);
+                            this.set(x, y, MATERIAL.STONE);
+                            if (idx >= 0) this.humanBuiltBlocks[idx] = true;
+                        }
+                    }
+                }
+            }
+            spawnPillar() {
+                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                // Tall narrow pillar - 2x2 base, 25 blocks tall, metal frame
+                const h = 25;
+                for (let by = 0; by < h; by++) {
+                    for (let bx = -1; bx <= 0; bx++) {
+                        const x = mx + bx, y = my + by;
+                        if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT) {
+                            const idx = this.getIndex(x, y);
+                            const isEdge = bx === -1 || bx === 0 || by === 0 || by === h - 1;
+                            this.set(x, y, isEdge ? MATERIAL.METAL : MATERIAL.GLASS);
+                            if (idx >= 0) this.humanBuiltBlocks[idx] = true;
+                        }
+                    }
+                }
+            }
 
             // Spawn pellets (shotgun spread - 5-7 light projectiles, launched in spread by gunpowder)
             spawnPellets() {
@@ -3264,6 +3351,11 @@
                     else if (a === 'bridge') game.spawnBridge();
                     else if (a === 'tower') game.spawnTower();
                     else if (a === 'arch') game.spawnArch();
+                    else if (a === 'stairs') game.spawnStairs();
+                    else if (a === 'wall') game.spawnWall();
+                    else if (a === 'platform') game.spawnPlatform();
+                    else if (a === 'pyramid') game.spawnPyramid();
+                    else if (a === 'pillar') game.spawnPillar();
                 }
             }
             if (e.button === 2) game.mouse.rightDown = true;
