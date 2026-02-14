@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RAMPAGE: VOXEL FURY 🧱💥</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -15,8 +12,8 @@
         }
 
         body {
-            font-family: 'Press Start 2P', monospace;
-            background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1e 100%);
+            font-family: Georgia, "Times New Roman", serif;
+            background: #2a2a2a;
             color: #fff;
             overflow: hidden;
             margin: 0;
@@ -32,7 +29,7 @@
             justify-content: center;
             align-items: center;
             overflow: hidden;
-            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid #555;
         }
 
         #gameCanvas {
@@ -62,13 +59,11 @@
             position: absolute;
             top: 12px;
             left: 12px;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 8px;
+            background: #1a1a1a;
+            border: 1px solid #555;
             font-size: 13px;
-            backdrop-filter: blur(10px);
             pointer-events: auto;
             cursor: default;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
             min-width: 140px;
         }
         
@@ -84,26 +79,25 @@
             padding: 10px 12px;
             cursor: pointer;
             user-select: none;
+            border-bottom: 1px solid #555;
         }
         
         #uiHeader:hover {
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px 8px 0 0;
+            background: #2a2a2a;
         }
         
         #ui.collapsed #uiHeader {
-            border-radius: 8px;
+            border-bottom: none;
         }
         
         #ui #uiHeader h1 {
-            font-size: 16px;
+            font-size: 14px;
             margin: 0;
-            color: #ff6b6b;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            color: #cc8888;
         }
         
         #uiContent {
-            padding: 4px 12px 10px 12px;
+            padding: 8px 12px 10px 12px;
         }
         
         #ui.collapsed #uiContent {
@@ -112,22 +106,22 @@
         
         #uiCollapseBtn {
             font-size: 12px;
-            color: #888;
+            color: #999;
             cursor: pointer;
             padding: 2px 6px;
         }
         
         #uiCollapseBtn:hover {
-            color: #4ecdc4;
+            color: #ccc;
         }
 
         #ui .stat {
             margin: 5px 0;
-            color: #ffffff;
+            color: #ddd;
         }
 
         #ui .label {
-            color: #aaa;
+            color: #999;
         }
 
         #materialMenu {
@@ -137,12 +131,11 @@
             left: 50%;
             transform: translateX(-50%);
             max-width: 95%;
-            background: rgba(0, 0, 0, 0.85);
-            border-radius: 12px 12px 0 0;
-            backdrop-filter: blur(12px);
+            background: #1a1a1a;
+            border: 1px solid #555;
+            border-bottom: none;
             pointer-events: auto;
-            transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.25s ease;
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+            min-width: 200px;
         }
         
         #materialMenu.hidden {
@@ -156,12 +149,12 @@
             padding: 6px 12px;
             cursor: pointer;
             user-select: none;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid #555;
             min-height: 36px;
         }
         
         #materialMenuHeader:hover {
-            background: rgba(255,255,255,0.05);
+            background: #2a2a2a;
         }
         
         #materialDragHandle {
@@ -171,7 +164,6 @@
             color: #666;
             cursor: grab;
             user-select: none;
-            border-radius: 4px;
         }
         #materialDragHandle:active {
             cursor: grabbing;
@@ -186,17 +178,16 @@
             color: #888;
             cursor: pointer;
             user-select: none;
-            border-radius: 4px;
-            border: 1px solid rgba(255,255,255,0.15);
+            border: 1px solid #555;
         }
         #materialDestroyBtn:hover {
-            color: #ff6b6b;
-            border-color: rgba(255,107,107,0.4);
+            color: #cc8888;
+            border-color: #888;
         }
         #materialDestroyBtn.active {
-            color: #ff6b6b;
-            background: rgba(255,107,107,0.2);
-            border-color: #ff6b6b;
+            color: #cc8888;
+            background: #333;
+            border-color: #cc8888;
         }
         #materialTabs {
             display: flex;
@@ -208,23 +199,21 @@
             padding: 6px 14px;
             font-size: 12px;
             font-weight: bold;
-            color: #888;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 6px;
+            color: #999;
+            background: #2a2a2a;
+            border: 1px solid #555;
             cursor: pointer;
-            transition: all 0.2s;
         }
         
         #materialTabs .tab:hover {
-            color: #4ecdc4;
-            background: rgba(78, 205, 196, 0.15);
+            color: #ccc;
+            background: #333;
         }
         
         #materialTabs .tab.active {
-            color: #4ecdc4;
-            background: rgba(78, 205, 196, 0.25);
-            border-color: #4ecdc4;
+            color: #ccc;
+            background: #444;
+            border-color: #777;
         }
         
         #materialContent {
@@ -243,8 +232,7 @@
         .materialTile {
             width: 40px;
             height: 40px;
-            border-radius: 8px;
-            border: 2px solid rgba(255,255,255,0.2);
+            border: 1px solid #555;
             cursor: pointer;
             display: flex;
             flex-direction: column;
@@ -252,26 +240,23 @@
             justify-content: center;
             font-size: 9px;
             color: #fff;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-            transition: all 0.2s;
             flex-shrink: 0;
         }
         
         .materialTile:hover {
-            border-color: #4ecdc4;
-            transform: scale(1.08);
-            box-shadow: 0 0 12px rgba(78, 205, 196, 0.4);
+            border-color: #888;
+            background: #2a2a2a;
         }
         
         .materialTile.selected {
-            border-color: #ff6b6b;
-            box-shadow: 0 0 12px rgba(255, 107, 107, 0.5);
+            border-color: #cc8888;
+            background: #333;
         }
         
         .materialTile .tileColor {
             width: 24px;
             height: 18px;
-            border-radius: 4px;
+            border: 1px solid #444;
             margin-bottom: 2px;
         }
         
@@ -289,30 +274,26 @@
             font-size: 11px;
             color: #888;
             cursor: pointer;
-            border-radius: 4px;
         }
         
         #minimizeBtn:hover {
-            color: #4ecdc4;
-            background: rgba(255,255,255,0.05);
+            color: #ccc;
+            background: #333;
         }
         
         #currentMaterialDisplay {
             position: absolute;
-            top: 12px;
+            top: 95px;
             right: 12px;
             display: flex;
             align-items: center;
             gap: 8px;
-            background: rgba(0, 0, 0, 0.8);
+            background: #1a1a1a;
             padding: 8px 14px;
-            border-radius: 8px;
             font-size: 12px;
             color: #fff;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.15);
+            border: 1px solid #555;
             pointer-events: none;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
         }
         
         #currentMaterialDisplay.hidden {
@@ -323,14 +304,13 @@
         #currentMaterialDisplay .swatch {
             width: 24px;
             height: 24px;
-            border-radius: 6px;
+            border: 1px solid #555;
             flex-shrink: 0;
-            border: 1px solid rgba(255,255,255,0.3);
         }
         
         #currentMaterialDisplay .name {
             font-weight: bold;
-            color: #4ecdc4;
+            color: #999;
         }
 
         .loading {
@@ -339,22 +319,20 @@
             left: 50%;
             transform: translate(-50%, -50%);
             font-size: 24px;
-            color: #4ecdc4;
+            color: #999;
         }
 
         #settings {
             position: absolute;
-            top: 60px;
+            top: 130px;
             right: 12px;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 8px;
+            background: #1a1a1a;
             font-size: 13px;
-            backdrop-filter: blur(10px);
+            border: 1px solid #555;
             min-width: 220px;
             max-width: 35vw;
             pointer-events: auto;
             cursor: default;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
         }
         
         #settings.hidden {
@@ -369,15 +347,15 @@
             padding: 10px 12px;
             cursor: pointer;
             user-select: none;
-            border-radius: 8px 8px 0 0;
+            border-bottom: 1px solid #555;
         }
         
         #settingsHeader:hover {
-            background: rgba(255,255,255,0.05);
+            background: #2a2a2a;
         }
         
         #settings.collapsed #settingsHeader {
-            border-radius: 8px;
+            border-bottom: none;
         }
         
         #settingsContent {
@@ -390,19 +368,19 @@
         
         #settingsCollapseBtn {
             font-size: 12px;
-            color: #888;
+            color: #999;
             cursor: pointer;
             padding: 2px 6px;
         }
         
         #settingsCollapseBtn:hover {
-            color: #4ecdc4;
+            color: #ccc;
         }
 
         #settings h3 {
             font-size: 14px;
             margin: 0;
-            color: #4ecdc4;
+            color: #999;
         }
 
         .setting-item {
@@ -412,7 +390,7 @@
         .setting-item label {
             display: block;
             margin-bottom: 5px;
-            color: #aaa;
+            color: #999;
             font-size: 12px;
             white-space: nowrap;
             overflow: visible;
@@ -424,7 +402,7 @@
         }
 
         .setting-value {
-            color: #fff;
+            color: #ddd;
             font-weight: bold;
             font-size: 14px;
         }
@@ -439,21 +417,95 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #4ecdc4;
+            background: #1a1a1a;
+            color: #999;
             padding: 8px 12px;
-            border-radius: 6px;
             font-size: 11px;
-            backdrop-filter: blur(10px);
+            border: 1px solid #555;
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
             pointer-events: none;
         }
         
         #uiToggleIndicator.visible {
             opacity: 1;
             visibility: visible;
+        }
+        
+        #gamemodePanel {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #1a1a1a;
+            border: 1px solid #555;
+            font-size: 12px;
+            pointer-events: auto;
+            cursor: default;
+            min-width: 180px;
+        }
+        
+        #gamemodePanel.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        #gamemodeHeader {
+            padding: 8px 12px;
+            border-bottom: 1px solid #555;
+            color: #999;
+            font-weight: bold;
+        }
+        
+        #gamemodeButtons {
+            display: flex;
+            gap: 4px;
+            padding: 8px 12px;
+        }
+        
+        #gamemodeButtons .modeBtn {
+            flex: 1;
+            padding: 8px 10px;
+            font-size: 11px;
+            border: 1px solid #555;
+            background: #2a2a2a;
+            color: #999;
+            cursor: pointer;
+            text-align: center;
+        }
+        
+        #gamemodeButtons .modeBtn:hover {
+            background: #333;
+            color: #ccc;
+        }
+        
+        #gamemodeButtons .modeBtn.active {
+            background: #444;
+            color: #cc8888;
+            border-color: #cc8888;
+        }
+        
+        #gamemodeProtectInfo {
+            padding: 6px 12px 8px;
+            border-top: 1px solid #333;
+            font-size: 11px;
+            color: #aaa;
+        }
+        
+        #gamemodeProtectInfo .waveStat {
+            margin: 2px 0;
+            color: #ddd;
+        }
+        
+        #gamemodeProtectInfo .gameOverMsg {
+            color: #ff6b6b;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+        
+        #gamemodeProtectInfo .victoryMsg {
+            color: #6bcf7d;
+            font-weight: bold;
+            margin-top: 4px;
         }
     </style>
 </head>
@@ -470,6 +522,20 @@
                 <div class="stat"><span class="label">Voxels:</span> <span id="particleCount">0</span></div>
                 <div class="stat"><span class="label">Destroyed:</span> <span id="destructionPercent">0</span>%</div>
                 <div class="stat"><span class="label">FPS:</span> <span id="fps">60</span></div>
+            </div>
+        </div>
+
+        <div id="gamemodePanel">
+            <div id="gamemodeHeader">Game Mode</div>
+            <div id="gamemodeButtons">
+                <button class="modeBtn active" data-mode="sandbox">Sandbox</button>
+                <button class="modeBtn" data-mode="protect">Protect Humans</button>
+            </div>
+            <div id="gamemodeProtectInfo" style="display: none;">
+                <div class="waveStat">Wave: <span id="protectWaveNum">1</span></div>
+                <div class="waveStat">Humans: <span id="protectHumansAlive">0</span></div>
+                <div class="waveStat">Time: <span id="protectWaveTime">0</span>s</div>
+                <div id="protectStatusMsg"></div>
             </div>
         </div>
 
@@ -901,6 +967,86 @@
                 this.initialParticles = this.particleCount;
             }
 
+            // Protect the Humans arena - flat platform with humans
+            generateProtectArena() {
+                this.trapdoorIndices.clear();
+                this.spoutIndices.clear();
+                this.spawnerStructures = [];
+                this.grid.fill(MATERIAL.EMPTY);
+                this.humanBuiltBlocks.fill(false);
+                this.plantType.fill(0);
+                this.humans = [];
+                this.nextHumanId = 0;
+                this.flies = [];
+                this.nextFlyId = 0;
+                this.leadBalls = [];
+                this.nextLeadBallId = 0;
+                this.pelletBalls = [];
+                this.nextPelletId = 0;
+                this.worms = [];
+                this.nextWormId = 0;
+                this.undoHistory = [];
+                
+                const groundLevel = GRID_HEIGHT - 12;
+                const platformWidth = Math.floor(GRID_WIDTH * 0.7);
+                const platformLeft = Math.floor((GRID_WIDTH - platformWidth) / 2);
+                
+                // Solid ground platform
+                for (let x = platformLeft; x < platformLeft + platformWidth; x++) {
+                    for (let y = groundLevel; y < GRID_HEIGHT; y++) {
+                        if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT)
+                            this.set(x, y, MATERIAL.CONCRETE);
+                    }
+                }
+                
+                // Spawn 5-8 humans on the platform
+                const numHumans = 5 + Math.floor(Math.random() * 4);
+                const spawnStart = platformLeft + 8;
+                const spawnEnd = platformLeft + platformWidth - 8;
+                for (let i = 0; i < numHumans; i++) {
+                    const mx = spawnStart + Math.floor(Math.random() * (spawnEnd - spawnStart));
+                    const my = groundLevel - 1;
+                    if (this.isEmpty(mx, my) && this.isEmpty(mx, my - 1)) {
+                        const humanId = this.nextHumanId++;
+                        const isBuilder = Math.random() < 0.4;
+                        const bodyMat = isBuilder ? MATERIAL.HUMAN_BODY_BUILDER : MATERIAL.HUMAN_BODY;
+                        this.set(mx, my, bodyMat);
+                        this.set(mx, my - 1, MATERIAL.HUMAN_HEAD);
+                        this.humans.push({
+                            id: humanId,
+                            headX: mx,
+                            headY: my - 1,
+                            bodyX: mx,
+                            bodyY: my,
+                            alive: true,
+                            vx: 0,
+                            vy: 0,
+                            direction: Math.random() < 0.5 ? -1 : 1,
+                            justBuilt: false,
+                            isBuilder
+                        });
+                    }
+                }
+                
+                this.countParticles();
+                this.initialParticles = this.particleCount;
+            }
+
+            // Spawn threat from above (acid, lava, fire, etc.)
+            spawnThreat(material, count, x, y) {
+                const r = Math.min(3 + Math.floor(count / 4), 8);
+                for (let dy = -r; dy <= r; dy++) {
+                    for (let dx = -r; dx <= r; dx++) {
+                        if (dx * dx + dy * dy <= r * r && Math.random() < 0.7) {
+                            const gx = x + dx;
+                            const gy = y + dy;
+                            if (gx >= 0 && gx < GRID_WIDTH && gy >= 0 && gy < GRID_HEIGHT)
+                                this.set(gx, gy, material);
+                        }
+                    }
+                }
+            }
+
             // Update humans - they move as connected entities
             updateHumans() {
                 for (let i = this.humans.length - 1; i >= 0; i--) {
@@ -980,6 +1126,17 @@
                     } else {
                         // On ground - Builder AI behavior
                         human.vy = 0;
+                        
+                        // Ecosystem: humans occasionally produce feces (nutrient input to ecosystem)
+                        if (Math.random() < 0.0012) {
+                            const fecalSpots = [[human.bodyX, human.bodyY + 1], [human.bodyX - 1, human.bodyY], [human.bodyX + 1, human.bodyY]];
+                            for (const [fx, fy] of fecalSpots) {
+                                if (fx >= 0 && fx < GRID_WIDTH && fy >= 0 && fy < GRID_HEIGHT && this.isEmpty(fx, fy)) {
+                                    this.set(fx, fy, MATERIAL.FEECES);
+                                    break;
+                                }
+                            }
+                        }
                         
                         // Try to walk in current direction
                         const nextX = human.bodyX + human.direction;
@@ -1220,6 +1377,20 @@
                         fly.y = newY;
                         this.set(fly.x, fly.y, MATERIAL.FLY);
                     }
+                    
+                    // Ecosystem: flies reproduce when on or adjacent to feces (eggs hatch)
+                    const onFeces = this.get(fly.x, fly.y + 1) === MATERIAL.FEECES || this.get(fly.x, fly.y - 1) === MATERIAL.FEECES ||
+                        this.get(fly.x - 1, fly.y) === MATERIAL.FEECES || this.get(fly.x + 1, fly.y) === MATERIAL.FEECES;
+                    if (onFeces && Math.random() < 0.008) {
+                        const spawnDirs = [[fly.x - 1, fly.y], [fly.x + 1, fly.y], [fly.x, fly.y - 1], [fly.x, fly.y + 1]];
+                        for (const [sx, sy] of spawnDirs) {
+                            if (sx >= 0 && sx < GRID_WIDTH && sy >= 0 && sy < GRID_HEIGHT && this.isEmpty(sx, sy)) {
+                                this.set(sx, sy, MATERIAL.FLY);
+                                this.flies.push({ id: this.nextFlyId++, x: sx, y: sy, alive: true });
+                                break;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -1295,6 +1466,35 @@
                         worm.x = newX;
                         worm.y = newY;
                         this.set(worm.x, worm.y, MATERIAL.WORM);
+                    }
+                    
+                    // Ecosystem: worms eat plants/feces and reproduce when well-fed
+                    const foodSpots = [[worm.x, worm.y + 1], [worm.x, worm.y - 1], [worm.x - 1, worm.y], [worm.x + 1, worm.y]];
+                    let hasFood = false;
+                    let eatenX = -1, eatenY = -1;
+                    for (const [fx, fy] of foodSpots) {
+                        const m = this.get(fx, fy);
+                        if (m === MATERIAL.PLANT || m === MATERIAL.FEECES) {
+                            hasFood = true;
+                            if (Math.random() < 0.012) {
+                                eatenX = fx; eatenY = fy;
+                                break;
+                            }
+                        }
+                    }
+                    if (hasFood && eatenX >= 0) {
+                        if (this.get(eatenX, eatenY) === MATERIAL.PLANT) this.plantType[this.getIndex(eatenX, eatenY)] = 0;
+                        this.set(eatenX, eatenY, MATERIAL.EMPTY);
+                    }
+                    if (hasFood && Math.random() < 0.006) {
+                        const spawnDirs = [[worm.x - 1, worm.y], [worm.x + 1, worm.y], [worm.x, worm.y - 1], [worm.x, worm.y + 1]];
+                        for (const [sx, sy] of spawnDirs) {
+                            if (sx >= 0 && sx < GRID_WIDTH && sy >= 0 && sy < GRID_HEIGHT && this.isEmpty(sx, sy)) {
+                                this.set(sx, sy, MATERIAL.WORM);
+                                this.worms.push({ id: this.nextWormId++, x: sx, y: sy, vx: 0, vy: 0 });
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -1637,8 +1837,22 @@
                         // Skip worms - handled as life-form entities
                         if (material === MATERIAL.WORM) continue;
                         
-                        // Skip dead humans - they don't move (static red voxels)
-                        if (material === MATERIAL.DEAD_HUMAN) continue;
+                        // Dead humans - decompose into feces when near water, blood, or bacteria (ecosystem nutrient cycle)
+                        if (material === MATERIAL.DEAD_HUMAN) {
+                            const decompNeighbors = [[x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]];
+                            let canDecompose = false;
+                            for (const [nx, ny] of decompNeighbors) {
+                                const n = this.get(nx, ny);
+                                if (n === MATERIAL.LIQUID || n === MATERIAL.BLOOD || n === MATERIAL.MILK || n === MATERIAL.BACTERIA) {
+                                    canDecompose = true;
+                                    break;
+                                }
+                            }
+                            if (canDecompose && Math.random() < 0.004) {
+                                newGrid[idx] = MATERIAL.FEECES;
+                            }
+                            continue;
+                        }
                         
                         // Skip fuse - sticks in air, doesn't fall
                         if (material === MATERIAL.FUSE) continue;
@@ -1987,9 +2201,13 @@
                         }
 
                         if (material === MATERIAL.PLANT) {
-                            const hasWater = this.get(x, y - 1) === MATERIAL.LIQUID || this.get(x, y + 1) === MATERIAL.LIQUID ||
-                                this.get(x - 1, y) === MATERIAL.LIQUID || this.get(x + 1, y) === MATERIAL.LIQUID;
-                            const growthChance = hasWater ? 0.014 : 0.008;
+                            const waterNeighbors = [[x, y - 1], [x, y + 1], [x - 1, y], [x + 1, y]];
+                            let waterCount = 0;
+                            for (const [nx, ny] of waterNeighbors) {
+                                const n = this.get(nx, ny);
+                                if (n === MATERIAL.LIQUID || n === MATERIAL.BLOOD || n === MATERIAL.MILK) waterCount++;
+                            }
+                            const growthChance = waterCount >= 2 ? 0.022 : waterCount >= 1 ? 0.016 : 0.008;
                             if (Math.random() < growthChance) {
                                 const hasGroundBelow = !emptyIn(newGrid, x, y + 1);
                                 const growthChoices = [];
@@ -2045,6 +2263,26 @@
                                     if (nearbyPlants === 0) {
                                         newGrid[idx] = MATERIAL.EMPTY; // Isolated plants die
                                         this.plantType[idx] = 0; // Clear plant type
+                                    }
+                                }
+                                
+                                // Ecosystem: seed spread - plants can sprout in distant wet spots (seeds germinate)
+                                if (Math.random() < 0.002) {
+                                    const spreadSpots = [[x-2,y],[x+2,y],[x,y-2],[x,y+2],[x-1,y-1],[x+1,y-1],[x-1,y+1],[x+1,y+1]];
+                                    for (const [sx, sy] of spreadSpots) {
+                                        if (sx < 0 || sx >= GRID_WIDTH || sy < 0 || sy >= GRID_HEIGHT) continue;
+                                        if (!emptyIn(newGrid, sx, sy)) continue;
+                                        const hasPlantNear = [[sx-1,sy],[sx+1,sy],[sx,sy-1],[sx,sy+1]].some(([nx,ny])=>this.get(nx,ny)===MATERIAL.PLANT);
+                                        const hasWaterNear = [[sx-1,sy],[sx+1,sy],[sx,sy-1],[sx,sy+1]].some(([nx,ny])=>{
+                                            const m = this.get(nx,ny);
+                                            return m === MATERIAL.LIQUID || m === MATERIAL.BLOOD || m === MATERIAL.MILK;
+                                        });
+                                        if (hasPlantNear && hasWaterNear) {
+                                            const growIdx = this.getIndex(sx, sy);
+                                            newGrid[growIdx] = MATERIAL.PLANT;
+                                            this.plantType[growIdx] = Math.random() < 0.3 ? 1 : 0;
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -2179,8 +2417,8 @@
                             if (willDie) {
                                 newGrid[idx] = MATERIAL.EMPTY;
                             } else {
-                                // Reproduce when near nutrients (water, blood, milk, feces)
-                                const nutrientMats = [MATERIAL.LIQUID, MATERIAL.BLOOD, MATERIAL.MILK, MATERIAL.FEECES];
+                                // Reproduce when near nutrients (water, blood, milk, feces, plants - organic matter)
+                                const nutrientMats = [MATERIAL.LIQUID, MATERIAL.BLOOD, MATERIAL.MILK, MATERIAL.FEECES, MATERIAL.PLANT];
                                 let hasNutrient = false;
                                 for (const [nx, ny] of [[x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]]) {
                                     if (nutrientMats.includes(this.get(nx, ny))) {
@@ -3085,6 +3323,19 @@
         const game = new Game();
         game.generateBuildings();
         
+        // Game mode: 'sandbox' | 'protect'
+        let gameMode = 'sandbox';
+        let protectState = {
+            wave: 1,
+            waveDuration: 45,
+            waveStartTime: 0,
+            phase: 'idle',
+            lastThreatTime: 0,
+            threatInterval: 2000,
+            threatTypes: [MATERIAL.ACID, MATERIAL.LAVA, MATERIAL.FIRE, MATERIAL.GUNPOWDER],
+            nextWaveUnlockTime: 0
+        };
+        
         // Selected material (null = none, or { type: 'material', id }, or { type: 'special', action })
         let selectedMaterial = null;
         
@@ -3243,6 +3494,108 @@
         initMaterialMenu();
         updateCurrentMaterialDisplay();
         
+        // Gamemode panel - switch between Sandbox and Protect the Humans
+        function initGamemodePanel() {
+            const btns = document.querySelectorAll('#gamemodeButtons .modeBtn');
+            const protectInfo = document.getElementById('gamemodeProtectInfo');
+            const statusEl = document.getElementById('protectStatusMsg');
+            
+            btns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const mode = btn.dataset.mode;
+                    if (mode === gameMode) return;
+                    gameMode = mode;
+                    btns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    if (mode === 'protect') {
+                        protectInfo.style.display = 'block';
+                        protectState.phase = 'playing';
+                        protectState.wave = 1;
+                        protectState.waveDuration = 45;
+                        protectState.waveStartTime = Date.now();
+                        protectState.lastThreatTime = Date.now();
+                        protectState.threatInterval = 2500;
+                        protectState.nextWaveUnlockTime = 0;
+                        game.generateProtectArena();
+                        statusEl.className = '';
+                        statusEl.textContent = '';
+                    } else {
+                        protectInfo.style.display = 'none';
+                        protectState.phase = 'idle';
+                        game.generateBuildings();
+                        game.humans = [];
+                        game.nextHumanId = 0;
+                    }
+                });
+            });
+            
+        }
+        
+        function updateProtectMode() {
+            if (gameMode !== 'protect') return;
+            const now = Date.now();
+            const elapsed = (now - protectState.waveStartTime) / 1000;
+            const alive = game.humans.filter(h => h.alive).length;
+            
+            document.getElementById('protectWaveNum').textContent = protectState.wave;
+            document.getElementById('protectHumansAlive').textContent = alive;
+            document.getElementById('protectWaveTime').textContent = Math.max(0, Math.ceil(protectState.waveDuration - elapsed));
+            
+            if (protectState.phase === 'gameover') {
+                document.getElementById('protectStatusMsg').className = 'gameOverMsg';
+                document.getElementById('protectStatusMsg').textContent = `Game Over! Wave ${protectState.wave} — Press R to restart`;
+                return;
+            }
+            
+            if (protectState.phase === 'victory') {
+                document.getElementById('protectStatusMsg').className = 'victoryMsg';
+                document.getElementById('protectStatusMsg').textContent = `Wave ${protectState.wave} complete! Starting wave ${protectState.wave + 1}...`;
+                return;
+            }
+            
+            if (alive === 0) {
+                protectState.phase = 'gameover';
+                document.getElementById('protectStatusMsg').className = 'gameOverMsg';
+                document.getElementById('protectStatusMsg').textContent = `Game Over! Wave ${protectState.wave} — Press R to restart`;
+                return;
+            }
+            
+            if (elapsed >= protectState.waveDuration) {
+                protectState.phase = 'victory';
+                protectState.nextWaveUnlockTime = now + 2000;
+                return;
+            }
+            
+            document.getElementById('protectStatusMsg').textContent = '';
+            
+            // Spawn threats - faster and more as wave increases
+            const interval = Math.max(600, protectState.threatInterval - protectState.wave * 150);
+            if (now - protectState.lastThreatTime > interval) {
+                protectState.lastThreatTime = now;
+                const threatCount = 2 + protectState.wave;
+                const threatTypes = [MATERIAL.ACID, MATERIAL.LAVA, MATERIAL.FIRE];
+                const mat = threatTypes[protectState.wave % threatTypes.length];
+                const x = 10 + Math.floor(Math.random() * (GRID_WIDTH - 20));
+                game.spawnThreat(mat, threatCount, x, 2);
+            }
+        }
+        
+        function advanceProtectWave() {
+            if (protectState.phase !== 'victory') return;
+            const now = Date.now();
+            if (now < protectState.nextWaveUnlockTime) return;
+            protectState.phase = 'playing';
+            protectState.wave++;
+            protectState.waveDuration = 40 + protectState.wave * 5;
+            protectState.waveStartTime = Date.now();
+            protectState.lastThreatTime = Date.now();
+            protectState.threatInterval = Math.max(500, 2500 - protectState.wave * 120);
+            document.getElementById('protectStatusMsg').textContent = '';
+        }
+        
+        initGamemodePanel();
+        
         // Collapsible UI and Settings
         let uiCollapsed = false;
         let settingsCollapsed = false;
@@ -3281,9 +3634,9 @@
             // Rebuild
             if (e.key === 'r' || e.key === 'R') {
                 game.grid.fill(MATERIAL.EMPTY);
-                game.humanBuiltBlocks.fill(false); // Clear sticky blocks
-                game.plantType.fill(0); // Clear plant colors
-                game.humans = []; // Clear all humans
+                game.humanBuiltBlocks.fill(false);
+                game.plantType.fill(0);
+                game.humans = [];
                 game.nextHumanId = 0;
                 game.flies = [];
                 game.nextFlyId = 0;
@@ -3294,7 +3647,17 @@
                 game.worms = [];
                 game.nextWormId = 0;
                 game.undoHistory = [];
-                game.generateBuildings();
+                if (gameMode === 'protect') {
+                    protectState.phase = 'playing';
+                    protectState.wave = 1;
+                    protectState.waveDuration = 45;
+                    protectState.waveStartTime = Date.now();
+                    protectState.lastThreatTime = Date.now();
+                    protectState.threatInterval = 2500;
+                    game.generateProtectArena();
+                } else {
+                    game.generateBuildings();
+                }
             }
             
             // Toggle UI visibility
@@ -3304,6 +3667,7 @@
                 const materialMenu = document.getElementById('materialMenu');
                 const currentDisplay = document.getElementById('currentMaterialDisplay');
                 const settingsElement = document.getElementById('settings');
+                const gamemodePanel = document.getElementById('gamemodePanel');
                 const indicator = document.getElementById('uiToggleIndicator');
                 
                 if (uiVisible) {
@@ -3311,12 +3675,14 @@
                     materialMenu.classList.remove('hidden');
                     currentDisplay.classList.remove('hidden');
                     settingsElement.classList.remove('hidden');
+                    gamemodePanel.classList.remove('hidden');
                     indicator.classList.remove('visible');
                 } else {
                     uiElement.classList.add('hidden');
                     materialMenu.classList.add('hidden');
                     currentDisplay.classList.add('hidden');
                     settingsElement.classList.add('hidden');
+                    gamemodePanel.classList.add('hidden');
                     indicator.classList.add('visible');
                 }
             }
@@ -3477,6 +3843,10 @@
 
         // Game loop
         function gameLoop() {
+            if (gameMode === 'protect') {
+                updateProtectMode();
+                advanceProtectWave();
+            }
             game.update();
             game.render();
             requestAnimationFrame(gameLoop);
