@@ -508,7 +508,7 @@
             <div id="materialContent"></div>
         </div>
         
-        <div id="uiToggleIndicator">H = show UI | Left-click = place | Right-click = destroy | Shift+drag = draw lines | O = open trapdoors | C = close trapdoors | R = rebuild</div>
+        <div id="uiToggleIndicator">H = show UI | Left-click = place | Right-click = destroy | Shift+drag = draw lines | Spawner = put material inside hollow square | O/C = trapdoors | R = rebuild</div>
     </div>
 
     <script>
@@ -672,6 +672,7 @@
                 { special: 'leadBall', label: 'Lead Ball', color: '#36454f' }
             ],
             Build: [
+                { special: 'spawner', label: 'Spawner', color: '#8b9dc3' },
                 { special: 'bridge', label: 'Bridge', color: '#5a6268' },
                 { special: 'tower', label: 'Tower', color: '#8899aa' },
                 { special: 'arch', label: 'Arch', color: '#696969' },
@@ -719,6 +720,7 @@
                 this.nextWormId = 0;
                 this.trapdoorIndices = new Set(); // Grid indices where trapdoors exist (O=open all, C=close all)
                 this.spoutIndices = new Map();   // idx -> liquid (LIQUID or LAVA) for spouts that emit
+                this.spawnerStructures = [];     // { left, top, right, bottom, emitX, emitY, material } - hollow square, emits what's inside
                 this.undoHistory = [];           // Stack of { type: 'place'|'destroy', changes: [...] }
                 this.maxUndoHistory = 50;        // Limit memory usage
             }
@@ -767,13 +769,14 @@
             // Place single voxel (records for undo) - used by line tool start and direct placement
             placeSingle(x, y, material) {
                 const state = this.captureCellState(x, y);
-                if (state) {
-                    const idx = this.getIndex(x, y);
-                    if (idx >= 0) {
-                        this.grid[idx] = material;
-                        if (material === MATERIAL.TRAPDOOR) this.trapdoorIndices.add(idx);
-                        if (material === MATERIAL.WATER_SPOUT) this.spoutIndices.set(idx, MATERIAL.LIQUID);
-                        if (material === MATERIAL.LAVA_SPOUT) this.spoutIndices.set(idx, MATERIAL.LAVA);
+                const idx = this.getIndex(x, y);
+                if (idx >= 0) {
+                    this.grid[idx] = material;
+                    if (material === MATERIAL.TRAPDOOR) this.trapdoorIndices.add(idx);
+                    if (material === MATERIAL.WATER_SPOUT) this.spoutIndices.set(idx, MATERIAL.LIQUID);
+                    if (material === MATERIAL.LAVA_SPOUT) this.spoutIndices.set(idx, MATERIAL.LAVA);
+                    this.notifyMaterialPlacedAt(x, y, material);
+                    if (state) {
                         this.undoHistory.push({ type: 'place', changes: [state] });
                         if (this.undoHistory.length > this.maxUndoHistory) this.undoHistory.shift();
                     }
@@ -801,6 +804,7 @@
                 this.nextWormId = 0;
                 this.trapdoorIndices = new Set();
                 this.spoutIndices = new Map();
+                this.spawnerStructures = [];
                 this.generateBuildings();
             }
 
@@ -833,6 +837,7 @@
             generateBuildings() {
                 this.trapdoorIndices.clear();
                 this.spoutIndices.clear();
+                this.spawnerStructures = [];
                 const groundLevel = GRID_HEIGHT - 15;
                 
                 // Ground
@@ -1577,6 +1582,7 @@
                 this.updateWorms();
                 this.updateLeadBalls();
                 this.updatePellets();
+                this.updateSpawners();
                 this.updateSpouts();
                 
                 const newGrid = [...this.grid];
@@ -2483,6 +2489,7 @@
                         if (material === MATERIAL.TRAPDOOR) this.trapdoorIndices.add(idx);
                         if (material === MATERIAL.WATER_SPOUT) this.spoutIndices.set(idx, MATERIAL.LIQUID);
                         if (material === MATERIAL.LAVA_SPOUT) this.spoutIndices.set(idx, MATERIAL.LAVA);
+                        this.notifyMaterialPlacedAt(px, py, material);
                     }
                     if (px === x1 && py === y1) break;
                     const e2 = 2 * err;
@@ -2514,6 +2521,7 @@
                             if (material === MATERIAL.TRAPDOOR && idx >= 0) this.trapdoorIndices.add(idx);
                             if (material === MATERIAL.WATER_SPOUT && idx >= 0) this.spoutIndices.set(idx, MATERIAL.LIQUID);
                             if (material === MATERIAL.LAVA_SPOUT && idx >= 0) this.spoutIndices.set(idx, MATERIAL.LAVA);
+                            this.notifyMaterialPlacedAt(x, y, material);
                         }
                     }
                 }
@@ -2534,6 +2542,30 @@
             closeAllTrapdoors() {
                 for (const idx of this.trapdoorIndices) {
                     this.grid[idx] = MATERIAL.TRAPDOOR;
+                }
+            }
+
+            // Update spawners - detect material in interior, emit from opening (sticky output)
+            updateSpawners() {
+                for (const s of this.spawnerStructures) {
+                    // Scan interior for material (user placed or physics moved it in)
+                    let found = false;
+                    for (let ix = s.left + 1; ix <= s.right - 1 && !found; ix++) {
+                        for (let iy = s.top + 1; iy <= s.bottom - 1 && !found; iy++) {
+                            const m = this.get(ix, iy);
+                            if (m !== MATERIAL.EMPTY) {
+                                const skip = [MATERIAL.HUMAN_HEAD, MATERIAL.HUMAN_BODY, MATERIAL.HUMAN_BODY_BUILDER, MATERIAL.DEAD_HUMAN, MATERIAL.FLY, MATERIAL.WORM, MATERIAL.LEAD, MATERIAL.PELLET];
+                                if (!skip.includes(m)) { s.material = m; found = true; }
+                            }
+                        }
+                    }
+                    if (!s.material) continue;
+                    if (this.frameCount % 5 !== 0) continue;
+                    const belowIdx = this.getIndex(s.emitX, s.emitY + 1);
+                    if (belowIdx === -1) continue;
+                    if (this.grid[belowIdx] !== MATERIAL.EMPTY) continue;
+                    this.grid[belowIdx] = s.material;
+                    this.humanBuiltBlocks[belowIdx] = true;
                 }
             }
 
@@ -2716,6 +2748,45 @@
                     }
                 }
             }
+
+            // Spawner - hollow square: put material inside, it emits it (sticky output)
+            spawnSpawner() {
+                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                const left = mx - 2, right = mx + 2, top = my - 2, bottom = my + 2;
+                const emitX = mx, emitY = bottom;
+                // 5x5 hollow square - walls are concrete, interior empty, opening at bottom center
+                for (let x = left; x <= right; x++) {
+                    for (let y = top; y <= bottom; y++) {
+                        if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) continue;
+                        const isTop = y === top;
+                        const isBottom = y === bottom;
+                        const isLeft = x === left;
+                        const isRight = x === right;
+                        const isOpening = isBottom && x === mx;
+                        if ((isTop || isBottom || isLeft || isRight) && !isOpening) {
+                            const idx = this.getIndex(x, y);
+                            this.set(x, y, MATERIAL.CONCRETE);
+                            if (idx >= 0) this.humanBuiltBlocks[idx] = true;
+                        }
+                    }
+                }
+                this.spawnerStructures.push({ left, top, right, bottom, emitX, emitY, material: null });
+            }
+
+            // When material is placed, check if it's inside a spawner - if so, set spawner's material
+            notifyMaterialPlacedAt(x, y, material) {
+                if (material === MATERIAL.EMPTY) return;
+                const skipTypes = [MATERIAL.HUMAN_HEAD, MATERIAL.HUMAN_BODY, MATERIAL.HUMAN_BODY_BUILDER, MATERIAL.DEAD_HUMAN, MATERIAL.FLY, MATERIAL.WORM, MATERIAL.LEAD, MATERIAL.PELLET];
+                if (skipTypes.includes(material)) return;
+                for (const s of this.spawnerStructures) {
+                    if (x >= s.left + 1 && x <= s.right - 1 && y >= s.top + 1 && y <= s.bottom - 1) {
+                        s.material = material;
+                        break;
+                    }
+                }
+            }
+
             spawnStairs() {
                 const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
                 const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
@@ -3348,6 +3419,7 @@
                     else if (a === 'bacteria') game.spawnMaterial(MATERIAL.BACTERIA);
                     else if (a === 'leadBall') game.spawnLeadBall();
                     else if (a === 'pellets') game.spawnPellets();
+                    else if (a === 'spawner') game.spawnSpawner();
                     else if (a === 'bridge') game.spawnBridge();
                     else if (a === 'tower') game.spawnTower();
                     else if (a === 'arch') game.spawnArch();
