@@ -508,7 +508,7 @@
             <div id="materialContent"></div>
         </div>
         
-        <div id="uiToggleIndicator">H = show UI | Left-click = place | Right-click = destroy | O = open trapdoors | C = close trapdoors</div>
+        <div id="uiToggleIndicator">H = show UI | Left-click = place | Right-click = destroy | O = open trapdoors | C = close trapdoors (placing trapdoors closes all)</div>
     </div>
 
     <script>
@@ -629,7 +629,7 @@
             [MATERIAL.ANTIMATTER]: { color: '#8b008b', density: 3, strength: 0, flow: true, shadeBase: [139, 0, 139], explosive: true },
             [MATERIAL.ANTIMATTER_BLAST]: { color: '#8a2be2', density: 0.3, strength: 0, flow: true, shadeBase: [120, 80, 255], burns: true, rises: true },
             [MATERIAL.ANTIMETAL]: { color: '#2a2a3a', density: 12, strength: 10, flow: false, shadeBase: [42, 42, 58], blocksAntimatter: true },
-            [MATERIAL.TRAPDOOR]: { color: '#4a3728', density: 8, strength: 5, flow: false, shadeBase: [74, 55, 40], isTrapdoor: true }
+            [MATERIAL.TRAPDOOR]: { color: '#4a3728', density: 8, strength: 5, flow: false, shadeBase: [74, 55, 40], isTrapdoor: true, sticky: true }
         };
 
         // Material display names
@@ -671,8 +671,7 @@
             { special: 'flies', label: 'Flies', color: '#1a1a1a' },
             { special: 'worm', label: 'Worm', color: '#ff69b4' },
             { special: 'bacteria', label: 'Bacteria', color: '#7cfc00' },
-            { special: 'pellets', label: 'Pellets', color: '#8b7355' },
-            MATERIAL.FLY, MATERIAL.WORM, MATERIAL.BACTERIA, MATERIAL.PELLET
+            { special: 'pellets', label: 'Pellets', color: '#8b7355' }
             ]
         };
 
@@ -1334,8 +1333,11 @@
                         ball.vy *= -1.35;
                         continue;
                     }
-                    const hitsGlueMetal = newVoxels.some(({ x, y }) => this.get(x, y) === MATERIAL.GLUE_METAL);
-                    if (hitsGlueMetal) {
+                    const hitsGlueMetalOrTrapdoor = newVoxels.some(({ x, y }) => {
+                        const m = this.get(x, y);
+                        return m === MATERIAL.GLUE_METAL || m === MATERIAL.TRAPDOOR;
+                    });
+                    if (hitsGlueMetalOrTrapdoor) {
                         ball.vx = 0;
                         ball.vy = 0;
                         continue;
@@ -1443,8 +1445,8 @@
                         ball.vy *= -1.2;
                         continue;
                     }
-                    const hitsGlueMetal = targetMat === MATERIAL.GLUE_METAL;
-                    if (hitsGlueMetal) {
+                    const hitsGlueMetalOrTrapdoor = targetMat === MATERIAL.GLUE_METAL || targetMat === MATERIAL.TRAPDOOR;
+                    if (hitsGlueMetalOrTrapdoor) {
                         ball.vx = 0;
                         ball.vy = 0;
                         continue;
@@ -1603,16 +1605,19 @@
                                         const explosionRadius = 8;
                                         for (let ex = nx - explosionRadius; ex <= nx + explosionRadius; ex++) {
                                             for (let ey = ny - explosionRadius; ey <= ny + explosionRadius; ey++) {
+                                                const eIdx = this.getIndex(ex, ey);
+                                                if (eIdx === -1) continue;
                                                 const dist = Math.sqrt((ex - nx) ** 2 + (ey - ny) ** 2);
                                                 if (dist <= explosionRadius && this.get(ex, ey) === MATERIAL.GUNPOWDER) {
-                                                    newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
+                                                    newGrid[eIdx] = MATERIAL.FIRE;
                                                 }
                                                 if (dist <= explosionRadius * 0.6 && (this.get(ex, ey) === MATERIAL.DUST || this.get(ex, ey) === MATERIAL.WOOD || this.get(ex, ey) === MATERIAL.PLANT)) {
-                                                    if (Math.random() < 0.7) newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
+                                                    if (Math.random() < 0.7) newGrid[eIdx] = MATERIAL.FIRE;
                                                 }
                                             }
                                         }
-                                        newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
+                                        const nIdxLava = this.getIndex(nx, ny);
+                                        if (nIdxLava !== -1) newGrid[nIdxLava] = MATERIAL.FIRE;
                                         this.launchLeadBallsNear(nx, ny, explosionRadius);
                                         this.launchPelletsNear(nx, ny, explosionRadius);
                                         this.launchWormsNear(nx, ny, explosionRadius);
@@ -1727,16 +1732,18 @@
                                         const explosionRadius = 8;
                                         for (let ex = nx - explosionRadius; ex <= nx + explosionRadius; ex++) {
                                             for (let ey = ny - explosionRadius; ey <= ny + explosionRadius; ey++) {
+                                                const eIdx = this.getIndex(ex, ey);
+                                                if (eIdx === -1) continue;
                                                 const dist = Math.sqrt((ex - nx) ** 2 + (ey - ny) ** 2);
                                                 if (dist <= explosionRadius && this.get(ex, ey) === MATERIAL.GUNPOWDER) {
-                                                    newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
+                                                    newGrid[eIdx] = MATERIAL.FIRE;
                                                 }
                                                 if (dist <= explosionRadius * 0.6 && (this.get(ex, ey) === MATERIAL.DUST || this.get(ex, ey) === MATERIAL.WOOD || this.get(ex, ey) === MATERIAL.PLANT)) {
-                                                    if (Math.random() < 0.7) newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
+                                                    if (Math.random() < 0.7) newGrid[eIdx] = MATERIAL.FIRE;
                                                 }
                                             }
                                         }
-                                        newGrid[nIdx] = MATERIAL.FIRE;
+                                        if (nIdx !== -1) newGrid[nIdx] = MATERIAL.FIRE;
                                         this.launchLeadBallsNear(nx, ny, explosionRadius);
                                         this.launchPelletsNear(nx, ny, explosionRadius);
                                         this.launchWormsNear(nx, ny, explosionRadius);
@@ -1843,11 +1850,11 @@
                                         }
                                     }
                                     break;
-                                } else if (neighborMat === MATERIAL.WOOD || neighborMat === MATERIAL.PLANT || neighborMat === MATERIAL.OIL) {
+                                } else if (nIdx !== -1 && (neighborMat === MATERIAL.WOOD || neighborMat === MATERIAL.PLANT || neighborMat === MATERIAL.OIL)) {
                                     if (Math.random() < 0.15) newGrid[nIdx] = MATERIAL.ANTIMATTER_BLAST;
                                 }
                             }
-                            if (Math.random() < 0.03) newGrid[idx] = MATERIAL.EMPTY; // Blast fades
+                            if (Math.random() < 0.12) newGrid[idx] = MATERIAL.EMPTY; // Blast fades quickly to prevent persistent buildup
                         }
 
                         // EMBER: Hot glowing particles - ignite flammables, extinguish in water
@@ -1876,13 +1883,15 @@
                                     const explosionRadius = 6;
                                     for (let ex = nx - explosionRadius; ex <= nx + explosionRadius; ex++) {
                                         for (let ey = ny - explosionRadius; ey <= ny + explosionRadius; ey++) {
+                                            const eIdx = this.getIndex(ex, ey);
+                                            if (eIdx === -1) continue;
                                             const dist = Math.sqrt((ex - nx) ** 2 + (ey - ny) ** 2);
                                             if (dist <= explosionRadius && this.get(ex, ey) === MATERIAL.GUNPOWDER) {
-                                                newGrid[this.getIndex(ex, ey)] = MATERIAL.FIRE;
+                                                newGrid[eIdx] = MATERIAL.FIRE;
                                             }
                                         }
                                     }
-                                    newGrid[nIdx] = MATERIAL.FIRE;
+                                    if (nIdx !== -1) newGrid[nIdx] = MATERIAL.FIRE;
                                     this.launchLeadBallsNear(nx, ny, explosionRadius);
                                     this.launchPelletsNear(nx, ny, explosionRadius);
                                     this.launchWormsNear(nx, ny, explosionRadius);
@@ -2238,11 +2247,11 @@
                         }
                         // Solid materials check for support
                         else {
-                            // SLIME/HONEY GLUE: Any block touching slime or honey is stuck - won't fall (floating metal!)
-                            const touchingSticky = this.get(x, y - 1) === MATERIAL.SLIME || this.get(x, y - 1) === MATERIAL.HONEY || this.get(x, y - 1) === MATERIAL.GLUE_METAL ||
-                                                  this.get(x, y + 1) === MATERIAL.SLIME || this.get(x, y + 1) === MATERIAL.HONEY || this.get(x, y + 1) === MATERIAL.GLUE_METAL ||
-                                                  this.get(x - 1, y) === MATERIAL.SLIME || this.get(x - 1, y) === MATERIAL.HONEY || this.get(x - 1, y) === MATERIAL.GLUE_METAL ||
-                                                  this.get(x + 1, y) === MATERIAL.SLIME || this.get(x + 1, y) === MATERIAL.HONEY || this.get(x + 1, y) === MATERIAL.GLUE_METAL;
+                            // SLIME/HONEY/GLUE_METAL/TRAPDOOR: Any block touching these is stuck - won't fall (floating!)
+                            const touchingSticky = this.get(x, y - 1) === MATERIAL.SLIME || this.get(x, y - 1) === MATERIAL.HONEY || this.get(x, y - 1) === MATERIAL.GLUE_METAL || this.get(x, y - 1) === MATERIAL.TRAPDOOR ||
+                                                  this.get(x, y + 1) === MATERIAL.SLIME || this.get(x, y + 1) === MATERIAL.HONEY || this.get(x, y + 1) === MATERIAL.GLUE_METAL || this.get(x, y + 1) === MATERIAL.TRAPDOOR ||
+                                                  this.get(x - 1, y) === MATERIAL.SLIME || this.get(x - 1, y) === MATERIAL.HONEY || this.get(x - 1, y) === MATERIAL.GLUE_METAL || this.get(x - 1, y) === MATERIAL.TRAPDOOR ||
+                                                  this.get(x + 1, y) === MATERIAL.SLIME || this.get(x + 1, y) === MATERIAL.HONEY || this.get(x + 1, y) === MATERIAL.GLUE_METAL || this.get(x + 1, y) === MATERIAL.TRAPDOOR;
                             
                             // STICKY BLOCKS: Human-built blocks are sticky; PLANTS need ground support
                             const isHumanBuilt = this.humanBuiltBlocks[idx];
@@ -2386,6 +2395,8 @@
                         }
                     }
                 }
+                // When placing trapdoors, close all trapdoors
+                if (material === MATERIAL.TRAPDOOR) this.closeAllTrapdoors();
             }
 
             openAllTrapdoors() {
