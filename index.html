@@ -629,7 +629,7 @@
 </head>
 <body>
     <div id="gameContainer">
-        <div id="mainMenu">
+        <div id="mainMenu" class="hidden">
             <h1>🧱 RAMPAGE: VOXEL FURY 💥</h1>
             <p>Choose your mode</p>
             <div id="mainMenuButtons">
@@ -688,7 +688,7 @@
             </div>
             <div class="setting-item">
                 <label>Command:</label>
-                <input type="text" id="settingsCommand" placeholder="Type survivalstart to start Survival mode" autocomplete="off">
+                <input type="text" id="settingsCommand" placeholder="commands here" autocomplete="off">
             </div>
             </div>
         </div>
@@ -1288,7 +1288,7 @@
 
             addToInventory(material, count) {
                 if (this.gameMode !== 'survival') return;
-                const gatherable = [MATERIAL.CONCRETE, MATERIAL.STONE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.WOOD, MATERIAL.SAND, MATERIAL.DUST, MATERIAL.GRAVEL, MATERIAL.ICE, MATERIAL.LIQUID, MATERIAL.PLANT, MATERIAL.SNOW, MATERIAL.LAVA, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.SLIME, MATERIAL.GUNPOWDER, MATERIAL.FUSE, MATERIAL.RUBBER, MATERIAL.GLUE_METAL, MATERIAL.TRAPDOOR, MATERIAL.WATER_SPOUT, MATERIAL.LAVA_SPOUT, MATERIAL.ANTIMETAL, MATERIAL.HONEY];
+                const gatherable = [MATERIAL.CONCRETE, MATERIAL.STONE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.WOOD, MATERIAL.SAND, MATERIAL.DUST, MATERIAL.GRAVEL, MATERIAL.ICE, MATERIAL.LIQUID, MATERIAL.PLANT, MATERIAL.SNOW, MATERIAL.LAVA, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.SLIME, MATERIAL.GUNPOWDER, MATERIAL.FUSE, MATERIAL.RUBBER, MATERIAL.GLUE_METAL, MATERIAL.TRAPDOOR, MATERIAL.WATER_SPOUT, MATERIAL.LAVA_SPOUT, MATERIAL.ANTIMETAL, MATERIAL.HONEY, MATERIAL.ACID, MATERIAL.BLOOD, MATERIAL.EMBER, MATERIAL.FEECES, MATERIAL.LEAD, MATERIAL.LEAD_BRICK, MATERIAL.MILK, MATERIAL.MERCURY, MATERIAL.PELLET, MATERIAL.ANTIMATTER, MATERIAL.FLY, MATERIAL.WORM, MATERIAL.BACTERIA, MATERIAL.FIRE];
                 if (!gatherable.includes(material)) return;
                 this.inventory[material] = (this.inventory[material] || 0) + (count || 1);
                 this.updateInventoryUI();
@@ -3520,6 +3520,30 @@
         // Initialize game
         const game = new Game();
         game.generateBuildings();
+        let survivalDigMode = false;
+
+        // Start in sandbox mode (no main menu popup)
+        function startSandboxMode() {
+            document.getElementById('mainMenu').classList.add('hidden');
+            game.gameMode = 'sandbox';
+            game.player = null;
+            game.inventory = {};
+            survivalDigMode = false;
+            document.getElementById('craftingPanel').classList.remove('open');
+            document.getElementById('ui').classList.remove('hidden');
+            document.getElementById('materialMenu').classList.remove('hidden');
+            document.getElementById('settings').classList.remove('hidden');
+            document.getElementById('currentMaterialDisplay').classList.remove('hidden');
+            game.grid.fill(MATERIAL.EMPTY);
+            game.humanBuiltBlocks.fill(false);
+            game.plantType.fill(0);
+            game.humans = []; game.flies = []; game.leadBalls = []; game.pelletBalls = []; game.worms = [];
+            game.trapdoorIndices.clear();
+            game.spoutIndices.clear();
+            game.spawnerStructures = [];
+            game.generateBuildings();
+        }
+        startSandboxMode();
 
         document.querySelector('.modeBtn.sandbox').addEventListener('click', () => {
             document.getElementById('mainMenu').classList.add('hidden');
@@ -3629,12 +3653,26 @@
             { inputs: [[MATERIAL.SAND, 2]], output: MATERIAL.DUST },
             { inputs: [[MATERIAL.ICE, 1]], output: MATERIAL.LIQUID },
             { inputs: [[MATERIAL.GRAVEL, 2], [MATERIAL.SAND, 1]], output: MATERIAL.CONCRETE },
-            { inputs: [[MATERIAL.WOOD, 2]], output: MATERIAL.CONCRETE }
+            { inputs: [[MATERIAL.WOOD, 2]], output: MATERIAL.CONCRETE },
+            { inputs: [[MATERIAL.LIQUID, 1], [MATERIAL.OIL, 1], [MATERIAL.GUNPOWDER, 1]], output: MATERIAL.ACID },
+            { inputs: [[MATERIAL.SLIME, 1], [MATERIAL.DUST, 1]], output: MATERIAL.BLOOD },
+            { inputs: [[MATERIAL.GUNPOWDER, 1], [MATERIAL.DUST, 1]], output: MATERIAL.EMBER },
+            { inputs: [[MATERIAL.PLANT, 1], [MATERIAL.SLIME, 1]], output: MATERIAL.FEECES },
+            { inputs: [[MATERIAL.METAL, 2], [MATERIAL.GRAVEL, 1], [MATERIAL.STONE, 1]], output: MATERIAL.LEAD },
+            { inputs: [[MATERIAL.LEAD, 1], [MATERIAL.CONCRETE, 2]], output: MATERIAL.LEAD_BRICK },
+            { inputs: [[MATERIAL.LIQUID, 1], [MATERIAL.SNOW, 1]], output: MATERIAL.MILK },
+            { inputs: [[MATERIAL.METAL, 2], [MATERIAL.LAVA, 1]], output: MATERIAL.MERCURY },
+            { inputs: [[MATERIAL.GRAVEL, 1], [MATERIAL.GUNPOWDER, 1]], output: MATERIAL.PELLET },
+            { inputs: [[MATERIAL.GUNPOWDER, 2], [MATERIAL.GLASS, 1], [MATERIAL.LAVA, 1]], output: MATERIAL.ANTIMATTER },
+            { inputs: [[MATERIAL.FEECES, 1], [MATERIAL.PLANT, 1]], output: MATERIAL.FLY },
+            { inputs: [[MATERIAL.PLANT, 1], [MATERIAL.DUST, 1]], output: MATERIAL.WORM },
+            { inputs: [[MATERIAL.SLIME, 1], [MATERIAL.LIQUID, 1]], output: MATERIAL.BACTERIA },
+            { inputs: [[MATERIAL.GUNPOWDER, 1], [MATERIAL.OIL, 2]], output: MATERIAL.FIRE }
         ];
 
         let survivalSelectedMaterial = null;
         let craftingPanelOpen = false;
-        let survivalDigMode = false;  // B toggles: left-click destroys (like sandbox)
+        // survivalDigMode declared in init (B toggles: left-click destroys in survival)
 
         function renderCraftingPanel() {
             const invList = document.getElementById('craftingInventoryList');
@@ -3648,7 +3686,7 @@
                 ? '<div style="color:#4ade80;font-weight:bold;padding:6px;background:#1a2a1a;border:1px solid #4ade80;margin-bottom:8px;">✓ Goal complete! Shelter built.</div>'
                 : '<div style="color:#fbbf24;padding:6px;background:#2a2a1a;border:1px solid #555;margin-bottom:8px;">Goal: Build your shelter — ' + placed + '/' + SURVIVAL_GOAL + ' blocks placed</div>';
             invList.innerHTML = '';
-            const gatherable = [MATERIAL.CONCRETE, MATERIAL.STONE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.WOOD, MATERIAL.SAND, MATERIAL.DUST, MATERIAL.GRAVEL, MATERIAL.ICE, MATERIAL.LIQUID, MATERIAL.PLANT, MATERIAL.SNOW, MATERIAL.LAVA, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.SLIME, MATERIAL.GUNPOWDER, MATERIAL.FUSE, MATERIAL.RUBBER, MATERIAL.GLUE_METAL, MATERIAL.TRAPDOOR, MATERIAL.WATER_SPOUT, MATERIAL.LAVA_SPOUT, MATERIAL.ANTIMETAL, MATERIAL.HONEY];
+            const gatherable = [MATERIAL.CONCRETE, MATERIAL.STONE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.WOOD, MATERIAL.SAND, MATERIAL.DUST, MATERIAL.GRAVEL, MATERIAL.ICE, MATERIAL.LIQUID, MATERIAL.PLANT, MATERIAL.SNOW, MATERIAL.LAVA, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.SLIME, MATERIAL.GUNPOWDER, MATERIAL.FUSE, MATERIAL.RUBBER, MATERIAL.GLUE_METAL, MATERIAL.TRAPDOOR, MATERIAL.WATER_SPOUT, MATERIAL.LAVA_SPOUT, MATERIAL.ANTIMETAL, MATERIAL.HONEY, MATERIAL.ACID, MATERIAL.BLOOD, MATERIAL.EMBER, MATERIAL.FEECES, MATERIAL.LEAD, MATERIAL.LEAD_BRICK, MATERIAL.MILK, MATERIAL.MERCURY, MATERIAL.PELLET, MATERIAL.ANTIMATTER, MATERIAL.FLY, MATERIAL.WORM, MATERIAL.BACTERIA, MATERIAL.FIRE];
             for (const m of gatherable) {
                 const count = game.inventory[m] || 0;
                 if (count <= 0) continue;
