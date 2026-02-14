@@ -2,27 +2,28 @@
 
 A pixel-perfect destruction sandbox with Neal.fun-inspired cellular automata physics.
 
+## 🎮 Gamemodes
+
+- **Sandbox** – Unlimited materials, full creative freedom, destroy and build at will
+- **Survival** – Procedural terrain with caves and cliffs. Gather materials by digging, manage health, survive hazards (lava, acid, fire, drowning). Build shelters from your inventory. **WASD or Arrow keys** to move your character.
+
 ## 🎮 How to Play
 
 1. **Open `index.html`** in any modern web browser
-2. **Choose a mode** (top-right): **Sandbox** or **Protect the Humans**
-3. **Control the Entity**: Use arrow keys to move your destructive force
+2. **Choose gamemode** – Sandbox or Survival
+3. **Control** (Survival: WASD/arrows to move; Sandbox: mouse for cursor)
 4. **Cause Chaos**: Smash through buildings and watch them crumble particle by particle
-5. **Destroy Manually**: Click and drag to obliterate structures
-6. **Spawn Materials**: Press number keys to add materials
-7. **Rebuild**: Press R to generate new buildings (or restart wave in Protect mode)
-
-### 🛡️ Protect the Humans Mode
-- **Goal**: Keep humans alive through increasingly hard waves of acid, lava, and fire raining from above
-- **Build defenses**: Use concrete (1), stone (J), metal (4), walls, etc. to shelter humans
-- **Waves**: Each wave lasts ~45 seconds; survive to advance. Threats spawn faster and in greater numbers each wave
-- **R** = Restart the run
+5. **Destroy Manually**: Right-click and drag to obliterate structures (Survival: gather materials into inventory)
+6. **Spawn Materials**: Select from menu and click to place (Survival: consumes from inventory)
+7. **Rebuild**: Press R to generate new world
 
 ## 🎯 Controls
 
 | Input | Action |
 |-------|--------|
-| `MOUSE CLICK + DRAG` | Destroy voxels at cursor |
+| `WASD` / `Arrow Keys` | Move character (Survival mode) |
+| `Left-click + Drag` | Place material |
+| `Right-click + Drag` | Destroy voxels at cursor |
 | `R` | Rebuild the world |
 | `H` | Hide/Show UI (clean view) |
 | `1` | Spawn concrete |
@@ -86,17 +87,6 @@ Humans now exhibit lemming-like construction behavior with advanced building mec
 - **Emergent Architecture**: Watch them create unique, organic platforms, towers, and pathways - no two structures are the same!
 
 **Try this:** Spawn several humans on a platform surrounded by acid - watch them automatically build unpredictable sticky bridges, create random towers, and construct elaborate structures with organic variety!
-
-### 🌿 Ecosystem (Life Cycles)
-Life forms interact in nutrient cycles and food chains:
-- **Humans** → Occasionally produce feces (nutrient input)
-- **Dead humans** → Decompose into feces when near water, blood, or bacteria
-- **Flies** → Attracted to feces, reproduce when on/near it (eggs hatch)
-- **Worms** → Eat plants and feces, reproduce when well-fed
-- **Bacteria** → Spread on water, blood, milk, feces, and plants
-- **Plants** → Grow faster near water; spread seeds to wet, plant-rich areas
-
-**Try this:** Add water, plants, feces, and a few humans—watch flies multiply near feces, worms consume and spread, bacteria colonize, and plants thrive in wet spots!
 
 ### ✅ Pixel-Perfect Voxel Simulation
 - Every particle is a 3x3 pixel voxel (large and visible!)
@@ -163,7 +153,7 @@ Life forms interact in nutrient cycles and food chains:
   - Isolated plants die back naturally
   - Each growth pattern is unique and unpredictable
 - **Bacteria** → Microscopic life forms with real-life properties:
-  - Reproduce and spread when near nutrients (water, blood, milk, feces, plants)
+  - Reproduce and spread when near nutrients (water, blood, milk, feces)
   - Die from heat (fire, lava), acid, and mercury (toxic)
   - Colonize surfaces and form organic colonies
 - **Human** → AI-controlled builder entities with lemming-like behavior:

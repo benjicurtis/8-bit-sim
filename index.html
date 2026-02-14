@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RAMPAGE: VOXEL FURY 🧱💥</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,7 +15,7 @@
         }
 
         body {
-            font-family: Georgia, "Times New Roman", serif;
+            font-family: 'Press Start 2P', monospace;
             background: #2a2a2a;
             color: #fff;
             overflow: hidden;
@@ -29,7 +32,8 @@
             justify-content: center;
             align-items: center;
             overflow: hidden;
-            border: 1px solid #555;
+            border: 3px solid;
+            border-color: #555 #222 #222 #555;
         }
 
         #gameCanvas {
@@ -60,11 +64,13 @@
             top: 12px;
             left: 12px;
             background: #1a1a1a;
-            border: 1px solid #555;
-            font-size: 13px;
+            border: 3px solid;
+            border-color: #333 #555 #555 #333;
+            font-size: 10px;
+            line-height: 1.8;
             pointer-events: auto;
             cursor: default;
-            min-width: 140px;
+            min-width: 160px;
         }
         
         #ui.hidden {
@@ -76,10 +82,10 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 12px;
+            padding: 8px 10px;
             cursor: pointer;
             user-select: none;
-            border-bottom: 1px solid #555;
+            border-bottom: 3px solid #555;
         }
         
         #uiHeader:hover {
@@ -91,13 +97,13 @@
         }
         
         #ui #uiHeader h1 {
-            font-size: 14px;
+            font-size: 10px;
             margin: 0;
             color: #cc8888;
         }
         
         #uiContent {
-            padding: 8px 12px 10px 12px;
+            padding: 8px 10px 10px 10px;
         }
         
         #ui.collapsed #uiContent {
@@ -132,7 +138,8 @@
             transform: translateX(-50%);
             max-width: 95%;
             background: #1a1a1a;
-            border: 1px solid #555;
+            border: 3px solid;
+            border-color: #333 #555 #555 #333;
             border-bottom: none;
             pointer-events: auto;
             min-width: 200px;
@@ -146,10 +153,10 @@
         #materialMenuHeader {
             display: flex;
             align-items: center;
-            padding: 6px 12px;
+            padding: 6px 10px;
             cursor: pointer;
             user-select: none;
-            border-bottom: 1px solid #555;
+            border-bottom: 3px solid #555;
             min-height: 36px;
         }
         
@@ -174,20 +181,21 @@
         #materialDestroyBtn {
             padding: 4px 8px;
             margin: -4px 4px -4px 0;
-            font-size: 11px;
+            font-size: 8px;
             color: #888;
             cursor: pointer;
             user-select: none;
-            border: 1px solid #555;
+            border: 2px solid;
+            border-color: #555 #333 #333 #555;
         }
         #materialDestroyBtn:hover {
             color: #cc8888;
-            border-color: #888;
+            border-color: #666 #444 #444 #666;
         }
         #materialDestroyBtn.active {
             color: #cc8888;
             background: #333;
-            border-color: #cc8888;
+            border-color: #333 #555 #555 #333;
         }
         #materialTabs {
             display: flex;
@@ -196,24 +204,26 @@
         }
         
         #materialTabs .tab {
-            padding: 6px 14px;
-            font-size: 12px;
+            padding: 6px 10px;
+            font-size: 8px;
             font-weight: bold;
             color: #999;
             background: #2a2a2a;
-            border: 1px solid #555;
+            border: 2px solid;
+            border-color: #555 #333 #333 #555;
             cursor: pointer;
         }
         
         #materialTabs .tab:hover {
             color: #ccc;
             background: #333;
+            border-color: #666 #444 #444 #666;
         }
         
         #materialTabs .tab.active {
             color: #ccc;
-            background: #444;
-            border-color: #777;
+            background: #333;
+            border-color: #333 #555 #555 #555;
         }
         
         #materialContent {
@@ -232,31 +242,33 @@
         .materialTile {
             width: 40px;
             height: 40px;
-            border: 1px solid #555;
+            border: 2px solid;
+            border-color: #555 #333 #333 #555;
             cursor: pointer;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 9px;
+            font-size: 7px;
             color: #fff;
             flex-shrink: 0;
         }
         
         .materialTile:hover {
-            border-color: #888;
+            border-color: #666 #444 #444 #666;
             background: #2a2a2a;
         }
         
         .materialTile.selected {
-            border-color: #cc8888;
+            border-color: #cc8888 #664444 #664444 #cc8888;
             background: #333;
         }
         
         .materialTile .tileColor {
             width: 24px;
             height: 18px;
-            border: 1px solid #444;
+            border: 2px solid;
+            border-color: #444 #222 #222 #444;
             margin-bottom: 2px;
         }
         
@@ -265,34 +277,38 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            font-size: 8px;
+            font-size: 6px;
         }
         
         #minimizeBtn {
             margin-left: auto;
-            padding: 4px 10px;
-            font-size: 11px;
+            padding: 4px 8px;
+            font-size: 8px;
             color: #888;
             cursor: pointer;
+            border: 2px solid;
+            border-color: #555 #333 #333 #555;
         }
         
         #minimizeBtn:hover {
             color: #ccc;
             background: #333;
+            border-color: #666 #444 #444 #666;
         }
         
         #currentMaterialDisplay {
             position: absolute;
-            top: 95px;
+            top: 12px;
             right: 12px;
             display: flex;
             align-items: center;
             gap: 8px;
             background: #1a1a1a;
-            padding: 8px 14px;
-            font-size: 12px;
+            padding: 8px 12px;
+            font-size: 8px;
             color: #fff;
-            border: 1px solid #555;
+            border: 3px solid;
+            border-color: #333 #555 #555 #333;
             pointer-events: none;
         }
         
@@ -304,7 +320,8 @@
         #currentMaterialDisplay .swatch {
             width: 24px;
             height: 24px;
-            border: 1px solid #555;
+            border: 2px solid;
+            border-color: #444 #222 #222 #444;
             flex-shrink: 0;
         }
         
@@ -324,11 +341,13 @@
 
         #settings {
             position: absolute;
-            top: 130px;
+            top: 60px;
             right: 12px;
             background: #1a1a1a;
-            font-size: 13px;
-            border: 1px solid #555;
+            font-size: 8px;
+            line-height: 2;
+            border: 3px solid;
+            border-color: #333 #555 #555 #333;
             min-width: 220px;
             max-width: 35vw;
             pointer-events: auto;
@@ -338,16 +357,29 @@
         #settings.hidden {
             opacity: 0;
             visibility: hidden;
+            pointer-events: none;
+        }
+        #settings.mainMenuOverlay {
+            z-index: 101;
+        }
+        #settings input[type="text"] {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 6px 8px;
+            font-size: 11px;
+            background: #222;
+            border: 1px solid #444;
+            color: #ccc;
         }
         
         #settingsHeader {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 12px;
+            padding: 8px 10px;
             cursor: pointer;
             user-select: none;
-            border-bottom: 1px solid #555;
+            border-bottom: 3px solid #555;
         }
         
         #settingsHeader:hover {
@@ -378,7 +410,7 @@
         }
 
         #settings h3 {
-            font-size: 14px;
+            font-size: 8px;
             margin: 0;
             color: #999;
         }
@@ -391,7 +423,7 @@
             display: block;
             margin-bottom: 5px;
             color: #999;
-            font-size: 12px;
+            font-size: 8px;
             white-space: nowrap;
             overflow: visible;
         }
@@ -404,12 +436,12 @@
         .setting-value {
             color: #ddd;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 8px;
         }
 
         .setting-note {
             color: #666;
-            font-size: 10px;
+            font-size: 7px;
             margin-top: 3px;
         }
         
@@ -419,9 +451,11 @@
             right: 10px;
             background: #1a1a1a;
             color: #999;
-            padding: 8px 12px;
-            font-size: 11px;
-            border: 1px solid #555;
+            padding: 8px 10px;
+            font-size: 7px;
+            line-height: 2;
+            border: 3px solid;
+            border-color: #333 #555 #555 #333;
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
@@ -431,87 +465,198 @@
             opacity: 1;
             visibility: visible;
         }
-        
-        #gamemodePanel {
+
+        /* Main Menu / Gamemode Selector */
+        #mainMenu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            pointer-events: auto;
+        }
+        #mainMenu.hidden {
+            display: none;
+        }
+        #mainMenu h1 {
+            font-size: 36px;
+            color: #cc8888;
+            margin-bottom: 12px;
+            text-shadow: 2px 2px 4px #000;
+        }
+        #mainMenu p {
+            color: #999;
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+        #mainMenuButtons {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .modeBtn {
+            padding: 20px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            background: #333;
+            border: 2px solid #555;
+            cursor: pointer;
+            min-width: 160px;
+        }
+        .modeBtn:hover {
+            background: #444;
+            border-color: #888;
+        }
+        .modeBtn.sandbox { border-color: #4a9eff; }
+        .modeBtn.sandbox:hover { background: #2a4a6a; }
+        .modeBtn.survival { border-color: #ff6b6b; }
+        .modeBtn.survival:hover { background: #6a2a2a; }
+        #mainMenuSettingsBtn {
+            margin-top: 16px;
+            padding: 8px 16px;
+            font-size: 12px;
+            color: #999;
+            background: transparent;
+            border: 1px solid #555;
+            cursor: pointer;
+        }
+        #mainMenuSettingsBtn:hover { color: #ccc; border-color: #777; }
+
+        /* Survival UI */
+        #survivalUI {
             position: absolute;
             top: 12px;
-            right: 12px;
+            left: 160px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        #survivalUI.hidden {
+            display: none;
+        }
+        #healthBar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             background: #1a1a1a;
+            padding: 6px 12px;
             border: 1px solid #555;
-            font-size: 12px;
-            pointer-events: auto;
-            cursor: default;
-            min-width: 180px;
         }
-        
-        #gamemodePanel.hidden {
-            opacity: 0;
-            visibility: hidden;
+        #healthFill {
+            width: 120px;
+            height: 16px;
+            background: #333;
+            border: 1px solid #555;
+            overflow: hidden;
         }
-        
-        #gamemodeHeader {
-            padding: 8px 12px;
-            border-bottom: 1px solid #555;
-            color: #999;
-            font-weight: bold;
+        #healthFill .fill {
+            height: 100%;
+            background: #4ade80;
+            transition: width 0.2s, background 0.2s;
         }
-        
-        #gamemodeButtons {
+        #healthFill .fill.low { background: #fbbf24; }
+        #healthFill .fill.critical { background: #ef4444; }
+        #inventoryBar {
             display: flex;
             gap: 4px;
-            padding: 8px 12px;
-        }
-        
-        #gamemodeButtons .modeBtn {
-            flex: 1;
-            padding: 8px 10px;
-            font-size: 11px;
+            background: #1a1a1a;
+            padding: 6px 12px;
             border: 1px solid #555;
-            background: #2a2a2a;
-            color: #999;
-            cursor: pointer;
-            text-align: center;
+            max-width: 400px;
+            flex-wrap: wrap;
         }
-        
-        #gamemodeButtons .modeBtn:hover {
-            background: #333;
-            color: #ccc;
+        .invSlot {
+            width: 36px;
+            height: 36px;
+            border: 1px solid #555;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #fff;
         }
-        
-        #gamemodeButtons .modeBtn.active {
-            background: #444;
-            color: #cc8888;
-            border-color: #cc8888;
+        .invSlot .invColor { width: 20px; height: 14px; border: 1px solid #444; }
+        .invSlot .invCount { font-weight: bold; }
+
+        /* Survival: Crafting panel (Tab to open) */
+        #craftingPanel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 480px;
+            max-width: 95vw;
+            background: #1a1a1a;
+            border: 2px solid #555;
+            z-index: 50;
+            display: none;
+            pointer-events: auto;
         }
-        
-        #gamemodeProtectInfo {
-            padding: 6px 12px 8px;
-            border-top: 1px solid #333;
-            font-size: 11px;
-            color: #aaa;
-        }
-        
-        #gamemodeProtectInfo .waveStat {
-            margin: 2px 0;
-            color: #ddd;
-        }
-        
-        #gamemodeProtectInfo .gameOverMsg {
-            color: #ff6b6b;
-            font-weight: bold;
-            margin-top: 4px;
-        }
-        
-        #gamemodeProtectInfo .victoryMsg {
-            color: #6bcf7d;
-            font-weight: bold;
-            margin-top: 4px;
-        }
+        #craftingPanel.open { display: block; }
+        #craftingPanel h2 { font-size: 16px; color: #ccc; margin: 0 0 12px 0; padding: 12px; border-bottom: 1px solid #555; }
+        #craftingGoal { font-size: 12px; }
+        #craftingContent { display: flex; gap: 24px; padding: 16px; max-height: 50vh; }
+        #craftingInventory { flex: 1; overflow-y: auto; }
+        #craftingRecipes { flex: 1; overflow-y: auto; max-height: 45vh; }
+        #craftingInventory h3, #craftingRecipes h3 { font-size: 12px; color: #999; margin-bottom: 8px; }
+        .craftSlot { display: flex; align-items: center; gap: 8px; padding: 6px 10px; margin: 4px 0; background: #2a2a2a; border: 1px solid #444; cursor: pointer; }
+        .craftSlot:hover { border-color: #777; background: #333; }
+        .craftSlot.selected { border-color: #4ade80; background: #1a2a1a; }
+        .craftSlot .colorBox { width: 20px; height: 20px; border: 1px solid #555; flex-shrink: 0; }
+        .craftSlot .name { flex: 1; }
+        .craftSlot .count { color: #888; }
+        .craftRecipe { display: flex; align-items: center; gap: 8px; padding: 8px; margin: 6px 0; background: #2a2a2a; border: 1px solid #444; cursor: pointer; }
+        .craftRecipe:hover { border-color: #777; }
+        .craftRecipe.cantCraft { opacity: 0.5; cursor: not-allowed; }
+        .craftRecipe .inputs, .craftRecipe .arrow, .craftRecipe .output { display: flex; align-items: center; gap: 4px; }
+        .craftRecipe .arrow { color: #666; }
+        .craftRecipe .output .colorBox { width: 24px; height: 24px; }
+        .craftHint { font-size: 10px; color: #666; margin-top: 12px; padding-top: 8px; border-top: 1px solid #333; }
+        #craftingHearts { display: flex; gap: 2px; margin-bottom: 12px; }
+        #craftingHearts span { font-size: 18px; }
     </style>
 </head>
 <body>
     <div id="gameContainer">
+        <div id="mainMenu">
+            <h1>🧱 RAMPAGE: VOXEL FURY 💥</h1>
+            <p>Choose your mode</p>
+            <div id="mainMenuButtons">
+                <button class="modeBtn sandbox">🎮 Sandbox</button>
+                <button class="modeBtn survival">🏕️ Survival</button>
+            </div>
+            <button id="mainMenuSettingsBtn" title="Open Settings to type survivalstart for Survival mode">⚙️ Settings</button>
+        </div>
+
         <canvas id="gameCanvas"></canvas>
+        
+        <div id="craftingPanel">
+            <h2>⚒️ Crafting <span style="color:#666;font-size:11px;">Tab to close</span></h2>
+            <div id="craftingGoal"></div>
+            <div id="craftingHearts"></div>
+            <div id="craftingContent">
+                <div id="craftingInventory">
+                    <h3>Inventory — click to select for placing</h3>
+                    <div id="craftingInventoryList"></div>
+                    <div class="craftHint">Click inventory or craft to select. LClick=place, RClick or B+LClick=break/dig.</div>
+                </div>
+                <div id="craftingRecipes">
+                    <h3>Recipes</h3>
+                    <div id="craftingRecipeList"></div>
+                </div>
+            </div>
+        </div>
         
         <div id="ui">
             <div id="uiHeader">
@@ -525,21 +670,7 @@
             </div>
         </div>
 
-        <div id="gamemodePanel">
-            <div id="gamemodeHeader">Game Mode</div>
-            <div id="gamemodeButtons">
-                <button class="modeBtn active" data-mode="sandbox">Sandbox</button>
-                <button class="modeBtn" data-mode="protect">Protect Humans</button>
-            </div>
-            <div id="gamemodeProtectInfo" style="display: none;">
-                <div class="waveStat">Wave: <span id="protectWaveNum">1</span></div>
-                <div class="waveStat">Humans: <span id="protectHumansAlive">0</span></div>
-                <div class="waveStat">Time: <span id="protectWaveTime">0</span>s</div>
-                <div id="protectStatusMsg"></div>
-            </div>
-        </div>
-
-        <div id="settings">
+        <div id="settings" class="hidden">
             <div id="settingsHeader">
                 <h3>⚙️ Settings</h3>
                 <span id="settingsCollapseBtn">−</span>
@@ -554,6 +685,10 @@
                 <label>Place Amount: <span class="setting-value" id="placeAmountDisplay">20</span></label>
                 <input type="range" id="placeAmountSlider" min="1" max="50" value="20" step="1">
                 <div class="setting-note">Radius when placing (1 = single voxel | 50 = large blob)</div>
+            </div>
+            <div class="setting-item">
+                <label>Command:</label>
+                <input type="text" id="settingsCommand" placeholder="Type survivalstart to start Survival mode" autocomplete="off">
             </div>
             </div>
         </div>
@@ -650,7 +785,9 @@
             ANTIMETAL: 41,  // Dense metal - blocks antimatter blast (immune to vaporization)
             TRAPDOOR: 42,   // Opens with O, closes with C - things fall through when open
             WATER_SPOUT: 43,  // Emits water downward - build fountains & fill areas
-            LAVA_SPOUT: 44    // Emits lava downward - build lava flows
+            LAVA_SPOUT: 44,   // Emits lava downward - build lava flows
+            PLAYER_HEAD: 45,   // Survival mode: player entity (controlled by arrow keys)
+            PLAYER_BODY: 46   // Survival mode: player entity body
         };
 
         // Material Properties
@@ -699,7 +836,9 @@
             [MATERIAL.ANTIMETAL]: { color: '#2a2a3a', density: 12, strength: 10, flow: false, shadeBase: [42, 42, 58], blocksAntimatter: true },
             [MATERIAL.TRAPDOOR]: { color: '#4a3728', density: 8, strength: 5, flow: false, shadeBase: [74, 55, 40], isTrapdoor: true, sticky: true },
             [MATERIAL.WATER_SPOUT]: { color: '#6eb5d0', density: 6, strength: 4, flow: false, shadeBase: [110, 181, 208], isSpout: true, spoutLiquid: MATERIAL.LIQUID },
-            [MATERIAL.LAVA_SPOUT]: { color: '#d94a2e', density: 7, strength: 5, flow: false, shadeBase: [217, 74, 46], isSpout: true, spoutLiquid: MATERIAL.LAVA, glows: true }
+            [MATERIAL.LAVA_SPOUT]: { color: '#d94a2e', density: 7, strength: 5, flow: false, shadeBase: [217, 74, 46], isSpout: true, spoutLiquid: MATERIAL.LAVA, glows: true },
+            [MATERIAL.PLAYER_HEAD]: { color: '#00ff88', density: 5, strength: 5, flow: false, shadeBase: [0, 255, 136], isPlayer: true },
+            [MATERIAL.PLAYER_BODY]: { color: '#00cc6a', density: 5, strength: 5, flow: false, shadeBase: [0, 204, 106], isPlayer: true }
         };
 
         // Material display names
@@ -717,6 +856,8 @@
             [MATERIAL.TRAPDOOR]: 'Trapdoor',
             [MATERIAL.WATER_SPOUT]: 'Water Spout',
             [MATERIAL.LAVA_SPOUT]: 'Lava Spout',
+            [MATERIAL.PLAYER_HEAD]: 'You',
+            [MATERIAL.PLAYER_BODY]: 'You',
             [MATERIAL.FLY]: 'Flies', [MATERIAL.DEAD_HUMAN]: 'Dead', [MATERIAL.HUMAN_HEAD]: 'Human', [MATERIAL.HUMAN_BODY]: 'Human',
             [MATERIAL.HUMAN_BODY_BUILDER]: 'Builder'
         };
@@ -789,6 +930,11 @@
                 this.spawnerStructures = [];     // { left, top, right, bottom, emitX, emitY, material } - hollow square, emits what's inside
                 this.undoHistory = [];           // Stack of { type: 'place'|'destroy', changes: [...] }
                 this.maxUndoHistory = 50;        // Limit memory usage
+                this.gameMode = 'sandbox';
+                this.player = null;
+                this.inventory = {};
+                this.playerKeys = { up: false, down: false, left: false, right: false };
+                this.blocksPlaced = 0;
             }
 
             // Capture current cell state for undo
@@ -834,6 +980,9 @@
 
             // Place single voxel (records for undo) - used by line tool start and direct placement
             placeSingle(x, y, material) {
+                if (this.gameMode === 'survival') {
+                    if (!this.consumeFromInventory(material, 1)) return;
+                }
                 const state = this.captureCellState(x, y);
                 const idx = this.getIndex(x, y);
                 if (idx >= 0) {
@@ -842,6 +991,7 @@
                     if (material === MATERIAL.WATER_SPOUT) this.spoutIndices.set(idx, MATERIAL.LIQUID);
                     if (material === MATERIAL.LAVA_SPOUT) this.spoutIndices.set(idx, MATERIAL.LAVA);
                     this.notifyMaterialPlacedAt(x, y, material);
+                    if (this.gameMode === 'survival') this.blocksPlaced = (this.blocksPlaced || 0) + 1;
                     if (state) {
                         this.undoHistory.push({ type: 'place', changes: [state] });
                         if (this.undoHistory.length > this.maxUndoHistory) this.undoHistory.shift();
@@ -967,84 +1117,196 @@
                 this.initialParticles = this.particleCount;
             }
 
-            // Protect the Humans arena - flat platform with humans
-            generateProtectArena() {
+            generateTerrain() {
                 this.trapdoorIndices.clear();
                 this.spoutIndices.clear();
                 this.spawnerStructures = [];
-                this.grid.fill(MATERIAL.EMPTY);
-                this.humanBuiltBlocks.fill(false);
-                this.plantType.fill(0);
-                this.humans = [];
-                this.nextHumanId = 0;
-                this.flies = [];
-                this.nextFlyId = 0;
-                this.leadBalls = [];
-                this.nextLeadBallId = 0;
-                this.pelletBalls = [];
-                this.nextPelletId = 0;
-                this.worms = [];
-                this.nextWormId = 0;
-                this.undoHistory = [];
-                
-                const groundLevel = GRID_HEIGHT - 12;
-                const platformWidth = Math.floor(GRID_WIDTH * 0.7);
-                const platformLeft = Math.floor((GRID_WIDTH - platformWidth) / 2);
-                
-                // Solid ground platform
-                for (let x = platformLeft; x < platformLeft + platformWidth; x++) {
-                    for (let y = groundLevel; y < GRID_HEIGHT; y++) {
-                        if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT)
-                            this.set(x, y, MATERIAL.CONCRETE);
+                const groundY = Math.floor(GRID_HEIGHT * 0.72);
+                const seed = Math.random() * 10000;
+                const n = (x, y, s) => (Math.sin((x + seed) * s * 0.1) * Math.cos((y + seed * 0.7) * s * 0.08) + Math.sin((x + y + seed) * s * 0.05)) * 0.5 + 0.5;
+
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    const heightNoise = n(x, 0, 0.025) * 80;
+                    const mountainNoise = n(x * 0.5, 0, 0.03) * 60;
+                    let surfY = groundY - Math.floor(heightNoise * 0.6) - Math.floor(mountainNoise * 0.5);
+                    const biome = n(x, 0, 0.02);
+                    if (biome < 0.35) surfY -= Math.max(0, Math.floor(Math.sin(x * 0.08 + seed) * 5));
+                    for (let y = 0; y < GRID_HEIGHT; y++) {
+                        if (y > surfY) continue;
+                        if (n(x, y, 0.08) > 0.52) continue;
+                        const depth = surfY - y;
+                        let material = MATERIAL.STONE;
+                        if (biome < 0.35) {
+                            if (depth < 2) material = Math.random() < 0.7 ? MATERIAL.SAND : MATERIAL.DUST;
+                            else if (depth < 15) material = Math.random() < 0.85 ? MATERIAL.SAND : MATERIAL.GRAVEL;
+                            else material = Math.random() < 0.7 ? MATERIAL.SAND : MATERIAL.STONE;
+                        } else if (biome > 0.65) {
+                            if (depth < 4) material = Math.random() < 0.6 ? MATERIAL.WOOD : MATERIAL.PLANT;
+                            else if (depth < 10) material = Math.random() < 0.7 ? MATERIAL.WOOD : MATERIAL.STONE;
+                            else material = Math.random() < 0.5 ? MATERIAL.STONE : MATERIAL.CONCRETE;
+                        } else {
+                            const peakHeight = groundY - heightNoise * 0.6 - mountainNoise * 0.5;
+                            if (depth < 2 && peakHeight < groundY - 40) material = Math.random() < 0.8 ? MATERIAL.SNOW : MATERIAL.ICE;
+                            else if (depth < 2) material = Math.random() < 0.5 ? MATERIAL.SAND : MATERIAL.DUST;
+                            else if (depth < 8) material = Math.random() < 0.4 ? MATERIAL.CONCRETE : MATERIAL.STONE;
+                        }
+                        this.set(x, y, material);
                     }
                 }
-                
-                // Spawn 5-8 humans on the platform
-                const numHumans = 5 + Math.floor(Math.random() * 4);
-                const spawnStart = platformLeft + 8;
-                const spawnEnd = platformLeft + platformWidth - 8;
-                for (let i = 0; i < numHumans; i++) {
-                    const mx = spawnStart + Math.floor(Math.random() * (spawnEnd - spawnStart));
-                    const my = groundLevel - 1;
-                    if (this.isEmpty(mx, my) && this.isEmpty(mx, my - 1)) {
-                        const humanId = this.nextHumanId++;
-                        const isBuilder = Math.random() < 0.4;
-                        const bodyMat = isBuilder ? MATERIAL.HUMAN_BODY_BUILDER : MATERIAL.HUMAN_BODY;
-                        this.set(mx, my, bodyMat);
-                        this.set(mx, my - 1, MATERIAL.HUMAN_HEAD);
-                        this.humans.push({
-                            id: humanId,
-                            headX: mx,
-                            headY: my - 1,
-                            bodyX: mx,
-                            bodyY: my,
-                            alive: true,
-                            vx: 0,
-                            vy: 0,
-                            direction: Math.random() < 0.5 ? -1 : 1,
-                            justBuilt: false,
-                            isBuilder
-                        });
+
+
+                for (let t = 0; t < 30; t++) {
+                    const tx = 15 + Math.floor(Math.random() * (GRID_WIDTH - 50));
+                    if (n(tx, 0, 0.02) > 0.6) {
+                        let surfY = groundY;
+                        for (let y = groundY; y >= 0; y--) {
+                            if (this.get(tx, y) !== MATERIAL.EMPTY) { surfY = y; break; }
+                        }
+                        const h = 4 + Math.floor(Math.random() * 6);
+                        for (let dy = 1; dy <= h; dy++) {
+                            const y = surfY - dy;
+                            if (y >= 0) this.set(tx, y, dy === h ? MATERIAL.PLANT : MATERIAL.WOOD);
+                        }
                     }
                 }
-                
+
+                for (let i = 0; i < 5; i++) {
+                    const px = Math.floor(Math.random() * (GRID_WIDTH - 30)) + 15;
+                    const py = groundY - 15 - Math.floor(Math.random() * 60);
+                    const size = 3 + Math.floor(Math.random() * 5);
+                    const liq = Math.random() < 0.25 ? MATERIAL.LAVA : MATERIAL.LIQUID;
+                    for (let dx = -size; dx <= size; dx++) {
+                        for (let dy = -size; dy <= size; dy++) {
+                            if (dx * dx + dy * dy < size * size && Math.random() < 0.55) {
+                                const x = px + dx, y = py + dy;
+                                if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT && this.get(x, y) !== MATERIAL.EMPTY)
+                                    this.set(x, y, liq);
+                            }
+                        }
+                    }
+                }
+
+                for (let s = 0; s < 45; s++) {
+                    this.simulate();
+                }
+
+                const spawnX = Math.floor(GRID_WIDTH / 2);
+                let spawnY = groundY;
+                for (let y = groundY; y >= 0; y--) {
+                    if (this.get(spawnX, y) !== MATERIAL.EMPTY) { spawnY = y - 2; break; }
+                }
+                if (spawnY < 0) spawnY = groundY - 5;
+                this.set(spawnX, spawnY, MATERIAL.PLAYER_BODY);
+                this.set(spawnX, spawnY - 1, MATERIAL.PLAYER_HEAD);
+                this.player = { headX: spawnX, headY: spawnY - 1, bodyX: spawnX, bodyY: spawnY, health: 100, maxHealth: 100, dead: false, invincibleUntil: Date.now() + 1500 };
+                this.blocksPlaced = 0;
                 this.countParticles();
                 this.initialParticles = this.particleCount;
             }
 
-            // Spawn threat from above (acid, lava, fire, etc.)
-            spawnThreat(material, count, x, y) {
-                const r = Math.min(3 + Math.floor(count / 4), 8);
-                for (let dy = -r; dy <= r; dy++) {
-                    for (let dx = -r; dx <= r; dx++) {
-                        if (dx * dx + dy * dy <= r * r && Math.random() < 0.7) {
-                            const gx = x + dx;
-                            const gy = y + dy;
-                            if (gx >= 0 && gx < GRID_WIDTH && gy >= 0 && gy < GRID_HEIGHT)
-                                this.set(gx, gy, material);
+            updatePlayer() {
+                if (!this.player || this.player.dead) return;
+                const p = this.player;
+                let moveX = 0;
+                if (this.playerKeys.left) moveX = -1;
+                if (this.playerKeys.right) moveX = 1;
+                if (p.vy === undefined) p.vy = 0;
+                p.vy += CONFIG.gravity;
+                const canFall = this.isEmpty(p.bodyX, p.bodyY + 1) || this.get(p.bodyX, p.bodyY + 1) === MATERIAL.LIQUID;
+                if (canFall && p.vy > 0) {
+                    this.set(p.headX, p.headY, this.get(p.bodyX, p.bodyY + 1) === MATERIAL.LIQUID ? MATERIAL.LIQUID : MATERIAL.EMPTY);
+                    this.set(p.bodyX, p.bodyY, MATERIAL.EMPTY);
+                    p.headY++; p.bodyY++;
+                    this.set(p.headX, p.headY, MATERIAL.PLAYER_HEAD);
+                    this.set(p.bodyX, p.bodyY, MATERIAL.PLAYER_BODY);
+                } else {
+                    p.vy = 0;
+                    if (moveX !== 0) {
+                        const nextX = p.bodyX + moveX;
+                        if (this.isEmpty(nextX, p.bodyY) && this.isEmpty(nextX, p.bodyY - 1)) {
+                            this.set(p.headX, p.headY, MATERIAL.EMPTY);
+                            this.set(p.bodyX, p.bodyY, MATERIAL.EMPTY);
+                            p.headX = p.bodyX = nextX;
+                            this.set(p.headX, p.headY, MATERIAL.PLAYER_HEAD);
+                            this.set(p.bodyX, p.bodyY, MATERIAL.PLAYER_BODY);
+                        }
+                    }
+                    if (this.playerKeys.up) {
+                        const canClimb = !this.isEmpty(p.bodyX, p.bodyY - 1) && this.isEmpty(p.bodyX, p.bodyY - 2);
+                        if (canClimb) {
+                            this.set(p.headX, p.headY, MATERIAL.EMPTY);
+                            this.set(p.bodyX, p.bodyY, MATERIAL.EMPTY);
+                            p.headY--; p.bodyY--;
+                            this.set(p.headX, p.headY, MATERIAL.PLAYER_HEAD);
+                            this.set(p.bodyX, p.bodyY, MATERIAL.PLAYER_BODY);
                         }
                     }
                 }
+                const now = Date.now();
+                if (now < p.invincibleUntil) return;
+                for (const [hx, hy] of [[p.headX, p.headY], [p.bodyX, p.bodyY]]) {
+                    for (const [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+                        const m = this.get(hx + dx, hy + dy);
+                        if (m === MATERIAL.LAVA || m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.MERCURY) {
+                            p.health = Math.max(0, p.health - 2);
+                            p.invincibleUntil = now + 400;
+                            if (p.health <= 0) {
+                                p.dead = true;
+                                this.set(p.headX, p.headY, MATERIAL.DUST);
+                                this.set(p.bodyX, p.bodyY, MATERIAL.DUST);
+                                setTimeout(() => this.respawnPlayer(), 2000);
+                            }
+                            return;
+                        }
+                    }
+                }
+                const below = this.get(p.bodyX, p.bodyY + 1);
+                if (below === MATERIAL.LIQUID || below === MATERIAL.ACID) {
+                    if (this.frameCount % 30 === 0) {
+                        p.health = Math.max(0, p.health - 1);
+                        if (p.health <= 0) {
+                            p.dead = true;
+                            this.set(p.headX, p.headY, MATERIAL.DUST);
+                            this.set(p.bodyX, p.bodyY, MATERIAL.DUST);
+                            setTimeout(() => this.respawnPlayer(), 2000);
+                        }
+                    }
+                }
+            }
+
+            respawnPlayer() {
+                if (this.gameMode !== 'survival') return;
+                const centerX = Math.floor(GRID_WIDTH / 2);
+                let spawnY = Math.floor(GRID_HEIGHT * 0.75);
+                for (let y = spawnY; y >= 0; y--) {
+                    if (this.get(centerX, y) !== MATERIAL.EMPTY) { spawnY = y - 2; break; }
+                }
+                this.set(centerX, spawnY, MATERIAL.PLAYER_BODY);
+                this.set(centerX, spawnY - 1, MATERIAL.PLAYER_HEAD);
+                this.player = { headX: centerX, headY: spawnY - 1, bodyX: centerX, bodyY: spawnY, health: 80, maxHealth: 100, dead: false, invincibleUntil: Date.now() + 2000 };
+            }
+
+            addToInventory(material, count) {
+                if (this.gameMode !== 'survival') return;
+                const gatherable = [MATERIAL.CONCRETE, MATERIAL.STONE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.WOOD, MATERIAL.SAND, MATERIAL.DUST, MATERIAL.GRAVEL, MATERIAL.ICE, MATERIAL.LIQUID, MATERIAL.PLANT, MATERIAL.SNOW, MATERIAL.LAVA, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.SLIME, MATERIAL.GUNPOWDER, MATERIAL.FUSE, MATERIAL.RUBBER, MATERIAL.GLUE_METAL, MATERIAL.TRAPDOOR, MATERIAL.WATER_SPOUT, MATERIAL.LAVA_SPOUT, MATERIAL.ANTIMETAL, MATERIAL.HONEY];
+                if (!gatherable.includes(material)) return;
+                this.inventory[material] = (this.inventory[material] || 0) + (count || 1);
+                this.updateInventoryUI();
+            }
+
+            consumeFromInventory(material, count) {
+                if (this.gameMode !== 'survival') return true;
+                const have = this.inventory[material] || 0;
+                const c = count || 1;
+                if (have < c) return false;
+                this.inventory[material] = have - c;
+                if (this.inventory[material] <= 0) delete this.inventory[material];
+                this.updateInventoryUI();
+                return true;
+            }
+
+            updateInventoryUI() {
+                if (typeof renderCraftingPanel === 'function' && craftingPanelOpen) renderCraftingPanel();
             }
 
             // Update humans - they move as connected entities
@@ -1126,17 +1388,6 @@
                     } else {
                         // On ground - Builder AI behavior
                         human.vy = 0;
-                        
-                        // Ecosystem: humans occasionally produce feces (nutrient input to ecosystem)
-                        if (Math.random() < 0.0012) {
-                            const fecalSpots = [[human.bodyX, human.bodyY + 1], [human.bodyX - 1, human.bodyY], [human.bodyX + 1, human.bodyY]];
-                            for (const [fx, fy] of fecalSpots) {
-                                if (fx >= 0 && fx < GRID_WIDTH && fy >= 0 && fy < GRID_HEIGHT && this.isEmpty(fx, fy)) {
-                                    this.set(fx, fy, MATERIAL.FEECES);
-                                    break;
-                                }
-                            }
-                        }
                         
                         // Try to walk in current direction
                         const nextX = human.bodyX + human.direction;
@@ -1377,20 +1628,6 @@
                         fly.y = newY;
                         this.set(fly.x, fly.y, MATERIAL.FLY);
                     }
-                    
-                    // Ecosystem: flies reproduce when on or adjacent to feces (eggs hatch)
-                    const onFeces = this.get(fly.x, fly.y + 1) === MATERIAL.FEECES || this.get(fly.x, fly.y - 1) === MATERIAL.FEECES ||
-                        this.get(fly.x - 1, fly.y) === MATERIAL.FEECES || this.get(fly.x + 1, fly.y) === MATERIAL.FEECES;
-                    if (onFeces && Math.random() < 0.008) {
-                        const spawnDirs = [[fly.x - 1, fly.y], [fly.x + 1, fly.y], [fly.x, fly.y - 1], [fly.x, fly.y + 1]];
-                        for (const [sx, sy] of spawnDirs) {
-                            if (sx >= 0 && sx < GRID_WIDTH && sy >= 0 && sy < GRID_HEIGHT && this.isEmpty(sx, sy)) {
-                                this.set(sx, sy, MATERIAL.FLY);
-                                this.flies.push({ id: this.nextFlyId++, x: sx, y: sy, alive: true });
-                                break;
-                            }
-                        }
-                    }
                 }
             }
 
@@ -1466,35 +1703,6 @@
                         worm.x = newX;
                         worm.y = newY;
                         this.set(worm.x, worm.y, MATERIAL.WORM);
-                    }
-                    
-                    // Ecosystem: worms eat plants/feces and reproduce when well-fed
-                    const foodSpots = [[worm.x, worm.y + 1], [worm.x, worm.y - 1], [worm.x - 1, worm.y], [worm.x + 1, worm.y]];
-                    let hasFood = false;
-                    let eatenX = -1, eatenY = -1;
-                    for (const [fx, fy] of foodSpots) {
-                        const m = this.get(fx, fy);
-                        if (m === MATERIAL.PLANT || m === MATERIAL.FEECES) {
-                            hasFood = true;
-                            if (Math.random() < 0.012) {
-                                eatenX = fx; eatenY = fy;
-                                break;
-                            }
-                        }
-                    }
-                    if (hasFood && eatenX >= 0) {
-                        if (this.get(eatenX, eatenY) === MATERIAL.PLANT) this.plantType[this.getIndex(eatenX, eatenY)] = 0;
-                        this.set(eatenX, eatenY, MATERIAL.EMPTY);
-                    }
-                    if (hasFood && Math.random() < 0.006) {
-                        const spawnDirs = [[worm.x - 1, worm.y], [worm.x + 1, worm.y], [worm.x, worm.y - 1], [worm.x, worm.y + 1]];
-                        for (const [sx, sy] of spawnDirs) {
-                            if (sx >= 0 && sx < GRID_WIDTH && sy >= 0 && sy < GRID_HEIGHT && this.isEmpty(sx, sy)) {
-                                this.set(sx, sy, MATERIAL.WORM);
-                                this.worms.push({ id: this.nextWormId++, x: sx, y: sy, vx: 0, vy: 0 });
-                                break;
-                            }
-                        }
                     }
                 }
             }
@@ -1837,22 +2045,8 @@
                         // Skip worms - handled as life-form entities
                         if (material === MATERIAL.WORM) continue;
                         
-                        // Dead humans - decompose into feces when near water, blood, or bacteria (ecosystem nutrient cycle)
-                        if (material === MATERIAL.DEAD_HUMAN) {
-                            const decompNeighbors = [[x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]];
-                            let canDecompose = false;
-                            for (const [nx, ny] of decompNeighbors) {
-                                const n = this.get(nx, ny);
-                                if (n === MATERIAL.LIQUID || n === MATERIAL.BLOOD || n === MATERIAL.MILK || n === MATERIAL.BACTERIA) {
-                                    canDecompose = true;
-                                    break;
-                                }
-                            }
-                            if (canDecompose && Math.random() < 0.004) {
-                                newGrid[idx] = MATERIAL.FEECES;
-                            }
-                            continue;
-                        }
+                        // Skip dead humans - they don't move (static red voxels)
+                        if (material === MATERIAL.DEAD_HUMAN) continue;
                         
                         // Skip fuse - sticks in air, doesn't fall
                         if (material === MATERIAL.FUSE) continue;
@@ -2201,13 +2395,9 @@
                         }
 
                         if (material === MATERIAL.PLANT) {
-                            const waterNeighbors = [[x, y - 1], [x, y + 1], [x - 1, y], [x + 1, y]];
-                            let waterCount = 0;
-                            for (const [nx, ny] of waterNeighbors) {
-                                const n = this.get(nx, ny);
-                                if (n === MATERIAL.LIQUID || n === MATERIAL.BLOOD || n === MATERIAL.MILK) waterCount++;
-                            }
-                            const growthChance = waterCount >= 2 ? 0.022 : waterCount >= 1 ? 0.016 : 0.008;
+                            const hasWater = this.get(x, y - 1) === MATERIAL.LIQUID || this.get(x, y + 1) === MATERIAL.LIQUID ||
+                                this.get(x - 1, y) === MATERIAL.LIQUID || this.get(x + 1, y) === MATERIAL.LIQUID;
+                            const growthChance = hasWater ? 0.014 : 0.008;
                             if (Math.random() < growthChance) {
                                 const hasGroundBelow = !emptyIn(newGrid, x, y + 1);
                                 const growthChoices = [];
@@ -2263,26 +2453,6 @@
                                     if (nearbyPlants === 0) {
                                         newGrid[idx] = MATERIAL.EMPTY; // Isolated plants die
                                         this.plantType[idx] = 0; // Clear plant type
-                                    }
-                                }
-                                
-                                // Ecosystem: seed spread - plants can sprout in distant wet spots (seeds germinate)
-                                if (Math.random() < 0.002) {
-                                    const spreadSpots = [[x-2,y],[x+2,y],[x,y-2],[x,y+2],[x-1,y-1],[x+1,y-1],[x-1,y+1],[x+1,y+1]];
-                                    for (const [sx, sy] of spreadSpots) {
-                                        if (sx < 0 || sx >= GRID_WIDTH || sy < 0 || sy >= GRID_HEIGHT) continue;
-                                        if (!emptyIn(newGrid, sx, sy)) continue;
-                                        const hasPlantNear = [[sx-1,sy],[sx+1,sy],[sx,sy-1],[sx,sy+1]].some(([nx,ny])=>this.get(nx,ny)===MATERIAL.PLANT);
-                                        const hasWaterNear = [[sx-1,sy],[sx+1,sy],[sx,sy-1],[sx,sy+1]].some(([nx,ny])=>{
-                                            const m = this.get(nx,ny);
-                                            return m === MATERIAL.LIQUID || m === MATERIAL.BLOOD || m === MATERIAL.MILK;
-                                        });
-                                        if (hasPlantNear && hasWaterNear) {
-                                            const growIdx = this.getIndex(sx, sy);
-                                            newGrid[growIdx] = MATERIAL.PLANT;
-                                            this.plantType[growIdx] = Math.random() < 0.3 ? 1 : 0;
-                                            break;
-                                        }
                                     }
                                 }
                             }
@@ -2417,8 +2587,8 @@
                             if (willDie) {
                                 newGrid[idx] = MATERIAL.EMPTY;
                             } else {
-                                // Reproduce when near nutrients (water, blood, milk, feces, plants - organic matter)
-                                const nutrientMats = [MATERIAL.LIQUID, MATERIAL.BLOOD, MATERIAL.MILK, MATERIAL.FEECES, MATERIAL.PLANT];
+                                // Reproduce when near nutrients (water, blood, milk, feces)
+                                const nutrientMats = [MATERIAL.LIQUID, MATERIAL.BLOOD, MATERIAL.MILK, MATERIAL.FEECES];
                                 let hasNutrient = false;
                                 for (const [nx, ny] of [[x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]]) {
                                     if (nutrientMats.includes(this.get(nx, ny))) {
@@ -2678,11 +2848,13 @@
                             
                             if (material !== MATERIAL.EMPTY) {
                                 if (material === MATERIAL.LEAD && this.isPartOfLeadBall(x, y)) continue;
+                                if (material === MATERIAL.PLAYER_HEAD || material === MATERIAL.PLAYER_BODY) continue;
                                 const destroyChance = 1.0 - (dist / radius) * 0.6;
                                 if (Math.random() < destroyChance) {
                                     const state = this.captureCellState(x, y);
                                     if (state) changes.push(state);
                                     const idx = this.getIndex(x, y);
+                                    if (this.gameMode === 'survival') this.addToInventory(material);
                                     if (Math.random() < 0.5) {
                                         this.set(x, y, MATERIAL.DUST);
                                         const angle = Math.atan2(dy, dx);
@@ -2716,6 +2888,15 @@
                 const changes = [];
                 const dx = Math.abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
                 const dy = -Math.abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+                let lineLen = 0;
+                for (let ex = x0, ey = y0, e = dx + dy;;) {
+                    lineLen++;
+                    if (ex === x1 && ey === y1) break;
+                    const e2 = 2 * e;
+                    if (e2 >= dy) { e += dy; ex += sx; }
+                    if (e2 <= dx) { e += dx; ey += sy; }
+                }
+                if (this.gameMode === 'survival' && !this.consumeFromInventory(material, lineLen)) return;
                 let err = dx + dy;
                 let px = x0, py = y0;
                 while (true) {
@@ -2728,6 +2909,7 @@
                         if (material === MATERIAL.WATER_SPOUT) this.spoutIndices.set(idx, MATERIAL.LIQUID);
                         if (material === MATERIAL.LAVA_SPOUT) this.spoutIndices.set(idx, MATERIAL.LAVA);
                         this.notifyMaterialPlacedAt(px, py, material);
+                        if (this.gameMode === 'survival') this.blocksPlaced = (this.blocksPlaced || 0) + 1;
                     }
                     if (px === x1 && py === y1) break;
                     const e2 = 2 * err;
@@ -2744,6 +2926,21 @@
             spawnMaterial(material) {
                 const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
                 const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                if (this.gameMode === 'survival') {
+                    if (!this.consumeFromInventory(material, 1)) return;
+                    const state = this.captureCellState(mx, my);
+                    if (state) this.undoHistory.push({ type: 'place', changes: [state] });
+                    this.set(mx, my, material);
+                    this.notifyMaterialPlacedAt(mx, my, material);
+                    this.blocksPlaced = (this.blocksPlaced || 0) + 1;
+                    const idx = this.getIndex(mx, my);
+                    if (idx >= 0) {
+                        if (material === MATERIAL.TRAPDOOR) this.trapdoorIndices.add(idx);
+                        if (material === MATERIAL.WATER_SPOUT) this.spoutIndices.set(idx, MATERIAL.LIQUID);
+                        if (material === MATERIAL.LAVA_SPOUT) this.spoutIndices.set(idx, MATERIAL.LAVA);
+                    }
+                    return;
+                }
                 const radius = CONFIG.spawnRadius;
                 const changes = [];
 
@@ -2792,7 +2989,7 @@
                         for (let iy = s.top + 1; iy <= s.bottom - 1 && !found; iy++) {
                             const m = this.get(ix, iy);
                             if (m !== MATERIAL.EMPTY) {
-                                const skip = [MATERIAL.HUMAN_HEAD, MATERIAL.HUMAN_BODY, MATERIAL.HUMAN_BODY_BUILDER, MATERIAL.DEAD_HUMAN, MATERIAL.FLY, MATERIAL.WORM, MATERIAL.LEAD, MATERIAL.PELLET];
+                                const skip = [MATERIAL.HUMAN_HEAD, MATERIAL.HUMAN_BODY, MATERIAL.HUMAN_BODY_BUILDER, MATERIAL.DEAD_HUMAN, MATERIAL.FLY, MATERIAL.WORM, MATERIAL.LEAD, MATERIAL.PELLET, MATERIAL.PLAYER_HEAD, MATERIAL.PLAYER_BODY];
                                 if (!skip.includes(m)) { s.material = m; found = true; }
                             }
                         }
@@ -3015,7 +3212,7 @@
             // When material is placed, check if it's inside a spawner - if so, set spawner's material
             notifyMaterialPlacedAt(x, y, material) {
                 if (material === MATERIAL.EMPTY) return;
-                const skipTypes = [MATERIAL.HUMAN_HEAD, MATERIAL.HUMAN_BODY, MATERIAL.HUMAN_BODY_BUILDER, MATERIAL.DEAD_HUMAN, MATERIAL.FLY, MATERIAL.WORM, MATERIAL.LEAD, MATERIAL.PELLET];
+                const skipTypes = [MATERIAL.HUMAN_HEAD, MATERIAL.HUMAN_BODY, MATERIAL.HUMAN_BODY_BUILDER, MATERIAL.DEAD_HUMAN, MATERIAL.FLY, MATERIAL.WORM, MATERIAL.LEAD, MATERIAL.PELLET, MATERIAL.PLAYER_HEAD, MATERIAL.PLAYER_BODY];
                 if (skipTypes.includes(material)) return;
                 for (const s of this.spawnerStructures) {
                     if (x >= s.left + 1 && x <= s.right - 1 && y >= s.top + 1 && y <= s.bottom - 1) {
@@ -3267,7 +3464,7 @@
                 if (this.mouse.isInCanvas) {
                     const mx = this.mouse.x;
                     const my = this.mouse.y;
-                    const isDestroy = this.mouse.rightDown || (destroyModeActive && this.mouse.down);
+                    const isDestroy = this.mouse.rightDown || (destroyModeActive && this.mouse.down) || (this.gameMode === 'survival' && survivalDigMode && this.mouse.down);
                     const isPlace = this.mouse.down && !isDestroy;
                     
                     // Outer circle (red=destroy, green=place, white=idle)
@@ -3307,6 +3504,7 @@
                     : 0;
                 document.getElementById('destructionPercent').textContent = Math.max(0, destruction);
                 document.getElementById('fps').textContent = this.fps;
+
             }
 
             hexToRgb(hex) {
@@ -3322,19 +3520,176 @@
         // Initialize game
         const game = new Game();
         game.generateBuildings();
-        
-        // Game mode: 'sandbox' | 'protect'
-        let gameMode = 'sandbox';
-        let protectState = {
-            wave: 1,
-            waveDuration: 45,
-            waveStartTime: 0,
-            phase: 'idle',
-            lastThreatTime: 0,
-            threatInterval: 2000,
-            threatTypes: [MATERIAL.ACID, MATERIAL.LAVA, MATERIAL.FIRE, MATERIAL.GUNPOWDER],
-            nextWaveUnlockTime: 0
-        };
+
+        document.querySelector('.modeBtn.sandbox').addEventListener('click', () => {
+            document.getElementById('mainMenu').classList.add('hidden');
+            game.gameMode = 'sandbox';
+            game.player = null;
+            game.inventory = {};
+            survivalDigMode = false;
+            document.getElementById('craftingPanel').classList.remove('open');
+            document.getElementById('ui').classList.remove('hidden');
+            document.getElementById('materialMenu').classList.remove('hidden');
+            document.getElementById('settings').classList.remove('hidden');
+            document.getElementById('currentMaterialDisplay').classList.remove('hidden');
+            game.grid.fill(MATERIAL.EMPTY);
+            game.humanBuiltBlocks.fill(false);
+            game.plantType.fill(0);
+            game.humans = []; game.flies = []; game.leadBalls = []; game.pelletBalls = []; game.worms = [];
+            game.trapdoorIndices.clear();
+            game.spoutIndices.clear();
+            game.spawnerStructures = [];
+            game.generateBuildings();
+        });
+
+        function startSurvivalMode() {
+            document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('settings').classList.remove('mainMenuOverlay');
+            game.gameMode = 'survival';
+            game.inventory = {};
+            game.grid.fill(MATERIAL.EMPTY);
+            game.humanBuiltBlocks.fill(false);
+            game.plantType.fill(0);
+            game.humans = []; game.flies = []; game.leadBalls = []; game.pelletBalls = []; game.worms = [];
+            game.trapdoorIndices.clear();
+            game.spoutIndices.clear();
+            game.spawnerStructures = [];
+            game.generateTerrain();
+            hideAllUIForSurvival();
+            renderCraftingPanel();
+        }
+
+        document.querySelector('.modeBtn.survival').addEventListener('click', () => {
+            // Survival only starts via command - open settings and focus command input
+            const settingsEl = document.getElementById('settings');
+            settingsEl.classList.remove('hidden');
+            settingsEl.classList.add('mainMenuOverlay');
+            settingsEl.classList.remove('collapsed');
+            settingsCollapsed = false;
+            document.getElementById('settingsCollapseBtn').textContent = '−';
+            document.getElementById('settingsCommand').focus();
+        });
+
+        document.getElementById('mainMenuSettingsBtn').addEventListener('click', () => {
+            const settingsEl = document.getElementById('settings');
+            settingsEl.classList.toggle('hidden');
+            if (!settingsEl.classList.contains('hidden')) {
+                settingsEl.classList.add('mainMenuOverlay');
+                settingsEl.classList.remove('collapsed');
+                settingsCollapsed = false;
+                document.getElementById('settingsCollapseBtn').textContent = '−';
+                document.getElementById('settingsCommand').focus();
+            } else {
+                settingsEl.classList.remove('mainMenuOverlay');
+            }
+        });
+
+        const settingsCommandInput = document.getElementById('settingsCommand');
+        settingsCommandInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const cmd = (settingsCommandInput.value || '').trim().toLowerCase();
+                if (cmd === 'survivalstart') {
+                    settingsCommandInput.value = '';
+                    startSurvivalMode();
+                }
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (game.gameMode === 'survival' && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','a','A','d','D','w','W','s','S'].includes(e.key)) {
+                e.preventDefault();
+                if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') game.playerKeys.left = true;
+                if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') game.playerKeys.right = true;
+                if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') game.playerKeys.up = true;
+                if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') game.playerKeys.down = true;
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','a','A','d','D','w','W','s','S'].includes(e.key)) {
+                if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') game.playerKeys.left = false;
+                if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') game.playerKeys.right = false;
+                if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') game.playerKeys.up = false;
+                if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') game.playerKeys.down = false;
+            }
+        });
+
+        function hideAllUIForSurvival() {
+            document.getElementById('ui').classList.add('hidden');
+            document.getElementById('materialMenu').classList.add('hidden');
+            document.getElementById('settings').classList.add('hidden');
+            document.getElementById('currentMaterialDisplay').classList.add('hidden');
+        }
+
+        const SURVIVAL_GOAL = 20;
+        const CRAFT_RECIPES = [
+            { inputs: [[MATERIAL.SAND, 3]], output: MATERIAL.GLASS },
+            { inputs: [[MATERIAL.STONE, 2], [MATERIAL.SAND, 1]], output: MATERIAL.CONCRETE },
+            { inputs: [[MATERIAL.STONE, 4]], output: MATERIAL.METAL },
+            { inputs: [[MATERIAL.DUST, 2]], output: MATERIAL.SAND },
+            { inputs: [[MATERIAL.SAND, 2]], output: MATERIAL.DUST },
+            { inputs: [[MATERIAL.ICE, 1]], output: MATERIAL.LIQUID },
+            { inputs: [[MATERIAL.GRAVEL, 2], [MATERIAL.SAND, 1]], output: MATERIAL.CONCRETE },
+            { inputs: [[MATERIAL.WOOD, 2]], output: MATERIAL.CONCRETE }
+        ];
+
+        let survivalSelectedMaterial = null;
+        let craftingPanelOpen = false;
+        let survivalDigMode = false;  // B toggles: left-click destroys (like sandbox)
+
+        function renderCraftingPanel() {
+            const invList = document.getElementById('craftingInventoryList');
+            const recipeList = document.getElementById('craftingRecipeList');
+            const heartsEl = document.getElementById('craftingHearts');
+            const goalEl = document.getElementById('craftingGoal');
+            if (!invList) return;
+            const placed = game.blocksPlaced || 0;
+            const goalDone = placed >= SURVIVAL_GOAL;
+            if (goalEl) goalEl.innerHTML = goalDone
+                ? '<div style="color:#4ade80;font-weight:bold;padding:6px;background:#1a2a1a;border:1px solid #4ade80;margin-bottom:8px;">✓ Goal complete! Shelter built.</div>'
+                : '<div style="color:#fbbf24;padding:6px;background:#2a2a1a;border:1px solid #555;margin-bottom:8px;">Goal: Build your shelter — ' + placed + '/' + SURVIVAL_GOAL + ' blocks placed</div>';
+            invList.innerHTML = '';
+            const gatherable = [MATERIAL.CONCRETE, MATERIAL.STONE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.WOOD, MATERIAL.SAND, MATERIAL.DUST, MATERIAL.GRAVEL, MATERIAL.ICE, MATERIAL.LIQUID, MATERIAL.PLANT, MATERIAL.SNOW, MATERIAL.LAVA, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.SLIME, MATERIAL.GUNPOWDER, MATERIAL.FUSE, MATERIAL.RUBBER, MATERIAL.GLUE_METAL, MATERIAL.TRAPDOOR, MATERIAL.WATER_SPOUT, MATERIAL.LAVA_SPOUT, MATERIAL.ANTIMETAL, MATERIAL.HONEY];
+            for (const m of gatherable) {
+                const count = game.inventory[m] || 0;
+                if (count <= 0) continue;
+                const div = document.createElement('div');
+                div.className = 'craftSlot' + (survivalSelectedMaterial === m ? ' selected' : '');
+                div.innerHTML = '<div class="colorBox" style="background:' + (MATERIAL_PROPS[m].color || '#888') + '"></div><span class="name">' + (MATERIAL_LABELS[m] || '?') + '</span><span class="count">×' + count + '</span>';
+                div.onclick = () => { survivalSelectedMaterial = m; renderCraftingPanel(); };
+                invList.appendChild(div);
+            }
+            if (Object.keys(game.inventory).length === 0) invList.innerHTML = '<div class="craftHint">Gather materials by right-click digging.</div>';
+            recipeList.innerHTML = '';
+            for (const r of CRAFT_RECIPES) {
+                const canCraft = r.inputs.every(([mat, n]) => (game.inventory[mat] || 0) >= n);
+                const div = document.createElement('div');
+                div.className = 'craftRecipe' + (canCraft ? '' : ' cantCraft');
+                let inputsHtml = '';
+                for (const [mat, n] of r.inputs) inputsHtml += '<div class="colorBox" style="background:' + (MATERIAL_PROPS[mat].color || '#888') + '" title="' + (MATERIAL_LABELS[mat] || '') + '">' + n + '</div>';
+                div.innerHTML = '<div class="inputs">' + inputsHtml + '</div><span class="arrow">→</span><div class="output"><div class="colorBox" style="background:' + (MATERIAL_PROPS[r.output].color || '#888') + '"></div><span>' + (MATERIAL_LABELS[r.output] || '?') + '</span></div>';
+                if (canCraft) div.onclick = () => { for (const [mat, n] of r.inputs) game.consumeFromInventory(mat, n); game.addToInventory(r.output); survivalSelectedMaterial = r.output; renderCraftingPanel(); };
+                recipeList.appendChild(div);
+            }
+            if (game.player && !game.player.dead) {
+                const hp = game.player.health, max = game.player.maxHealth;
+                let hearts = '';
+                const full = Math.ceil((hp / max) * 5);
+                for (let i = 0; i < 5; i++) hearts += i < full ? '<span style="color:#ef4444">❤</span>' : '<span style="color:#444">♡</span>';
+                heartsEl.innerHTML = hearts;
+            } else heartsEl.innerHTML = '';
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab' && game.gameMode === 'survival') {
+                e.preventDefault();
+                craftingPanelOpen = !craftingPanelOpen;
+                document.getElementById('craftingPanel').classList.toggle('open', craftingPanelOpen);
+                if (craftingPanelOpen) renderCraftingPanel();
+            }
+            if (e.key === 'b' || e.key === 'B') {
+                if (game.gameMode === 'survival') survivalDigMode = !survivalDigMode;
+            }
+        });
         
         // Selected material (null = none, or { type: 'material', id }, or { type: 'special', action })
         let selectedMaterial = null;
@@ -3494,108 +3849,6 @@
         initMaterialMenu();
         updateCurrentMaterialDisplay();
         
-        // Gamemode panel - switch between Sandbox and Protect the Humans
-        function initGamemodePanel() {
-            const btns = document.querySelectorAll('#gamemodeButtons .modeBtn');
-            const protectInfo = document.getElementById('gamemodeProtectInfo');
-            const statusEl = document.getElementById('protectStatusMsg');
-            
-            btns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const mode = btn.dataset.mode;
-                    if (mode === gameMode) return;
-                    gameMode = mode;
-                    btns.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    
-                    if (mode === 'protect') {
-                        protectInfo.style.display = 'block';
-                        protectState.phase = 'playing';
-                        protectState.wave = 1;
-                        protectState.waveDuration = 45;
-                        protectState.waveStartTime = Date.now();
-                        protectState.lastThreatTime = Date.now();
-                        protectState.threatInterval = 2500;
-                        protectState.nextWaveUnlockTime = 0;
-                        game.generateProtectArena();
-                        statusEl.className = '';
-                        statusEl.textContent = '';
-                    } else {
-                        protectInfo.style.display = 'none';
-                        protectState.phase = 'idle';
-                        game.generateBuildings();
-                        game.humans = [];
-                        game.nextHumanId = 0;
-                    }
-                });
-            });
-            
-        }
-        
-        function updateProtectMode() {
-            if (gameMode !== 'protect') return;
-            const now = Date.now();
-            const elapsed = (now - protectState.waveStartTime) / 1000;
-            const alive = game.humans.filter(h => h.alive).length;
-            
-            document.getElementById('protectWaveNum').textContent = protectState.wave;
-            document.getElementById('protectHumansAlive').textContent = alive;
-            document.getElementById('protectWaveTime').textContent = Math.max(0, Math.ceil(protectState.waveDuration - elapsed));
-            
-            if (protectState.phase === 'gameover') {
-                document.getElementById('protectStatusMsg').className = 'gameOverMsg';
-                document.getElementById('protectStatusMsg').textContent = `Game Over! Wave ${protectState.wave} — Press R to restart`;
-                return;
-            }
-            
-            if (protectState.phase === 'victory') {
-                document.getElementById('protectStatusMsg').className = 'victoryMsg';
-                document.getElementById('protectStatusMsg').textContent = `Wave ${protectState.wave} complete! Starting wave ${protectState.wave + 1}...`;
-                return;
-            }
-            
-            if (alive === 0) {
-                protectState.phase = 'gameover';
-                document.getElementById('protectStatusMsg').className = 'gameOverMsg';
-                document.getElementById('protectStatusMsg').textContent = `Game Over! Wave ${protectState.wave} — Press R to restart`;
-                return;
-            }
-            
-            if (elapsed >= protectState.waveDuration) {
-                protectState.phase = 'victory';
-                protectState.nextWaveUnlockTime = now + 2000;
-                return;
-            }
-            
-            document.getElementById('protectStatusMsg').textContent = '';
-            
-            // Spawn threats - faster and more as wave increases
-            const interval = Math.max(600, protectState.threatInterval - protectState.wave * 150);
-            if (now - protectState.lastThreatTime > interval) {
-                protectState.lastThreatTime = now;
-                const threatCount = 2 + protectState.wave;
-                const threatTypes = [MATERIAL.ACID, MATERIAL.LAVA, MATERIAL.FIRE];
-                const mat = threatTypes[protectState.wave % threatTypes.length];
-                const x = 10 + Math.floor(Math.random() * (GRID_WIDTH - 20));
-                game.spawnThreat(mat, threatCount, x, 2);
-            }
-        }
-        
-        function advanceProtectWave() {
-            if (protectState.phase !== 'victory') return;
-            const now = Date.now();
-            if (now < protectState.nextWaveUnlockTime) return;
-            protectState.phase = 'playing';
-            protectState.wave++;
-            protectState.waveDuration = 40 + protectState.wave * 5;
-            protectState.waveStartTime = Date.now();
-            protectState.lastThreatTime = Date.now();
-            protectState.threatInterval = Math.max(500, 2500 - protectState.wave * 120);
-            document.getElementById('protectStatusMsg').textContent = '';
-        }
-        
-        initGamemodePanel();
-        
         // Collapsible UI and Settings
         let uiCollapsed = false;
         let settingsCollapsed = false;
@@ -3634,9 +3887,9 @@
             // Rebuild
             if (e.key === 'r' || e.key === 'R') {
                 game.grid.fill(MATERIAL.EMPTY);
-                game.humanBuiltBlocks.fill(false);
-                game.plantType.fill(0);
-                game.humans = [];
+                game.humanBuiltBlocks.fill(false); // Clear sticky blocks
+                game.plantType.fill(0); // Clear plant colors
+                game.humans = []; // Clear all humans
                 game.nextHumanId = 0;
                 game.flies = [];
                 game.nextFlyId = 0;
@@ -3647,43 +3900,37 @@
                 game.worms = [];
                 game.nextWormId = 0;
                 game.undoHistory = [];
-                if (gameMode === 'protect') {
-                    protectState.phase = 'playing';
-                    protectState.wave = 1;
-                    protectState.waveDuration = 45;
-                    protectState.waveStartTime = Date.now();
-                    protectState.lastThreatTime = Date.now();
-                    protectState.threatInterval = 2500;
-                    game.generateProtectArena();
-                } else {
-                    game.generateBuildings();
-                }
+                if (game.gameMode === 'survival') {
+                    game.inventory = {};
+                    game.generateTerrain();
+                } else game.generateBuildings();
             }
             
-            // Toggle UI visibility
             if (e.key === 'h' || e.key === 'H') {
-                uiVisible = !uiVisible;
-                const uiElement = document.getElementById('ui');
-                const materialMenu = document.getElementById('materialMenu');
-                const currentDisplay = document.getElementById('currentMaterialDisplay');
-                const settingsElement = document.getElementById('settings');
-                const gamemodePanel = document.getElementById('gamemodePanel');
-                const indicator = document.getElementById('uiToggleIndicator');
-                
-                if (uiVisible) {
-                    uiElement.classList.remove('hidden');
-                    materialMenu.classList.remove('hidden');
-                    currentDisplay.classList.remove('hidden');
-                    settingsElement.classList.remove('hidden');
-                    gamemodePanel.classList.remove('hidden');
-                    indicator.classList.remove('visible');
+                if (game.gameMode === 'survival') {
+                    craftingPanelOpen = !craftingPanelOpen;
+                    document.getElementById('craftingPanel').classList.toggle('open', craftingPanelOpen);
+                    if (craftingPanelOpen) renderCraftingPanel();
                 } else {
-                    uiElement.classList.add('hidden');
-                    materialMenu.classList.add('hidden');
-                    currentDisplay.classList.add('hidden');
-                    settingsElement.classList.add('hidden');
-                    gamemodePanel.classList.add('hidden');
-                    indicator.classList.add('visible');
+                    uiVisible = !uiVisible;
+                    const uiElement = document.getElementById('ui');
+                    const materialMenu = document.getElementById('materialMenu');
+                    const currentDisplay = document.getElementById('currentMaterialDisplay');
+                    const settingsElement = document.getElementById('settings');
+                    const indicator = document.getElementById('uiToggleIndicator');
+                    if (uiVisible) {
+                        uiElement.classList.remove('hidden');
+                        materialMenu.classList.remove('hidden');
+                        currentDisplay.classList.remove('hidden');
+                        settingsElement.classList.remove('hidden');
+                        indicator.classList.remove('visible');
+                    } else {
+                        uiElement.classList.add('hidden');
+                        materialMenu.classList.add('hidden');
+                        currentDisplay.classList.add('hidden');
+                        settingsElement.classList.add('hidden');
+                        indicator.classList.add('visible');
+                    }
                 }
             }
         });
@@ -3712,7 +3959,7 @@
             game.plantType = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
             game.particleCount = 0;
             game.initialParticles = 0;
-            game.humans = []; // Clear all humans
+            game.humans = [];
             game.nextHumanId = 0;
             game.flies = [];
             game.nextFlyId = 0;
@@ -3720,9 +3967,8 @@
             game.nextLeadBallId = 0;
             game.worms = [];
             game.nextWormId = 0;
-            
-            // Generate new buildings
-            game.generateBuildings();
+            if (game.gameMode === 'survival') { game.inventory = {}; game.generateTerrain(); }
+            else game.generateBuildings();
         });
 
         // Place amount slider (how many voxels when placing materials)
@@ -3764,18 +4010,17 @@
             e.preventDefault();
             if (e.button === 0) {
                 game.mouse.down = true;
-                // Line tool: init last position when Shift+material (for drawing lines)
-                if (!destroyModeActive && selectedMaterial && selectedMaterial.type === 'material' && e.shiftKey && game.mouse.isInCanvas) {
+                const placeMat = game.gameMode === 'survival' ? survivalSelectedMaterial : (selectedMaterial && selectedMaterial.type === 'material' ? selectedMaterial.id : null);
+                if (!destroyModeActive && !survivalDigMode && placeMat && e.shiftKey && game.mouse.isInCanvas) {
                     const mx = Math.floor(game.mouse.x / CONFIG.pixelSize);
                     const my = Math.floor(game.mouse.y / CONFIG.pixelSize);
                     lastLinePos = { x: mx, y: my };
-                    game.placeSingle(mx, my, selectedMaterial.id);
-                    if (selectedMaterial.id === MATERIAL.TRAPDOOR) game.closeAllTrapdoors();
+                    game.placeSingle(mx, my, placeMat);
+                    if (placeMat === MATERIAL.TRAPDOOR) game.closeAllTrapdoors();
                 } else {
                     lastLinePos = null;
                 }
-                // Special spawners: one per click (skip when destroy mode active)
-                if (!destroyModeActive && selectedMaterial && selectedMaterial.type === 'special' && game.mouse.isInCanvas) {
+                if (!destroyModeActive && game.gameMode !== 'survival' && selectedMaterial && selectedMaterial.type === 'special' && game.mouse.isInCanvas) {
                     const a = selectedMaterial.action;
                     if (a === 'human') game.spawnHuman();
                     else if (a === 'builder') game.spawnBuilderHuman();
@@ -3825,28 +4070,26 @@
 
         // Continuous place/destroy while mouse held
         setInterval(() => {
-            if ((game.mouse.rightDown || (destroyModeActive && game.mouse.down)) && game.mouse.isInCanvas) {
+            const isSurvDig = game.gameMode === 'survival' && survivalDigMode && game.mouse.down;
+            if ((game.mouse.rightDown || (destroyModeActive && game.mouse.down) || isSurvDig) && game.mouse.isInCanvas) {
                 game.destroyAtMouse();
             }
-            if (game.mouse.down && game.mouse.isInCanvas && !destroyModeActive && selectedMaterial && selectedMaterial.type === 'material') {
+            const placeMat = game.gameMode === 'survival' ? survivalSelectedMaterial : (selectedMaterial && selectedMaterial.type === 'material' ? selectedMaterial.id : null);
+            if (game.mouse.down && game.mouse.isInCanvas && !destroyModeActive && !isSurvDig && placeMat) {
                 const mx = Math.floor(game.mouse.x / CONFIG.pixelSize);
                 const my = Math.floor(game.mouse.y / CONFIG.pixelSize);
                 if (shiftKeyHeld && lastLinePos && (lastLinePos.x !== mx || lastLinePos.y !== my)) {
-                    game.placeLine(lastLinePos.x, lastLinePos.y, mx, my, selectedMaterial.id);
+                    game.placeLine(lastLinePos.x, lastLinePos.y, mx, my, placeMat);
                     lastLinePos = { x: mx, y: my };
-                    if (selectedMaterial.id === MATERIAL.TRAPDOOR) game.closeAllTrapdoors();
+                    if (placeMat === MATERIAL.TRAPDOOR) game.closeAllTrapdoors();
                 } else if (!shiftKeyHeld) {
-                    game.spawnMaterial(selectedMaterial.id);
+                    game.spawnMaterial(placeMat);
                 }
             }
         }, 30);
 
         // Game loop
         function gameLoop() {
-            if (gameMode === 'protect') {
-                updateProtectMode();
-                advanceProtectWave();
-            }
             game.update();
             game.render();
             requestAnimationFrame(gameLoop);
