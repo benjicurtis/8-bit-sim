@@ -508,7 +508,7 @@
             <div id="materialContent"></div>
         </div>
         
-        <div id="uiToggleIndicator">H = show UI | Left-click = place | Right-click = destroy</div>
+        <div id="uiToggleIndicator">H = show UI | Left-click = place | Right-click = destroy | O = open trapdoors | C = close trapdoors</div>
     </div>
 
     <script>
@@ -581,7 +581,8 @@
             RUBBER: 38,      // Bouncy block - deflects lead and pellets
             ANTIMATTER: 39,  // Purple powder - ignite with fire for purple/blue blast!
             ANTIMATTER_BLAST: 40,  // Purple-blue blast from antimatter explosion (rises, destroys)
-            ANTIMETAL: 41  // Dense metal - blocks antimatter blast (immune to vaporization)
+            ANTIMETAL: 41,  // Dense metal - blocks antimatter blast (immune to vaporization)
+            TRAPDOOR: 42   // Opens with O, closes with C - things fall through when open
         };
 
         // Material Properties
@@ -627,7 +628,8 @@
             [MATERIAL.RUBBER]: { color: '#2d2d2d', density: 3, strength: 3, flow: false, shadeBase: [45, 45, 50], bouncy: true },
             [MATERIAL.ANTIMATTER]: { color: '#8b008b', density: 3, strength: 0, flow: true, shadeBase: [139, 0, 139], explosive: true },
             [MATERIAL.ANTIMATTER_BLAST]: { color: '#8a2be2', density: 0.3, strength: 0, flow: true, shadeBase: [120, 80, 255], burns: true, rises: true },
-            [MATERIAL.ANTIMETAL]: { color: '#2a2a3a', density: 12, strength: 10, flow: false, shadeBase: [42, 42, 58], blocksAntimatter: true }
+            [MATERIAL.ANTIMETAL]: { color: '#2a2a3a', density: 12, strength: 10, flow: false, shadeBase: [42, 42, 58], blocksAntimatter: true },
+            [MATERIAL.TRAPDOOR]: { color: '#4a3728', density: 8, strength: 5, flow: false, shadeBase: [74, 55, 40], isTrapdoor: true }
         };
 
         // Material display names
@@ -642,6 +644,7 @@
             [MATERIAL.LEAD_BRICK]: 'Lead Brick', [MATERIAL.BACTERIA]: 'Bacteria', [MATERIAL.MERCURY]: 'Mercury',
             [MATERIAL.PELLET]: 'Pellets', [MATERIAL.FUSE]: 'Fuse', [MATERIAL.RUBBER]: 'Rubber',
             [MATERIAL.ANTIMATTER]: 'Antimatter', [MATERIAL.ANTIMATTER_BLAST]: 'Antimatter Blast', [MATERIAL.ANTIMETAL]: 'Antimetal',
+            [MATERIAL.TRAPDOOR]: 'Trapdoor',
             [MATERIAL.FLY]: 'Flies', [MATERIAL.DEAD_HUMAN]: 'Dead', [MATERIAL.HUMAN_HEAD]: 'Human', [MATERIAL.HUMAN_BODY]: 'Human',
             [MATERIAL.HUMAN_BODY_BUILDER]: 'Builder'
         };
@@ -650,15 +653,16 @@
         const MATERIAL_TABS = {
             Solid: [
                 MATERIAL.CONCRETE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.DUST, MATERIAL.SNOW, MATERIAL.ICE,
-                MATERIAL.SAND, MATERIAL.GRAVEL, MATERIAL.WOOD, MATERIAL.STONE, MATERIAL.LEAD_BRICK, MATERIAL.GLUE_METAL,
-                MATERIAL.RUBBER, MATERIAL.ANTIMETAL, MATERIAL.FEECES, MATERIAL.FUSE, MATERIAL.EMBER
+                MATERIAL.SAND, MATERIAL.GRAVEL, MATERIAL.WOOD, MATERIAL.STONE, MATERIAL.GLUE_METAL,
+                MATERIAL.RUBBER, MATERIAL.ANTIMETAL, MATERIAL.FEECES, MATERIAL.FUSE, MATERIAL.EMBER, MATERIAL.TRAPDOOR
             ],
             Liquid: [
                 MATERIAL.LIQUID, MATERIAL.LAVA, MATERIAL.ACID, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.BLOOD,
                 MATERIAL.SLIME, MATERIAL.HONEY, MATERIAL.MILK, MATERIAL.MERCURY
             ],
             Explosive: [
-                MATERIAL.GUNPOWDER, MATERIAL.FIRE, MATERIAL.ANTIMATTER
+                MATERIAL.GUNPOWDER, MATERIAL.FIRE, MATERIAL.ANTIMATTER,
+                { special: 'leadBall', label: 'Lead Ball', color: '#36454f' }
             ],
             Life: [
             { special: 'human', label: 'Human', color: '#ff69b4' },
@@ -667,9 +671,8 @@
             { special: 'flies', label: 'Flies', color: '#1a1a1a' },
             { special: 'worm', label: 'Worm', color: '#ff69b4' },
             { special: 'bacteria', label: 'Bacteria', color: '#7cfc00' },
-            { special: 'leadBall', label: 'Lead Ball', color: '#36454f' },
             { special: 'pellets', label: 'Pellets', color: '#8b7355' },
-            MATERIAL.FLY, MATERIAL.WORM, MATERIAL.BACTERIA, MATERIAL.LEAD, MATERIAL.PELLET
+            MATERIAL.FLY, MATERIAL.WORM, MATERIAL.BACTERIA, MATERIAL.PELLET
             ]
         };
 
@@ -698,6 +701,7 @@
                 this.nextPelletId = 0;
                 this.worms = []; // Track worm entities (1 pink particle each)
                 this.nextWormId = 0;
+                this.trapdoorIndices = new Set(); // Grid indices where trapdoors exist (O=open all, C=close all)
             }
 
             // Reinitialize grid when voxel size changes
@@ -719,6 +723,7 @@
                 this.nextPelletId = 0;
                 this.worms = [];
                 this.nextWormId = 0;
+                this.trapdoorIndices = new Set();
                 this.generateBuildings();
             }
 
@@ -749,6 +754,7 @@
 
             // Generate procedural buildings
             generateBuildings() {
+                this.trapdoorIndices.clear();
                 const groundLevel = GRID_HEIGHT - 15;
                 
                 // Ground
@@ -793,6 +799,18 @@
                                 }
                             }
                         }
+                    }
+                }
+
+                // Trapdoors in the ground (top surface) - O opens all, C closes all
+                const numTrapdoors = 10 + Math.floor(Math.random() * 6);
+                for (let t = 0; t < numTrapdoors; t++) {
+                    const tx = 10 + Math.floor(Math.random() * (GRID_WIDTH - 20));
+                    const ty = groundLevel;
+                    const idx = this.getIndex(tx, ty);
+                    if (idx >= 0 && this.get(tx, ty) === MATERIAL.CONCRETE) {
+                        this.set(tx, ty, MATERIAL.TRAPDOOR);
+                        this.trapdoorIndices.add(idx);
                     }
                 }
 
@@ -2343,6 +2361,7 @@
                                     if (idx !== -1) {
                                         this.humanBuiltBlocks[idx] = false;
                                         this.plantType[idx] = 0;
+                                        if (material === MATERIAL.TRAPDOOR) this.trapdoorIndices.delete(idx);
                                     }
                                 }
                             }
@@ -2361,9 +2380,23 @@
                     for (let dy = -radius; dy <= radius; dy++) {
                         const dist = Math.sqrt(dx * dx + dy * dy);
                         if (dist <= radius && Math.random() < 0.7) {
+                            const idx = this.getIndex(mx + dx, my + dy);
                             this.set(mx + dx, my + dy, material);
+                            if (material === MATERIAL.TRAPDOOR && idx >= 0) this.trapdoorIndices.add(idx);
                         }
                     }
+                }
+            }
+
+            openAllTrapdoors() {
+                for (const idx of this.trapdoorIndices) {
+                    if (this.grid[idx] === MATERIAL.TRAPDOOR) this.grid[idx] = MATERIAL.EMPTY;
+                }
+            }
+
+            closeAllTrapdoors() {
+                for (const idx of this.trapdoorIndices) {
+                    this.grid[idx] = MATERIAL.TRAPDOOR;
                 }
             }
 
@@ -2857,6 +2890,14 @@
 
         // Input handling
         window.addEventListener('keydown', (e) => {
+            // Trapdoors: O = open all, C = close all
+            if (e.key === 'o' || e.key === 'O') {
+                game.openAllTrapdoors();
+            }
+            if (e.key === 'c' || e.key === 'C') {
+                game.closeAllTrapdoors();
+            }
+            
             // Rebuild
             if (e.key === 'r' || e.key === 'R') {
                 game.grid.fill(MATERIAL.EMPTY);
