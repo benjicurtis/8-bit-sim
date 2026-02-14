@@ -47,6 +47,19 @@ A pixel-perfect destruction sandbox with Neal.fun-inspired cellular automata phy
 | `-` | Spawn antimetal (blocks antimatter blast - immune to vaporization) |
 | `C` | Spawn bacteria (reproduces near nutrients, dies from heat/acid) |
 | `D` | Spawn mercury (dense toxic liquid metal) |
+| **Shift + drag** | Draw straight lines with selected material (build walls, floors) |
+
+## 🏗️ Building Tools (NEW!)
+
+**Construct, don't just destroy!** New interactive building elements:
+
+- **Water Spout** → Place in Solid tab. Continuously emits water downward—build fountains, fill pools, create flowing water features
+- **Lava Spout** → Place in Solid tab. Emits lava continuously—build lava flows and volcanic setups
+- **Quick Structures** (Build tab) → One-click placement:
+  - **Bridge** → 12-wide concrete platform (2 blocks thick)
+  - **Tower** → 4×20 block tower with metal-reinforced edges
+  - **Arch** → Decorative stone arch
+- **Line Tool** → Hold **Shift** and drag with any material selected to draw straight lines—perfect for walls, floors, and precise construction
 
 ## 🌟 Features Implemented
 

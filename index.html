@@ -508,7 +508,7 @@
             <div id="materialContent"></div>
         </div>
         
-        <div id="uiToggleIndicator">H = show UI | Left-click = place | Right-click = destroy | O = open trapdoors | C = close trapdoors (placing trapdoors closes all)</div>
+        <div id="uiToggleIndicator">H = show UI | Left-click = place | Right-click = destroy | Shift+drag = draw lines | O = open trapdoors | C = close trapdoors | R = rebuild</div>
     </div>
 
     <script>
@@ -582,7 +582,9 @@
             ANTIMATTER: 39,  // Purple powder - ignite with fire for purple/blue blast!
             ANTIMATTER_BLAST: 40,  // Purple-blue blast from antimatter explosion (rises, destroys)
             ANTIMETAL: 41,  // Dense metal - blocks antimatter blast (immune to vaporization)
-            TRAPDOOR: 42   // Opens with O, closes with C - things fall through when open
+            TRAPDOOR: 42,   // Opens with O, closes with C - things fall through when open
+            WATER_SPOUT: 43,  // Emits water downward - build fountains & fill areas
+            LAVA_SPOUT: 44    // Emits lava downward - build lava flows
         };
 
         // Material Properties
@@ -629,7 +631,9 @@
             [MATERIAL.ANTIMATTER]: { color: '#8b008b', density: 3, strength: 0, flow: true, shadeBase: [139, 0, 139], explosive: true },
             [MATERIAL.ANTIMATTER_BLAST]: { color: '#8a2be2', density: 0.3, strength: 0, flow: true, shadeBase: [120, 80, 255], burns: true, rises: true },
             [MATERIAL.ANTIMETAL]: { color: '#2a2a3a', density: 12, strength: 10, flow: false, shadeBase: [42, 42, 58], blocksAntimatter: true },
-            [MATERIAL.TRAPDOOR]: { color: '#4a3728', density: 8, strength: 5, flow: false, shadeBase: [74, 55, 40], isTrapdoor: true, sticky: true }
+            [MATERIAL.TRAPDOOR]: { color: '#4a3728', density: 8, strength: 5, flow: false, shadeBase: [74, 55, 40], isTrapdoor: true, sticky: true },
+            [MATERIAL.WATER_SPOUT]: { color: '#6eb5d0', density: 6, strength: 4, flow: false, shadeBase: [110, 181, 208], isSpout: true, spoutLiquid: MATERIAL.LIQUID },
+            [MATERIAL.LAVA_SPOUT]: { color: '#d94a2e', density: 7, strength: 5, flow: false, shadeBase: [217, 74, 46], isSpout: true, spoutLiquid: MATERIAL.LAVA, glows: true }
         };
 
         // Material display names
@@ -643,8 +647,10 @@
             [MATERIAL.GLUE_METAL]: 'Glue Metal', [MATERIAL.MILK]: 'Milk', [MATERIAL.WORM]: 'Worm',
             [MATERIAL.LEAD_BRICK]: 'Lead Brick', [MATERIAL.BACTERIA]: 'Bacteria', [MATERIAL.MERCURY]: 'Mercury',
             [MATERIAL.PELLET]: 'Pellets', [MATERIAL.FUSE]: 'Fuse', [MATERIAL.RUBBER]: 'Rubber',
-            [MATERIAL.ANTIMATTER]: 'Antimatter', [MATERIAL.ANTIMATTER_BLAST]: 'Antimatter Blast', [MATERIAL.ANTIMETAL]: 'Antimetal',
+            [MATERIAL.ANTIMATTER]: 'Antimatter', [MATERIAL.ANTIMATTER_BLAST]: 'Antimatter Blast',             [MATERIAL.ANTIMETAL]: 'Antimetal',
             [MATERIAL.TRAPDOOR]: 'Trapdoor',
+            [MATERIAL.WATER_SPOUT]: 'Water Spout',
+            [MATERIAL.LAVA_SPOUT]: 'Lava Spout',
             [MATERIAL.FLY]: 'Flies', [MATERIAL.DEAD_HUMAN]: 'Dead', [MATERIAL.HUMAN_HEAD]: 'Human', [MATERIAL.HUMAN_BODY]: 'Human',
             [MATERIAL.HUMAN_BODY_BUILDER]: 'Builder'
         };
@@ -654,7 +660,8 @@
             Solid: [
                 MATERIAL.CONCRETE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.DUST, MATERIAL.SNOW, MATERIAL.ICE,
                 MATERIAL.SAND, MATERIAL.GRAVEL, MATERIAL.WOOD, MATERIAL.STONE, MATERIAL.GLUE_METAL,
-                MATERIAL.RUBBER, MATERIAL.ANTIMETAL, MATERIAL.FEECES, MATERIAL.FUSE, MATERIAL.EMBER, MATERIAL.TRAPDOOR
+                MATERIAL.RUBBER, MATERIAL.ANTIMETAL, MATERIAL.FEECES, MATERIAL.FUSE, MATERIAL.EMBER, MATERIAL.TRAPDOOR,
+                MATERIAL.WATER_SPOUT, MATERIAL.LAVA_SPOUT
             ],
             Liquid: [
                 MATERIAL.LIQUID, MATERIAL.LAVA, MATERIAL.ACID, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.BLOOD,
@@ -663,6 +670,11 @@
             Explosive: [
                 MATERIAL.GUNPOWDER, MATERIAL.FIRE, MATERIAL.ANTIMATTER,
                 { special: 'leadBall', label: 'Lead Ball', color: '#36454f' }
+            ],
+            Build: [
+                { special: 'bridge', label: 'Bridge', color: '#5a6268' },
+                { special: 'tower', label: 'Tower', color: '#8899aa' },
+                { special: 'arch', label: 'Arch', color: '#696969' }
             ],
             Life: [
             { special: 'human', label: 'Human', color: '#ff69b4' },
@@ -701,6 +713,66 @@
                 this.worms = []; // Track worm entities (1 pink particle each)
                 this.nextWormId = 0;
                 this.trapdoorIndices = new Set(); // Grid indices where trapdoors exist (O=open all, C=close all)
+                this.spoutIndices = new Map();   // idx -> liquid (LIQUID or LAVA) for spouts that emit
+                this.undoHistory = [];           // Stack of { type: 'place'|'destroy', changes: [...] }
+                this.maxUndoHistory = 50;        // Limit memory usage
+            }
+
+            // Capture current cell state for undo
+            captureCellState(x, y) {
+                const idx = this.getIndex(x, y);
+                if (idx < 0) return null;
+                const material = this.grid[idx];
+                const state = { x, y, prevMaterial: material };
+                if (material === MATERIAL.PLANT) state.prevPlantType = this.plantType[idx];
+                state.prevHumanBuilt = this.humanBuiltBlocks[idx];
+                if (material === MATERIAL.TRAPDOOR) state.wasTrapdoor = true;
+                if (material === MATERIAL.WATER_SPOUT || material === MATERIAL.LAVA_SPOUT) {
+                    state.wasSpout = true;
+                    state.spoutLiquid = material === MATERIAL.WATER_SPOUT ? MATERIAL.LIQUID : MATERIAL.LAVA;
+                }
+                return state;
+            }
+
+            // Restore a cell from undo state (for undoing placement or destruction)
+            restoreCell(state) {
+                const { x, y, prevMaterial, prevPlantType, prevHumanBuilt, wasTrapdoor, wasSpout, spoutLiquid } = state;
+                const idx = this.getIndex(x, y);
+                if (idx < 0) return;
+                this.trapdoorIndices.delete(idx);
+                this.spoutIndices.delete(idx);
+                this.grid[idx] = prevMaterial;
+                if (prevMaterial === MATERIAL.PLANT && prevPlantType !== undefined) this.plantType[idx] = prevPlantType;
+                this.humanBuiltBlocks[idx] = prevHumanBuilt || false;
+                this.velocityX[idx] = 0;
+                this.velocityY[idx] = 0;
+                this.particleAge[idx] = 0;
+                if (wasTrapdoor) this.trapdoorIndices.add(idx);
+                if (wasSpout && spoutLiquid) this.spoutIndices.set(idx, spoutLiquid);
+            }
+
+            undo() {
+                const action = this.undoHistory.pop();
+                if (!action) return;
+                for (const change of action.changes) {
+                    this.restoreCell(change);
+                }
+            }
+
+            // Place single voxel (records for undo) - used by line tool start and direct placement
+            placeSingle(x, y, material) {
+                const state = this.captureCellState(x, y);
+                if (state) {
+                    const idx = this.getIndex(x, y);
+                    if (idx >= 0) {
+                        this.grid[idx] = material;
+                        if (material === MATERIAL.TRAPDOOR) this.trapdoorIndices.add(idx);
+                        if (material === MATERIAL.WATER_SPOUT) this.spoutIndices.set(idx, MATERIAL.LIQUID);
+                        if (material === MATERIAL.LAVA_SPOUT) this.spoutIndices.set(idx, MATERIAL.LAVA);
+                        this.undoHistory.push({ type: 'place', changes: [state] });
+                        if (this.undoHistory.length > this.maxUndoHistory) this.undoHistory.shift();
+                    }
+                }
             }
 
             // Reinitialize grid when voxel size changes
@@ -723,6 +795,7 @@
                 this.worms = [];
                 this.nextWormId = 0;
                 this.trapdoorIndices = new Set();
+                this.spoutIndices = new Map();
                 this.generateBuildings();
             }
 
@@ -754,6 +827,7 @@
             // Generate procedural buildings
             generateBuildings() {
                 this.trapdoorIndices.clear();
+                this.spoutIndices.clear();
                 const groundLevel = GRID_HEIGHT - 15;
                 
                 // Ground
@@ -1498,6 +1572,7 @@
                 this.updateWorms();
                 this.updateLeadBalls();
                 this.updatePellets();
+                this.updateSpouts();
                 
                 const newGrid = [...this.grid];
                 const newVelX = [...this.velocityX];
@@ -2342,6 +2417,7 @@
                 const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
                 const radius = CONFIG.destroyRadius / CONFIG.pixelSize;
                 const now = Date.now();
+                const changes = [];
 
                 for (let dx = -radius; dx <= radius; dx++) {
                     for (let dy = -radius; dy <= radius; dy++) {
@@ -2355,6 +2431,8 @@
                                 if (material === MATERIAL.LEAD && this.isPartOfLeadBall(x, y)) continue;
                                 const destroyChance = 1.0 - (dist / radius) * 0.6;
                                 if (Math.random() < destroyChance) {
+                                    const state = this.captureCellState(x, y);
+                                    if (state) changes.push(state);
                                     const idx = this.getIndex(x, y);
                                     if (Math.random() < 0.5) {
                                         this.set(x, y, MATERIAL.DUST);
@@ -2371,11 +2449,44 @@
                                         this.humanBuiltBlocks[idx] = false;
                                         this.plantType[idx] = 0;
                                         if (material === MATERIAL.TRAPDOOR) this.trapdoorIndices.delete(idx);
+                                        if (material === MATERIAL.WATER_SPOUT || material === MATERIAL.LAVA_SPOUT) this.spoutIndices.delete(idx);
                                     }
                                 }
                             }
                         }
                     }
+                }
+                if (changes.length > 0) {
+                    this.undoHistory.push({ type: 'destroy', changes });
+                    if (this.undoHistory.length > this.maxUndoHistory) this.undoHistory.shift();
+                }
+            }
+
+            // Place material along a line (Bresenham) - for Shift+drag line tool
+            placeLine(x0, y0, x1, y1, material) {
+                const changes = [];
+                const dx = Math.abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+                const dy = -Math.abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+                let err = dx + dy;
+                let px = x0, py = y0;
+                while (true) {
+                    const idx = this.getIndex(px, py);
+                    if (idx >= 0) {
+                        const state = this.captureCellState(px, py);
+                        if (state) changes.push(state);
+                        this.grid[idx] = material;
+                        if (material === MATERIAL.TRAPDOOR) this.trapdoorIndices.add(idx);
+                        if (material === MATERIAL.WATER_SPOUT) this.spoutIndices.set(idx, MATERIAL.LIQUID);
+                        if (material === MATERIAL.LAVA_SPOUT) this.spoutIndices.set(idx, MATERIAL.LAVA);
+                    }
+                    if (px === x1 && py === y1) break;
+                    const e2 = 2 * err;
+                    if (e2 >= dy) { err += dy; px += sx; }
+                    if (e2 <= dx) { err += dx; py += sy; }
+                }
+                if (changes.length > 0) {
+                    this.undoHistory.push({ type: 'place', changes });
+                    if (this.undoHistory.length > this.maxUndoHistory) this.undoHistory.shift();
                 }
             }
 
@@ -2384,16 +2495,26 @@
                 const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
                 const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
                 const radius = CONFIG.spawnRadius;
+                const changes = [];
 
                 for (let dx = -radius; dx <= radius; dx++) {
                     for (let dy = -radius; dy <= radius; dy++) {
                         const dist = Math.sqrt(dx * dx + dy * dy);
                         if (dist <= radius && Math.random() < 0.7) {
-                            const idx = this.getIndex(mx + dx, my + dy);
-                            this.set(mx + dx, my + dy, material);
+                            const x = mx + dx, y = my + dy;
+                            const state = this.captureCellState(x, y);
+                            if (state) changes.push(state);
+                            const idx = this.getIndex(x, y);
+                            this.set(x, y, material);
                             if (material === MATERIAL.TRAPDOOR && idx >= 0) this.trapdoorIndices.add(idx);
+                            if (material === MATERIAL.WATER_SPOUT && idx >= 0) this.spoutIndices.set(idx, MATERIAL.LIQUID);
+                            if (material === MATERIAL.LAVA_SPOUT && idx >= 0) this.spoutIndices.set(idx, MATERIAL.LAVA);
                         }
                     }
+                }
+                if (changes.length > 0) {
+                    this.undoHistory.push({ type: 'place', changes });
+                    if (this.undoHistory.length > this.maxUndoHistory) this.undoHistory.shift();
                 }
                 // When placing trapdoors, close all trapdoors
                 if (material === MATERIAL.TRAPDOOR) this.closeAllTrapdoors();
@@ -2408,6 +2529,28 @@
             closeAllTrapdoors() {
                 for (const idx of this.trapdoorIndices) {
                     this.grid[idx] = MATERIAL.TRAPDOOR;
+                }
+            }
+
+            // Update spouts - emit liquid downward every few frames
+            updateSpouts() {
+                if (this.frameCount % 4 !== 0) return; // Emit every 4 frames to avoid flooding
+                for (const [idx, liquid] of this.spoutIndices) {
+                    const material = this.grid[idx];
+                    if (material !== MATERIAL.WATER_SPOUT && material !== MATERIAL.LAVA_SPOUT) {
+                        this.spoutIndices.delete(idx);
+                        continue;
+                    }
+                    const x = idx % GRID_WIDTH;
+                    const y = Math.floor(idx / GRID_WIDTH);
+                    const belowIdx = this.getIndex(x, y + 1);
+                    if (belowIdx === -1) continue;
+                    const below = this.grid[belowIdx];
+                    // Emit into empty, or same liquid, or displace lighter liquids
+                    const canEmit = below === MATERIAL.EMPTY || below === liquid;
+                    if (canEmit && Math.random() < 0.6) {
+                        this.grid[belowIdx] = liquid;
+                    }
                 }
             }
 
@@ -2511,6 +2654,53 @@
                         justBuilt: false,
                         isBuilder: true
                     });
+                }
+            }
+
+            // Spawn quick structures - place pre-built shapes for building
+            spawnBridge() {
+                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                // 12-wide concrete bridge, 2 thick
+                for (let dx = -6; dx <= 5; dx++) {
+                    for (let dy = 0; dy <= 1; dy++) {
+                        const x = mx + dx, y = my + dy;
+                        if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT)
+                            this.set(x, y, MATERIAL.CONCRETE);
+                    }
+                }
+            }
+            spawnTower() {
+                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                // 4x4 base, 20 blocks tall tower - concrete with metal corners
+                const h = 20;
+                for (let by = 0; by < h; by++) {
+                    for (let bx = -2; bx <= 1; bx++) {
+                        const x = mx + bx, y = my + by;
+                        if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT) {
+                            const isEdge = bx === -2 || bx === 1 || by === 0 || by === h - 1;
+                            this.set(x, y, isEdge ? MATERIAL.METAL : MATERIAL.CONCRETE);
+                        }
+                    }
+                }
+            }
+            spawnArch() {
+                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
+                // Stone arch - curved top, two pillars (centered on click)
+                const shape = [
+                    [0,3],[1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[8,3],
+                    [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],[7,2],
+                    [2,1],[3,1],[4,1],[5,1],[6,1],
+                    [3,0],[4,0],[5,0],
+                    [4,-1],
+                    [0,4],[0,5],[1,4],[1,5],[7,4],[7,5],[8,4],[8,5]
+                ];
+                for (const [dx, dy] of shape) {
+                    const x = mx + dx - 4, y = my + dy;
+                    if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT)
+                        this.set(x, y, MATERIAL.STONE);
                 }
             }
 
@@ -2732,6 +2922,10 @@
         // Selected material (null = none, or { type: 'material', id }, or { type: 'special', action })
         let selectedMaterial = null;
         
+        // Line tool: last position when Shift+drag drawing
+        let lastLinePos = null;
+        let shiftKeyHeld = false;
+        
         // UI visibility state
         let uiVisible = true;
         let materialMenuMinimized = false;
@@ -2901,6 +3095,15 @@
 
         // Input handling
         window.addEventListener('keydown', (e) => {
+            // Backspace: undo most recent material added or broken
+            if (e.key === 'Backspace') {
+                const target = document.activeElement;
+                const isEditable = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable);
+                if (!isEditable) {
+                    e.preventDefault();
+                    game.undo();
+                }
+            }
             // Trapdoors: O = open all, C = close all
             if (e.key === 'o' || e.key === 'O') {
                 game.openAllTrapdoors();
@@ -2924,6 +3127,7 @@
                 game.nextPelletId = 0;
                 game.worms = [];
                 game.nextWormId = 0;
+                game.undoHistory = [];
                 game.generateBuildings();
             }
             
@@ -2967,6 +3171,7 @@
             
             // FULL RESET: Clear everything and rebuild from scratch
             game._simOrder = null;
+            game.undoHistory = [];
             game.grid = new Array(GRID_WIDTH * GRID_HEIGHT).fill(MATERIAL.EMPTY);
             game.velocityX = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
             game.velocityY = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
@@ -3027,6 +3232,16 @@
             e.preventDefault();
             if (e.button === 0) {
                 game.mouse.down = true;
+                // Line tool: init last position when Shift+material (for drawing lines)
+                if (!destroyModeActive && selectedMaterial && selectedMaterial.type === 'material' && e.shiftKey && game.mouse.isInCanvas) {
+                    const mx = Math.floor(game.mouse.x / CONFIG.pixelSize);
+                    const my = Math.floor(game.mouse.y / CONFIG.pixelSize);
+                    lastLinePos = { x: mx, y: my };
+                    game.placeSingle(mx, my, selectedMaterial.id);
+                    if (selectedMaterial.id === MATERIAL.TRAPDOOR) game.closeAllTrapdoors();
+                } else {
+                    lastLinePos = null;
+                }
                 // Special spawners: one per click (skip when destroy mode active)
                 if (!destroyModeActive && selectedMaterial && selectedMaterial.type === 'special' && game.mouse.isInCanvas) {
                     const a = selectedMaterial.action;
@@ -3038,6 +3253,9 @@
                     else if (a === 'bacteria') game.spawnMaterial(MATERIAL.BACTERIA);
                     else if (a === 'leadBall') game.spawnLeadBall();
                     else if (a === 'pellets') game.spawnPellets();
+                    else if (a === 'bridge') game.spawnBridge();
+                    else if (a === 'tower') game.spawnTower();
+                    else if (a === 'arch') game.spawnArch();
                 }
             }
             if (e.button === 2) game.mouse.rightDown = true;
@@ -3045,12 +3263,18 @@
 
         canvas.addEventListener('mouseup', (e) => {
             e.preventDefault();
-            if (e.button === 0) game.mouse.down = false;
+            if (e.button === 0) {
+                game.mouse.down = false;
+                lastLinePos = null;
+            }
             if (e.button === 2) game.mouse.rightDown = false;
         });
 
         window.addEventListener('mouseup', (e) => {
-            if (e.button === 0) game.mouse.down = false;
+            if (e.button === 0) {
+                game.mouse.down = false;
+                lastLinePos = null;
+            }
             if (e.button === 2) game.mouse.rightDown = false;
         });
 
@@ -3058,13 +3282,24 @@
             e.preventDefault();
         });
 
+        window.addEventListener('keydown', (e) => { if (e.key === 'Shift') shiftKeyHeld = true; });
+        window.addEventListener('keyup', (e) => { if (e.key === 'Shift') shiftKeyHeld = false; });
+
         // Continuous place/destroy while mouse held
         setInterval(() => {
             if ((game.mouse.rightDown || (destroyModeActive && game.mouse.down)) && game.mouse.isInCanvas) {
                 game.destroyAtMouse();
             }
             if (game.mouse.down && game.mouse.isInCanvas && !destroyModeActive && selectedMaterial && selectedMaterial.type === 'material') {
-                game.spawnMaterial(selectedMaterial.id);
+                const mx = Math.floor(game.mouse.x / CONFIG.pixelSize);
+                const my = Math.floor(game.mouse.y / CONFIG.pixelSize);
+                if (shiftKeyHeld && lastLinePos && (lastLinePos.x !== mx || lastLinePos.y !== my)) {
+                    game.placeLine(lastLinePos.x, lastLinePos.y, mx, my, selectedMaterial.id);
+                    lastLinePos = { x: mx, y: my };
+                    if (selectedMaterial.id === MATERIAL.TRAPDOOR) game.closeAllTrapdoors();
+                } else if (!shiftKeyHeld) {
+                    game.spawnMaterial(selectedMaterial.id);
+                }
             }
         }, 30);
 
