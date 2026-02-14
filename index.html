@@ -164,6 +164,40 @@
             background: rgba(255,255,255,0.05);
         }
         
+        #materialDragHandle {
+            padding: 4px 8px;
+            margin: -4px 4px -4px -4px;
+            font-size: 12px;
+            color: #666;
+            cursor: grab;
+            user-select: none;
+            border-radius: 4px;
+        }
+        #materialDragHandle:active {
+            cursor: grabbing;
+        }
+        #materialDragHandle:hover {
+            color: #888;
+        }
+        #materialDestroyBtn {
+            padding: 4px 8px;
+            margin: -4px 4px -4px 0;
+            font-size: 11px;
+            color: #888;
+            cursor: pointer;
+            user-select: none;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        #materialDestroyBtn:hover {
+            color: #ff6b6b;
+            border-color: rgba(255,107,107,0.4);
+        }
+        #materialDestroyBtn.active {
+            color: #ff6b6b;
+            background: rgba(255,107,107,0.2);
+            border-color: #ff6b6b;
+        }
         #materialTabs {
             display: flex;
             gap: 4px;
@@ -465,6 +499,8 @@
 
         <div id="materialMenu">
             <div id="materialMenuHeader">
+                <span id="materialDragHandle" title="Drag to move">⋮⋮</span>
+                <span id="materialDestroyBtn" title="Destroy mode (left-click destroys)">✕</span>
                 <div id="materialTabs"></div>
                 <span style="font-size:10px;color:#666;margin-left:8px;">R=Rebuild</span>
                 <span id="minimizeBtn">−</span>
@@ -2593,8 +2629,8 @@
                 if (this.mouse.isInCanvas) {
                     const mx = this.mouse.x;
                     const my = this.mouse.y;
-                    const isDestroy = this.mouse.rightDown;
-                    const isPlace = this.mouse.down;
+                    const isDestroy = this.mouse.rightDown || (destroyModeActive && this.mouse.down);
+                    const isPlace = this.mouse.down && !isDestroy;
                     
                     // Outer circle (red=destroy, green=place, white=idle)
                     let stroke = 'rgba(255, 255, 255, 0.7)';
@@ -2655,6 +2691,8 @@
         // UI visibility state
         let uiVisible = true;
         let materialMenuMinimized = false;
+        let destroyModeActive = false;
+        let materialMenuPosition = null; // { left, bottom } when dragged, null = centered
 
         // Build material menu
         function initMaterialMenu() {
@@ -2701,6 +2739,8 @@
                     }
                     tile.addEventListener('click', (e) => {
                         e.stopPropagation();
+                        destroyModeActive = false;
+                        document.getElementById('materialDestroyBtn').classList.remove('active');
                         document.querySelectorAll('.materialTile').forEach(t => t.classList.remove('selected'));
                         tile.classList.add('selected');
                         if (typeof item === 'object' && item.special) {
@@ -2716,6 +2756,51 @@
             
             renderMaterialContent(tabNames[0]);
             
+            // Drag handle - move material menu
+            const dragHandle = document.getElementById('materialDragHandle');
+            const menuEl = document.getElementById('materialMenu');
+            const containerEl = document.getElementById('gameContainer');
+            dragHandle.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const rect = menuEl.getBoundingClientRect();
+                const cRect = containerEl.getBoundingClientRect();
+                let startLeft = materialMenuPosition ? materialMenuPosition.left : (rect.left - cRect.left);
+                let startBottom = materialMenuPosition ? materialMenuPosition.bottom : (cRect.bottom - rect.bottom);
+                const onMove = (ev) => {
+                    const dx = ev.clientX - startX;
+                    const dy = startY - ev.clientY;
+                    materialMenuPosition = {
+                        left: Math.max(0, Math.min(cRect.width - rect.width, startLeft + dx)),
+                        bottom: Math.max(0, Math.min(cRect.height - 40, startBottom + dy))
+                    };
+                    menuEl.style.left = materialMenuPosition.left + 'px';
+                    menuEl.style.bottom = materialMenuPosition.bottom + 'px';
+                    menuEl.style.transform = 'none';
+                };
+                const onUp = () => {
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                };
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
+            
+            // Destroy button - toggle destroy mode (left-click destroys when active)
+            const destroyBtn = document.getElementById('materialDestroyBtn');
+            destroyBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                destroyModeActive = !destroyModeActive;
+                destroyBtn.classList.toggle('active', destroyModeActive);
+                if (destroyModeActive) {
+                    document.querySelectorAll('.materialTile').forEach(t => t.classList.remove('selected'));
+                    selectedMaterial = null;
+                }
+                updateCurrentMaterialDisplay();
+            });
+            
             // Minimize button
             document.getElementById('minimizeBtn').addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -2726,7 +2811,7 @@
             
             // Header click to expand when minimized
             document.getElementById('materialMenuHeader').addEventListener('click', (e) => {
-                if (materialMenuMinimized && !e.target.classList.contains('tab') && e.target.id !== 'minimizeBtn') {
+                if (materialMenuMinimized && !e.target.classList.contains('tab') && e.target.id !== 'minimizeBtn' && e.target.id !== 'materialDragHandle' && e.target.id !== 'materialDestroyBtn') {
                     materialMenuMinimized = false;
                     document.getElementById('materialMenu').classList.remove('minimized');
                     document.getElementById('minimizeBtn').textContent = '−';
@@ -2737,7 +2822,11 @@
         function updateCurrentMaterialDisplay() {
             const swatch = document.getElementById('currentSwatch');
             const nameEl = document.getElementById('currentMaterialName');
-            if (selectedMaterial) {
+            if (destroyModeActive) {
+                swatch.style.background = '#ff6b6b';
+                swatch.style.display = 'block';
+                nameEl.textContent = 'Destroy';
+            } else if (selectedMaterial) {
                 swatch.style.background = selectedMaterial.color;
                 swatch.style.display = 'block';
                 nameEl.textContent = selectedMaterial.label;
@@ -2886,8 +2975,8 @@
             e.preventDefault();
             if (e.button === 0) {
                 game.mouse.down = true;
-                // Special spawners: one per click
-                if (selectedMaterial && selectedMaterial.type === 'special' && game.mouse.isInCanvas) {
+                // Special spawners: one per click (skip when destroy mode active)
+                if (!destroyModeActive && selectedMaterial && selectedMaterial.type === 'special' && game.mouse.isInCanvas) {
                     const a = selectedMaterial.action;
                     if (a === 'human') game.spawnHuman();
                     else if (a === 'builder') game.spawnBuilderHuman();
@@ -2919,10 +3008,10 @@
 
         // Continuous place/destroy while mouse held
         setInterval(() => {
-            if (game.mouse.rightDown && game.mouse.isInCanvas) {
+            if ((game.mouse.rightDown || (destroyModeActive && game.mouse.down)) && game.mouse.isInCanvas) {
                 game.destroyAtMouse();
             }
-            if (game.mouse.down && game.mouse.isInCanvas && selectedMaterial && selectedMaterial.type === 'material') {
+            if (game.mouse.down && game.mouse.isInCanvas && !destroyModeActive && selectedMaterial && selectedMaterial.type === 'material') {
                 game.spawnMaterial(selectedMaterial.id);
             }
         }, 30);
