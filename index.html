@@ -89,34 +89,173 @@
             color: #aaa;
         }
 
-        #controls {
+        #materialMenu {
             position: absolute;
-            bottom: 12px;
+            bottom: 0;
+            cursor: default;
             left: 50%;
             transform: translateX(-50%);
-            max-width: 90%;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-size: 11px;
-            backdrop-filter: blur(10px);
-            text-align: center;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
+            max-width: 95%;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 12px 12px 0 0;
+            backdrop-filter: blur(12px);
+            pointer-events: auto;
+            transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.25s ease;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
         }
         
-        #controls.hidden {
+        #materialMenu.hidden {
             opacity: 0;
             visibility: hidden;
         }
-
-        #controls .key {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin: 0 1px;
-            color: #4ecdc4;
+        
+        #materialMenuHeader {
+            display: flex;
+            align-items: center;
+            padding: 6px 12px;
+            cursor: pointer;
+            user-select: none;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            min-height: 36px;
+        }
+        
+        #materialMenuHeader:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        #materialTabs {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        
+        #materialTabs .tab {
+            padding: 6px 14px;
+            font-size: 12px;
             font-weight: bold;
+            color: #888;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        #materialTabs .tab:hover {
+            color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.15);
+        }
+        
+        #materialTabs .tab.active {
+            color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.25);
+            border-color: #4ecdc4;
+        }
+        
+        #materialContent {
+            padding: 12px 16px 16px;
+            max-height: 160px;
+            overflow-y: auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        #materialMenu.minimized #materialContent {
+            display: none;
+        }
+        
+        .materialTile {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.2);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        
+        .materialTile:hover {
+            border-color: #4ecdc4;
+            transform: scale(1.08);
+            box-shadow: 0 0 12px rgba(78, 205, 196, 0.4);
+        }
+        
+        .materialTile.selected {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 12px rgba(255, 107, 107, 0.5);
+        }
+        
+        .materialTile .tileColor {
+            width: 24px;
+            height: 18px;
+            border-radius: 4px;
+            margin-bottom: 2px;
+        }
+        
+        .materialTile .tileName {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 8px;
+        }
+        
+        #minimizeBtn {
+            margin-left: auto;
+            padding: 4px 10px;
+            font-size: 11px;
+            color: #888;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        #minimizeBtn:hover {
+            color: #4ecdc4;
+            background: rgba(255,255,255,0.05);
+        }
+        
+        #currentMaterialDisplay {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #fff;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.15);
+            pointer-events: none;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        
+        #currentMaterialDisplay.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        #currentMaterialDisplay .swatch {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        #currentMaterialDisplay .name {
+            font-weight: bold;
+            color: #4ecdc4;
         }
 
         .loading {
@@ -130,7 +269,7 @@
 
         #settings {
             position: absolute;
-            top: 12px;
+            top: 60px;
             right: 12px;
             background: rgba(0, 0, 0, 0.7);
             padding: 10px 12px;
@@ -231,19 +370,21 @@
             </div>
         </div>
 
-        <div id="controls">
-            <div><span class="key">CLICK+DRAG</span> Destroy | <span class="key">R</span> Rebuild | <span class="key">H</span> Hide UI</div>
-            <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Liquid</div>
-            <div style="margin-top: 2px;"><span class="key">3</span> Water <span class="key">5</span> Lava <span class="key">6</span> Acid <span class="key">9</span> Oil <span class="key">0</span> Steam <span class="key">Q</span> Blood <span class="key">W</span> Slime <span class="key">I</span> Honey <span class="key">D</span> Mercury</div>
-            <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Solid</div>
-            <div style="margin-top: 2px;"><span class="key">1</span> Concrete <span class="key">2</span> Dust <span class="key">4</span> Metal <span class="key">8</span> Snow <span class="key">E</span> Fire <span class="key">Y</span> Ice <span class="key">U</span> Sand <span class="key">O</span> Gravel</div>
-            <div style="margin-top: 2px;"><span class="key">P</span> Wood <span class="key">G</span> Gunpowder <span class="key">J</span> Stone <span class="key">K</span> Ember <span class="key">F</span> Feces</div>
-            <div style="margin-top: 2px;"><span class="key">V</span> Lead Brick <span class="key">M</span> Lead Ball <span class="key">N</span> Glue Metal <span class="key">A</span> Pellets <span class="key">S</span> Fuse <span class="key">.</span> Rubber <span class="key">Z</span> Milk <span class="key">`</span> Antimatter (ignite w/ fire) <span class="key">-</span> Antimetal (blocks blast)</div>
-            <div style="margin-top: 6px; color: #4ecdc4; font-weight: bold;">Life</div>
-            <div style="margin-top: 2px;"><span class="key">7</span> Human <span class="key">B</span> Builder <span class="key">T</span> Plant <span class="key">L</span> Flies <span class="key">X</span> Worm <span class="key">C</span> Bacteria</div>
+        <div id="currentMaterialDisplay">
+            <div class="swatch" id="currentSwatch"></div>
+            <div class="name" id="currentMaterialName">—</div>
+        </div>
+
+        <div id="materialMenu">
+            <div id="materialMenuHeader">
+                <div id="materialTabs"></div>
+                <span style="font-size:10px;color:#666;margin-left:8px;">R=Rebuild</span>
+                <span id="minimizeBtn">−</span>
+            </div>
+            <div id="materialContent"></div>
         </div>
         
-        <div id="uiToggleIndicator">Press H to show UI</div>
+        <div id="uiToggleIndicator">H = show UI | Left-click = place | Right-click = destroy</div>
     </div>
 
     <script>
@@ -365,6 +506,48 @@
             [MATERIAL.ANTIMETAL]: { color: '#2a2a3a', density: 12, strength: 10, flow: false, shadeBase: [42, 42, 58], blocksAntimatter: true }
         };
 
+        // Material display names
+        const MATERIAL_LABELS = {
+            [MATERIAL.CONCRETE]: 'Concrete', [MATERIAL.METAL]: 'Metal', [MATERIAL.GLASS]: 'Glass', [MATERIAL.DUST]: 'Dust',
+            [MATERIAL.LIQUID]: 'Water', [MATERIAL.LAVA]: 'Lava', [MATERIAL.ACID]: 'Acid', [MATERIAL.SNOW]: 'Snow',
+            [MATERIAL.OIL]: 'Oil', [MATERIAL.STEAM]: 'Steam', [MATERIAL.BLOOD]: 'Blood', [MATERIAL.SLIME]: 'Slime',
+            [MATERIAL.FIRE]: 'Fire', [MATERIAL.PLANT]: 'Plant', [MATERIAL.ICE]: 'Ice', [MATERIAL.SAND]: 'Sand',
+            [MATERIAL.HONEY]: 'Honey', [MATERIAL.GRAVEL]: 'Gravel', [MATERIAL.WOOD]: 'Wood', [MATERIAL.GUNPOWDER]: 'Gunpowder',
+            [MATERIAL.STONE]: 'Stone', [MATERIAL.EMBER]: 'Ember', [MATERIAL.FEECES]: 'Feces', [MATERIAL.LEAD]: 'Lead Ball',
+            [MATERIAL.GLUE_METAL]: 'Glue Metal', [MATERIAL.MILK]: 'Milk', [MATERIAL.WORM]: 'Worm',
+            [MATERIAL.LEAD_BRICK]: 'Lead Brick', [MATERIAL.BACTERIA]: 'Bacteria', [MATERIAL.MERCURY]: 'Mercury',
+            [MATERIAL.PELLET]: 'Pellets', [MATERIAL.FUSE]: 'Fuse', [MATERIAL.RUBBER]: 'Rubber',
+            [MATERIAL.ANTIMATTER]: 'Antimatter', [MATERIAL.ANTIMATTER_BLAST]: 'Antimatter Blast', [MATERIAL.ANTIMETAL]: 'Antimetal',
+            [MATERIAL.FLY]: 'Flies', [MATERIAL.DEAD_HUMAN]: 'Dead', [MATERIAL.HUMAN_HEAD]: 'Human', [MATERIAL.HUMAN_BODY]: 'Human',
+            [MATERIAL.HUMAN_BODY_BUILDER]: 'Builder'
+        };
+
+        // Menu tabs: Solid | Liquid | Explosive | Life
+        const MATERIAL_TABS = {
+            Solid: [
+                MATERIAL.CONCRETE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.DUST, MATERIAL.SNOW, MATERIAL.ICE,
+                MATERIAL.SAND, MATERIAL.GRAVEL, MATERIAL.WOOD, MATERIAL.STONE, MATERIAL.LEAD_BRICK, MATERIAL.GLUE_METAL,
+                MATERIAL.RUBBER, MATERIAL.ANTIMETAL, MATERIAL.FEECES, MATERIAL.FUSE, MATERIAL.EMBER
+            ],
+            Liquid: [
+                MATERIAL.LIQUID, MATERIAL.LAVA, MATERIAL.ACID, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.BLOOD,
+                MATERIAL.SLIME, MATERIAL.HONEY, MATERIAL.MILK, MATERIAL.MERCURY
+            ],
+            Explosive: [
+                MATERIAL.GUNPOWDER, MATERIAL.FIRE, MATERIAL.ANTIMATTER
+            ],
+            Life: [
+            { special: 'human', label: 'Human', color: '#ff69b4' },
+            { special: 'builder', label: 'Builder', color: '#ffd700' },
+            { special: 'plant', label: 'Plant', color: '#228b22' },
+            { special: 'flies', label: 'Flies', color: '#1a1a1a' },
+            { special: 'worm', label: 'Worm', color: '#ff69b4' },
+            { special: 'bacteria', label: 'Bacteria', color: '#7cfc00' },
+            { special: 'leadBall', label: 'Lead Ball', color: '#36454f' },
+            { special: 'pellets', label: 'Pellets', color: '#8b7355' },
+            MATERIAL.FLY, MATERIAL.WORM, MATERIAL.BACTERIA, MATERIAL.LEAD, MATERIAL.PELLET
+        ];
+
         // Game State
         class Game {
             constructor() {
@@ -374,7 +557,7 @@
                 this.particleAge = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0); // Track when debris was created
                 this.humanBuiltBlocks = new Array(GRID_WIDTH * GRID_HEIGHT).fill(false); // Track blocks placed by humans (sticky)
                 this.plantType = new Array(GRID_WIDTH * GRID_HEIGHT).fill(0); // 0=green leaf, 1=brown stem, 2+=flower colors
-                this.mouse = { x: -1000, y: -1000, down: false, isInCanvas: false }; // Start off-screen to prevent initial cursor
+                this.mouse = { x: -1000, y: -1000, down: false, rightDown: false, isInCanvas: false }; // left=place, right=destroy
                 this.particleCount = 0;
                 this.initialParticles = 0;
                 this.fps = 60;
@@ -2291,16 +2474,22 @@
                 if (this.mouse.isInCanvas) {
                     const mx = this.mouse.x;
                     const my = this.mouse.y;
+                    const isDestroy = this.mouse.rightDown;
+                    const isPlace = this.mouse.down;
                     
-                    // Outer circle
-                    ctx.strokeStyle = this.mouse.down ? 'rgba(255, 80, 80, 0.9)' : 'rgba(255, 255, 255, 0.7)';
+                    // Outer circle (red=destroy, green=place, white=idle)
+                    let stroke = 'rgba(255, 255, 255, 0.7)';
+                    let fill = 'rgba(255, 255, 255, 0.8)';
+                    if (isDestroy) { stroke = 'rgba(255, 80, 80, 0.9)'; fill = 'rgba(255, 60, 60, 0.9)'; }
+                    else if (isPlace) { stroke = 'rgba(78, 205, 196, 0.9)'; fill = 'rgba(78, 205, 196, 0.8)'; }
+                    ctx.strokeStyle = stroke;
                     ctx.lineWidth = 2;
                     ctx.beginPath();
                     ctx.arc(mx, my, CONFIG.destroyRadius, 0, Math.PI * 2);
                     ctx.stroke();
                     
                     // Crosshair lines
-                    ctx.strokeStyle = this.mouse.down ? 'rgba(255, 80, 80, 0.8)' : 'rgba(255, 255, 255, 0.6)';
+                    ctx.strokeStyle = stroke;
                     ctx.lineWidth = 2;
                     const crossSize = 10;
                     ctx.beginPath();
@@ -2311,7 +2500,7 @@
                     ctx.stroke();
                     
                     // Center dot
-                    ctx.fillStyle = this.mouse.down ? 'rgba(255, 60, 60, 0.9)' : 'rgba(255, 255, 255, 0.8)';
+                    ctx.fillStyle = fill;
                     ctx.beginPath();
                     ctx.arc(mx, my, 3, 0, Math.PI * 2);
                     ctx.fill();
@@ -2341,8 +2530,106 @@
         const game = new Game();
         game.generateBuildings();
         
+        // Selected material (null = none, or { type: 'material', id }, or { type: 'special', action })
+        let selectedMaterial = null;
+        
         // UI visibility state
         let uiVisible = true;
+        let materialMenuMinimized = false;
+
+        // Build material menu
+        function initMaterialMenu() {
+            const tabsEl = document.getElementById('materialTabs');
+            const contentEl = document.getElementById('materialContent');
+            const tabNames = Object.keys(MATERIAL_TABS);
+            
+            tabNames.forEach((tabName, i) => {
+                const tab = document.createElement('span');
+                tab.className = 'tab' + (i === 0 ? ' active' : '');
+                tab.textContent = tabName;
+                tab.dataset.tab = tabName;
+                tab.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (materialMenuMinimized) {
+                        materialMenuMinimized = false;
+                        document.getElementById('materialMenu').classList.remove('minimized');
+                        document.getElementById('minimizeBtn').textContent = '−';
+                    }
+                    tabsEl.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    renderMaterialContent(tabName);
+                });
+                tabsEl.appendChild(tab);
+            });
+            
+            function renderMaterialContent(tabName) {
+                contentEl.innerHTML = '';
+                const items = MATERIAL_TABS[tabName];
+                items.forEach(item => {
+                    const tile = document.createElement('div');
+                    tile.className = 'materialTile';
+                    if (typeof item === 'object' && item.special) {
+                        tile.dataset.special = item.special;
+                        tile.innerHTML = `<div class="tileColor" style="background:${item.color}"></div><span class="tileName">${item.label}</span>`;
+                        tile.title = item.label;
+                    } else {
+                        const m = item;
+                        const props = MATERIAL_PROPS[m];
+                        const label = MATERIAL_LABELS[m] || '?';
+                        tile.dataset.material = m;
+                        tile.innerHTML = `<div class="tileColor" style="background:${props.color || '#444'}"></div><span class="tileName">${label}</span>`;
+                        tile.title = label;
+                    }
+                    tile.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        document.querySelectorAll('.materialTile').forEach(t => t.classList.remove('selected'));
+                        tile.classList.add('selected');
+                        if (typeof item === 'object' && item.special) {
+                            selectedMaterial = { type: 'special', action: item.special, label: item.label, color: item.color };
+                        } else {
+                            selectedMaterial = { type: 'material', id: item, label: MATERIAL_LABELS[item], color: MATERIAL_PROPS[item].color };
+                        }
+                        updateCurrentMaterialDisplay();
+                    });
+                    contentEl.appendChild(tile);
+                });
+            }
+            
+            renderMaterialContent(tabNames[0]);
+            
+            // Minimize button
+            document.getElementById('minimizeBtn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                materialMenuMinimized = !materialMenuMinimized;
+                document.getElementById('materialMenu').classList.toggle('minimized', materialMenuMinimized);
+                e.target.textContent = materialMenuMinimized ? '+' : '−';
+            });
+            
+            // Header click to expand when minimized
+            document.getElementById('materialMenuHeader').addEventListener('click', (e) => {
+                if (materialMenuMinimized && !e.target.classList.contains('tab') && e.target.id !== 'minimizeBtn') {
+                    materialMenuMinimized = false;
+                    document.getElementById('materialMenu').classList.remove('minimized');
+                    document.getElementById('minimizeBtn').textContent = '−';
+                }
+            });
+        }
+        
+        function updateCurrentMaterialDisplay() {
+            const swatch = document.getElementById('currentSwatch');
+            const nameEl = document.getElementById('currentMaterialName');
+            if (selectedMaterial) {
+                swatch.style.background = selectedMaterial.color;
+                swatch.style.display = 'block';
+                nameEl.textContent = selectedMaterial.label;
+            } else {
+                swatch.style.display = 'none';
+                nameEl.textContent = '—';
+            }
+        }
+        
+        initMaterialMenu();
+        updateCurrentMaterialDisplay();
 
         // Input handling
         window.addEventListener('keydown', (e) => {
@@ -2368,64 +2655,25 @@
             if (e.key === 'h' || e.key === 'H') {
                 uiVisible = !uiVisible;
                 const uiElement = document.getElementById('ui');
-                const controlsElement = document.getElementById('controls');
+                const materialMenu = document.getElementById('materialMenu');
+                const currentDisplay = document.getElementById('currentMaterialDisplay');
                 const settingsElement = document.getElementById('settings');
                 const indicator = document.getElementById('uiToggleIndicator');
                 
                 if (uiVisible) {
                     uiElement.classList.remove('hidden');
-                    controlsElement.classList.remove('hidden');
+                    materialMenu.classList.remove('hidden');
+                    currentDisplay.classList.remove('hidden');
                     settingsElement.classList.remove('hidden');
                     indicator.classList.remove('visible');
                 } else {
                     uiElement.classList.add('hidden');
-                    controlsElement.classList.add('hidden');
+                    materialMenu.classList.add('hidden');
+                    currentDisplay.classList.add('hidden');
                     settingsElement.classList.add('hidden');
                     indicator.classList.add('visible');
                 }
             }
-
-            // Spawn materials
-            if (e.key === '1') game.spawnMaterial(MATERIAL.CONCRETE);
-            if (e.key === '2') game.spawnMaterial(MATERIAL.DUST);
-            if (e.key === '3') game.spawnMaterial(MATERIAL.LIQUID);
-            if (e.key === '4') game.spawnMaterial(MATERIAL.METAL);
-            if (e.key === '5') game.spawnMaterial(MATERIAL.LAVA);
-            if (e.key === '6') game.spawnMaterial(MATERIAL.ACID);
-            if (e.key === '7') game.spawnHuman(); // Normal human (blue)
-            if (e.key === 'b' || e.key === 'B') game.spawnBuilderHuman(); // Builder human (yellow shirt)
-            
-            // New materials
-            if (e.key === '8') game.spawnMaterial(MATERIAL.SNOW);
-            if (e.key === '9') game.spawnMaterial(MATERIAL.OIL);
-            if (e.key === '0') game.spawnMaterial(MATERIAL.STEAM);
-            if (e.key === 'q' || e.key === 'Q') game.spawnMaterial(MATERIAL.BLOOD);
-            if (e.key === 'w' || e.key === 'W') game.spawnMaterial(MATERIAL.SLIME);
-            if (e.key === 'e' || e.key === 'E') game.spawnMaterial(MATERIAL.FIRE);
-            if (e.key === 't' || e.key === 'T') game.spawnPlant(); // Spawn small seeds that grow
-            if (e.key === 'y' || e.key === 'Y') game.spawnMaterial(MATERIAL.ICE);
-            if (e.key === 'u' || e.key === 'U') game.spawnMaterial(MATERIAL.SAND);
-            
-            if (e.key === 'i' || e.key === 'I') game.spawnMaterial(MATERIAL.HONEY);
-            if (e.key === 'o' || e.key === 'O') game.spawnMaterial(MATERIAL.GRAVEL);
-            if (e.key === 'p' || e.key === 'P') game.spawnMaterial(MATERIAL.WOOD);
-            if (e.key === 'g' || e.key === 'G') game.spawnMaterial(MATERIAL.GUNPOWDER);
-            if (e.key === 'j' || e.key === 'J') game.spawnMaterial(MATERIAL.STONE);
-            if (e.key === 'k' || e.key === 'K') game.spawnMaterial(MATERIAL.EMBER);
-            if (e.key === 'v' || e.key === 'V') game.spawnMaterial(MATERIAL.LEAD_BRICK);
-            if (e.key === 'f' || e.key === 'F') game.spawnFeces();
-            if (e.key === 'l' || e.key === 'L') game.spawnFly();
-            if (e.key === 'm' || e.key === 'M') game.spawnLeadBall();
-            if (e.key === 'n' || e.key === 'N') game.spawnGlueMetal();
-            if (e.key === 'z' || e.key === 'Z') game.spawnMaterial(MATERIAL.MILK);
-            if (e.key === 'x' || e.key === 'X') game.spawnWorm();
-            if (e.key === 'c' || e.key === 'C') game.spawnMaterial(MATERIAL.BACTERIA);
-            if (e.key === 'd' || e.key === 'D') game.spawnMaterial(MATERIAL.MERCURY);
-            if (e.key === 'a' || e.key === 'A') game.spawnPellets();
-            if (e.key === 's' || e.key === 'S') game.spawnMaterial(MATERIAL.FUSE);
-            if (e.key === '.' || e.key === '>') game.spawnMaterial(MATERIAL.RUBBER);
-            if (e.key === '`' || e.key === '~') game.spawnMaterial(MATERIAL.ANTIMATTER);
-            if (e.key === '-' || e.key === '_') game.spawnMaterial(MATERIAL.ANTIMETAL);
         });
 
         // Voxel size slider
@@ -2496,31 +2744,51 @@
             e.preventDefault();
             game.mouse.isInCanvas = false;
             game.mouse.down = false;
+            game.mouse.rightDown = false;
         });
 
         canvas.addEventListener('mousedown', (e) => {
-            e.preventDefault(); // Prevent default click behavior
-            game.mouse.down = true;
+            e.preventDefault();
+            if (e.button === 0) {
+                game.mouse.down = true;
+                // Special spawners: one per click
+                if (selectedMaterial && selectedMaterial.type === 'special' && game.mouse.isInCanvas) {
+                    const a = selectedMaterial.action;
+                    if (a === 'human') game.spawnHuman();
+                    else if (a === 'builder') game.spawnBuilderHuman();
+                    else if (a === 'plant') game.spawnPlant();
+                    else if (a === 'flies') game.spawnFly();
+                    else if (a === 'worm') game.spawnWorm();
+                    else if (a === 'bacteria') game.spawnMaterial(MATERIAL.BACTERIA);
+                    else if (a === 'leadBall') game.spawnLeadBall();
+                    else if (a === 'pellets') game.spawnPellets();
+                }
+            }
+            if (e.button === 2) game.mouse.rightDown = true;
         });
 
         canvas.addEventListener('mouseup', (e) => {
-            e.preventDefault(); // Prevent default click behavior
-            game.mouse.down = false;
+            e.preventDefault();
+            if (e.button === 0) game.mouse.down = false;
+            if (e.button === 2) game.mouse.rightDown = false;
         });
 
-        // Global mouseup to catch releases outside canvas
         window.addEventListener('mouseup', (e) => {
-            game.mouse.down = false;
+            if (e.button === 0) game.mouse.down = false;
+            if (e.button === 2) game.mouse.rightDown = false;
         });
 
         canvas.addEventListener('contextmenu', (e) => {
-            e.preventDefault(); // Prevent right-click menu
+            e.preventDefault();
         });
 
-        // Continuous destruction while mouse held
+        // Continuous place/destroy while mouse held
         setInterval(() => {
-            if (game.mouse.down) {
+            if (game.mouse.rightDown && game.mouse.isInCanvas) {
                 game.destroyAtMouse();
+            }
+            if (game.mouse.down && game.mouse.isInCanvas && selectedMaterial && selectedMaterial.type === 'material') {
+                game.spawnMaterial(selectedMaterial.id);
             }
         }, 30);
 
