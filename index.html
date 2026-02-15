@@ -1012,10 +1012,21 @@
         // Custom materials (user-created, stored in localStorage)
         const CUSTOM_MATERIAL_BASE = 100;
         let customMaterials = [];
-        try {
-            const stored = localStorage.getItem('rampage_custom_materials');
-            if (stored) customMaterials = JSON.parse(stored);
-        } catch (_) {}
+        function loadCustomMaterials() {
+            try {
+                const stored = localStorage.getItem('rampage_custom_materials');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    customMaterials = Array.isArray(parsed) ? parsed.filter(m => m && typeof m.id === 'number' && m.name) : [];
+                }
+            } catch (_) {
+                customMaterials = [];
+            }
+        }
+        loadCustomMaterials();
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'rampage_custom_materials') loadCustomMaterials();
+        });
 
         function getMaterialProps(material) {
             if (material >= CUSTOM_MATERIAL_BASE) {
@@ -1056,8 +1067,14 @@
         }
 
         function saveCustomMaterials() {
-            try { localStorage.setItem('rampage_custom_materials', JSON.stringify(customMaterials)); } catch (_) {}
+            try {
+                localStorage.setItem('rampage_custom_materials', JSON.stringify(customMaterials));
+            } catch (e) {
+                console.warn('Could not save custom materials to localStorage:', e);
+            }
         }
+        window.addEventListener('beforeunload', () => saveCustomMaterials());
+        document.addEventListener('visibilitychange', () => { if (document.hidden) saveCustomMaterials(); });
 
         function addCustomMaterial(cfg) {
             const maxId = customMaterials.length ? Math.max(...customMaterials.map(c => c.id)) : CUSTOM_MATERIAL_BASE - 1;
