@@ -149,10 +149,6 @@
             opacity: 0;
             visibility: hidden;
         }
-        #customMaterialEditor.hidden {
-            display: none !important;
-            pointer-events: none;
-        }
         
         #materialMenuHeader {
             display: flex;
@@ -239,8 +235,138 @@
             gap: 8px;
         }
         
-        #materialMenu.minimized #materialContent {
+        #materialMenu.minimized #materialContent,
+        #materialMenu.minimized #materialCommands,
+        #materialMenu.minimized #madeSection {
             display: none;
+        }
+        
+        #madeSection.hidden {
+            display: none;
+        }
+        
+        #madeSection {
+            padding: 8px;
+            border-top: 2px solid #444;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        
+        #madeContent {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        #createMaterialModal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            pointer-events: auto;
+        }
+        
+        #createMaterialModal.hidden {
+            display: none;
+            pointer-events: none;
+        }
+        
+        #createMaterialModal .createModalContent {
+            background: #1a1a1a;
+            border: 3px solid;
+            border-color: #333 #555 #555 #333;
+            padding: 16px;
+            min-width: 280px;
+            max-width: 90vw;
+            font-size: 9px;
+        }
+        
+        #createMaterialModal .createModalHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 10px;
+            color: #ccc;
+        }
+        
+        #createMaterialModal .createModalHeader button {
+            background: #333;
+            color: #888;
+            border: 2px solid #555;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0 8px;
+            line-height: 1;
+        }
+        
+        #createMaterialModal .createModalHeader button:hover {
+            color: #ccc;
+        }
+        
+        #createMaterialModal .createForm {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        
+        #createMaterialModal .createForm label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        #createMaterialModal .createForm input[type="text"] {
+            padding: 4px 8px;
+            background: #222;
+            border: 2px solid #444;
+            color: #ccc;
+            font-family: inherit;
+        }
+        
+        #createMaterialModal .createProps {
+            margin-bottom: 12px;
+        }
+        
+        #createMaterialModal .propRow {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 6px 0;
+        }
+        
+        #createMaterialModal .propRow span:first-child {
+            min-width: 90px;
+            color: #999;
+        }
+        
+        #createMaterialModal .propRow input[type="range"] {
+            flex: 1;
+            accent-color: #cc8888;
+        }
+        
+        #createMaterialModal .propRow span:last-child {
+            min-width: 28px;
+            color: #888;
+        }
+        
+        #createMaterialModal #createMaterialSave {
+            width: 100%;
+            padding: 8px;
+            background: #333;
+            border: 2px solid #555;
+            color: #ccc;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        #createMaterialModal #createMaterialSave:hover {
+            background: #444;
+            color: #fff;
         }
         
         .materialTile {
@@ -300,21 +426,10 @@
             border-color: #666 #444 #444 #666;
         }
         
-        #topRightUI {
+        #currentMaterialDisplay {
             position: absolute;
             top: 12px;
             right: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            align-items: flex-end;
-        }
-        #topRightUI.hidden {
-            opacity: 0;
-            visibility: hidden;
-        }
-        
-        #currentMaterialDisplay {
             display: flex;
             align-items: center;
             gap: 8px;
@@ -808,16 +923,14 @@
             </div>
             <div class="setting-item">
                 <label>Command:</label>
-                <input type="text" id="settingsCommand" placeholder="commands here (type 'make' for custom materials)" autocomplete="off">
+                <input type="text" id="settingsCommand" placeholder="commands here" autocomplete="off">
             </div>
             </div>
         </div>
 
-        <div id="topRightUI">
-            <div id="currentMaterialDisplay">
-                <div class="swatch" id="currentSwatch"></div>
-                <div class="name" id="currentMaterialName">—</div>
-            </div>
+        <div id="currentMaterialDisplay">
+            <div class="swatch" id="currentSwatch"></div>
+            <div class="name" id="currentMaterialName">—</div>
         </div>
 
         <div id="materialMenu">
@@ -828,27 +941,33 @@
                 <span style="font-size:10px;color:#666;margin-left:8px;">R=Rebuild</span>
                 <span id="minimizeBtn">−</span>
             </div>
+            <input type="text" id="materialCommands" placeholder="commands here" title="Type 'make' to show Made section" style="width:100%;padding:6px 8px;margin:0;font-family:inherit;font-size:8px;color:#ccc;background:#222;border:2px solid #444;box-sizing:border-box;">
             <div id="materialContent"></div>
+            <div id="madeSection" class="hidden">
+                <div class="madeHeader" style="padding:6px 10px;border-bottom:2px solid #444;font-size:8px;color:#888;">MADE</div>
+                <div id="madeContent"></div>
+            </div>
         </div>
-
-        <div id="customMaterialEditor" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;display:flex;align-items:center;justify-content:center;pointer-events:auto;">
-            <div style="background:#1a1a1a;border:3px solid #555;padding:20px;min-width:280px;max-width:95%;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                    <h3 style="font-size:10px;color:#cc8888;margin:0;">Create Your Own Material</h3>
-                    <span id="customEditorClose" style="cursor:pointer;font-size:14px;color:#888;">✕</span>
+        <div id="createMaterialModal" class="hidden">
+            <div class="createModalContent">
+                <div class="createModalHeader">
+                    <span>Create your own</span>
+                    <button id="createModalClose" type="button">×</button>
                 </div>
-                <p style="font-size:7px;color:#8a8;margin-bottom:12px;">Custom Material Loaded ✅ Now tune its behavior with sliders. Your changes apply instantly.</p>
-                <div style="font-size:8px;color:#ccc;margin-bottom:8px;">Name:</div>
-                <input type="text" id="customMaterialName" placeholder="My Material" style="width:100%;padding:8px;margin-bottom:12px;background:#222;color:#fff;border:1px solid #555;box-sizing:border-box;" />
-                <div style="font-size:8px;color:#ccc;margin-bottom:4px;">Color (hex):</div>
-                <input type="text" id="customMaterialHex" value="#ff6b6b" placeholder="#ff6b6b" style="width:120px;padding:6px;margin-bottom:12px;background:#222;color:#fff;border:1px solid #555;" />
-                <div id="customMaterialPreview" style="width:40px;height:24px;border:2px solid #444;margin-bottom:12px;background:#ff6b6b;"></div>
-                <div style="font-size:8px;color:#999;margin-bottom:8px;">Properties</div>
-                <div id="customMaterialSliders"></div>
-                <div style="margin-top:16px;display:flex;gap:8px;">
-                    <button id="customMaterialSave" style="padding:8px 16px;font-size:9px;background:#4a7;color:#fff;border:2px solid #5b8;cursor:pointer;">Save & Use</button>
-                    <button id="customMaterialClearAll" style="padding:8px 12px;font-size:9px;background:#a44;color:#fff;border:2px solid #b55;cursor:pointer;">Clear all custom</button>
+                <div id="customMaterialLoadedMsg" class="hidden" style="color:#4ade80;font-size:8px;margin:6px 0;">Custom Material Loaded ✅<br>Now tune its behavior with sliders. Your changes apply instantly.</div>
+                <div class="createForm">
+                    <label>Name: <input type="text" id="customMaterialName" placeholder="My Material" maxlength="20"></label>
+                    <label>Hex: <input type="text" id="customMaterialHex" placeholder="#ff6600" value="#ff6600" maxlength="7"></label>
                 </div>
+                <div class="createProps">
+                    <div class="propRow"><span>Density</span><input type="range" id="propDensity" min="0" max="100" value="50" title="lighter floats, heavier sinks"><span id="propDensityVal">50</span></div>
+                    <div class="propRow"><span>Flammability</span><input type="range" id="propFlammability" min="0" max="100" value="0" title="how easily it ignites"><span id="propFlammabilityVal">0</span></div>
+                    <div class="propRow"><span>Conductivity</span><input type="range" id="propConductivity" min="0" max="100" value="0" title="how well it carries electricity"><span id="propConductivityVal">0</span></div>
+                    <div class="propRow"><span>Viscosity</span><input type="range" id="propViscosity" min="0" max="100" value="0" title="how thick and slow it flows"><span id="propViscosityVal">0</span></div>
+                    <div class="propRow"><span>Heat Resistance</span><input type="range" id="propHeatResist" min="0" max="100" value="50" title="how well it survives heat"><span id="propHeatResistVal">50</span></div>
+                    <div class="propRow"><span>Reactivity</span><input type="range" id="propReactivity" min="0" max="100" value="0" title="how strongly it reacts with other materials"><span id="propReactivityVal">0</span></div>
+                </div>
+                <button id="createMaterialSave" type="button">Create & Save</button>
             </div>
         </div>
         
@@ -936,6 +1055,35 @@
             MOUSE: 49          // Life form - scurries on ground, flees from humans
         };
 
+        const CUSTOM_MATERIAL_START = 100;
+        let customMaterials = []; // { id, name, hex, density, flammability, conductivity, viscosity, heatResist, reactivity }
+
+        function loadCustomMaterials() {
+            try {
+                const stored = localStorage.getItem('rampage_custom_materials');
+                customMaterials = stored ? JSON.parse(stored) : [];
+                customMaterials.forEach(c => registerCustomMaterial(c));
+            } catch (e) { customMaterials = []; }
+        }
+        function saveCustomMaterials() {
+            localStorage.setItem('rampage_custom_materials', JSON.stringify(customMaterials));
+        }
+        function registerCustomMaterial(c) {
+            const hex = c.hex || '#888888';
+            const rgb = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            const shadeBase = rgb ? [parseInt(rgb[1], 16), parseInt(rgb[2], 16), parseInt(rgb[3], 16)] : [136, 136, 136];
+            const flow = (c.viscosity || 0) > 60;
+            const density = Math.max(0.5, (c.density || 50) / 12);
+            MATERIAL_PROPS[c.id] = {
+                color: hex, density, strength: 2, flow,
+                shadeBase,
+                custom: true,
+                flammability: (c.flammability || 0) / 100,
+                heatResist: (c.heatResist || 50) / 100
+            };
+            MATERIAL_LABELS[c.id] = c.name || 'Custom';
+        }
+
         // Material Properties
         const MATERIAL_PROPS = {
             [MATERIAL.EMPTY]: { color: null, density: 0, strength: 0 },
@@ -1011,92 +1159,7 @@
             [MATERIAL.HUMAN_BODY_BUILDER]: 'Builder',
             [MATERIAL.FISH]: 'Fish', [MATERIAL.ANT]: 'Ant', [MATERIAL.MOUSE]: 'Mouse'
         };
-
-        // Custom materials (user-created, stored in localStorage)
-        const CUSTOM_MATERIAL_BASE = 100;
-        let customMaterials = [];
-        function loadCustomMaterials() {
-            try {
-                const stored = localStorage.getItem('rampage_custom_materials');
-                if (stored) {
-                    const parsed = JSON.parse(stored);
-                    customMaterials = Array.isArray(parsed) ? parsed.filter(m => m && typeof m.id === 'number' && m.name) : [];
-                }
-            } catch (_) {
-                customMaterials = [];
-            }
-        }
         loadCustomMaterials();
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'rampage_custom_materials') loadCustomMaterials();
-        });
-
-        function getMaterialProps(material) {
-            if (material >= CUSTOM_MATERIAL_BASE) {
-                const c = customMaterials.find(m => m.id === material);
-                if (c) {
-                    const rgb = (() => {
-                        const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(c.hex || '#888888');
-                        return r ? [parseInt(r[1], 16), parseInt(r[2], 16), parseInt(r[3], 16)] : [136, 136, 136];
-                    })();
-                    return {
-                        color: c.hex || '#888888',
-                        density: 1 + c.density * 14,
-                        strength: Math.floor(c.heatResistance * 8),
-                        flow: c.density < 0.3,
-                        shadeBase: rgb,
-                        flammable: (c.flammability || 0) > 0.4,
-                        viscous: (c.viscosity || 0) > 0.6,
-                        isCustom: true,
-                        customFlammability: c.flammability || 0,
-                        customHeatResistance: c.heatResistance || 0.5,
-                        customReactivity: c.reactivity || 0.5
-                    };
-                }
-            }
-            return MATERIAL_PROPS[material] || { color: '#888', density: 5, strength: 0, flow: false, shadeBase: [136, 136, 136] };
-        }
-
-        function getMaterialLabel(material) {
-            if (material >= CUSTOM_MATERIAL_BASE) {
-                const c = customMaterials.find(m => m.id === material);
-                return c ? (c.name || 'Custom') : 'Custom';
-            }
-            return MATERIAL_LABELS[material] || '?';
-        }
-
-        function isCustomMaterial(material) {
-            return material >= CUSTOM_MATERIAL_BASE && customMaterials.some(c => c.id === material);
-        }
-
-        function saveCustomMaterials() {
-            try {
-                localStorage.setItem('rampage_custom_materials', JSON.stringify(customMaterials));
-            } catch (e) {
-                console.warn('Could not save custom materials to localStorage:', e);
-            }
-        }
-        window.addEventListener('beforeunload', () => saveCustomMaterials());
-        document.addEventListener('visibilitychange', () => { if (document.hidden) saveCustomMaterials(); });
-
-        function addCustomMaterial(cfg) {
-            const maxId = customMaterials.length ? Math.max(...customMaterials.map(c => c.id)) : CUSTOM_MATERIAL_BASE - 1;
-            const id = maxId + 1;
-            const m = {
-                id,
-                name: cfg.name || 'Custom',
-                hex: (cfg.hex || '#888888').replace(/^([a-f\d])([a-f\d])([a-f\d])$/i, '#$1$1$2$2$3$3'),
-                density: cfg.density ?? 0.5,
-                flammability: cfg.flammability ?? 0.5,
-                conductivity: cfg.conductivity ?? 0.5,
-                viscosity: cfg.viscosity ?? 0.5,
-                heatResistance: cfg.heatResistance ?? 0.5,
-                reactivity: cfg.reactivity ?? 0.5
-            };
-            customMaterials.push(m);
-            saveCustomMaterials();
-            return m;
-        }
 
         // Menu tabs: Solid | Liquid | Explosive | Life
         const MATERIAL_TABS = {
@@ -2805,7 +2868,7 @@
                         // Skip fuse - sticks in air, doesn't fall
                         if (material === MATERIAL.FUSE) continue;
 
-                        const props = getMaterialProps(material);
+                        const props = MATERIAL_PROPS[material];
                         const vx = this.velocityX[idx];
                         const vy = this.velocityY[idx];
 
@@ -2907,11 +2970,6 @@
                                         newGrid[this.getIndex(nx, ny)] = MATERIAL.LAVA;
                                     } else if (neighborMat === MATERIAL.RUBBER && Math.random() < 0.25) {
                                         newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
-                                    } else if (isCustomMaterial(neighborMat)) {
-                                        const cp = getMaterialProps(neighborMat);
-                                        if ((cp.customHeatResistance || 0) < 0.5 && Math.random() < 0.25) {
-                                            newGrid[this.getIndex(nx, ny)] = (cp.customFlammability || 0) > 0.5 ? MATERIAL.FIRE : MATERIAL.LAVA;
-                                        }
                                     }
                                 }
                             }
@@ -3049,9 +3107,6 @@
                                         newGrid[nIdx] = MATERIAL.FIRE;
                                     } else if (neighborMat === MATERIAL.RUBBER && Math.random() < 0.18) {
                                         newGrid[nIdx] = MATERIAL.FIRE;
-                                    } else if (isCustomMaterial(neighborMat)) {
-                                        const cp = getMaterialProps(neighborMat);
-                                        if ((cp.customFlammability || 0) > 0.4 && Math.random() < 0.15) newGrid[nIdx] = MATERIAL.FIRE;
                                     }
                                 }
                                 
@@ -3571,8 +3626,8 @@
                         if (uIdx === -1 || dIdx === -1) continue;
                         const upper = newGrid[uIdx];
                         const lower = newGrid[dIdx];
-                        const upProps = getMaterialProps(upper);
-                        const loProps = getMaterialProps(lower);
+                        const upProps = MATERIAL_PROPS[upper];
+                        const loProps = MATERIAL_PROPS[lower];
                         if (upper !== MATERIAL.EMPTY && lower !== MATERIAL.EMPTY &&
                             upProps && upProps.flow && loProps && loProps.flow &&
                             !upProps.rises && !loProps.rises &&
@@ -4201,8 +4256,9 @@
                         const material = this.get(x, y);
                         if (material === MATERIAL.EMPTY) continue;
 
-                        const props = getMaterialProps(material);
-                        let base = props.shadeBase;
+                        const props = MATERIAL_PROPS[material];
+                        if (!props) continue;
+                        let base = props.shadeBase || [128, 128, 128];
                         if (material === MATERIAL.PLANT) {
                             const pType = this.plantType[this.getIndex(x, y)] || 0;
                             base = PLANT_COLORS[Math.min(pType, 6)];
@@ -4240,7 +4296,7 @@
                         else if (material === MATERIAL.FISH) noise += Math.sin(t * 0.03 + x * 1.2 + y * 1.2) * 12;
                         else if (material === MATERIAL.ANT) noise += Math.sin(t * 0.02 + x * 3 + y * 3) * 8;
                         else if (material === MATERIAL.MOUSE) noise += Math.sin(t * 0.025 + x * 1.5 + y * 1.5) * 10;
-                        else if (material >= CUSTOM_MATERIAL_BASE) noise += Math.sin(t * 0.01 + x * 1.2 + y * 1.2) * 10;
+                        else if (material >= CUSTOM_MATERIAL_START) noise += Math.sin(t * 0.02 + x * 1.2 + y * 1.2) * 10;
                         else if (material === MATERIAL.PLANT) {
                             const pType = this.plantType[this.getIndex(x, y)] || 0;
                             noise += pType >= 2 ? Math.sin(x * 0.5 + y * 0.8) * 8
@@ -4354,7 +4410,7 @@
             document.getElementById('ui').classList.remove('hidden');
             document.getElementById('materialMenu').classList.remove('hidden');
             document.getElementById('settings').classList.remove('hidden');
-            document.getElementById('topRightUI').classList.remove('hidden');
+            document.getElementById('currentMaterialDisplay').classList.remove('hidden');
             game.grid.fill(MATERIAL.EMPTY);
             game.humanBuiltBlocks.fill(false);
             game.plantType.fill(0);
@@ -4390,7 +4446,7 @@
             document.getElementById('ui').classList.remove('hidden');
             document.getElementById('materialMenu').classList.remove('hidden');
             document.getElementById('settings').classList.remove('hidden');
-            document.getElementById('topRightUI').classList.remove('hidden');
+            document.getElementById('currentMaterialDisplay').classList.remove('hidden');
             game.grid.fill(MATERIAL.EMPTY);
             game.humanBuiltBlocks.fill(false);
             game.plantType.fill(0);
@@ -4494,7 +4550,7 @@
             document.getElementById('ui').classList.add('hidden');
             document.getElementById('materialMenu').classList.add('hidden');
             document.getElementById('settings').classList.add('hidden');
-            document.getElementById('topRightUI').classList.add('hidden');
+            document.getElementById('currentMaterialDisplay').classList.add('hidden');
         }
 
         const SURVIVAL_GOAL = 20;
@@ -4595,24 +4651,73 @@
         let destroyModeActive = false;
         let materialMenuPosition = null; // { left, bottom } when dragged, null = centered
 
-        // Build material menu
-        let madeTabEl = null;
+        function updateMadeSection() {
+            const cmd = (document.getElementById('materialCommands')?.value || '').toLowerCase();
+            const showMade = cmd.includes('make');
+            const madeSection = document.getElementById('madeSection');
+            if (madeSection) {
+                madeSection.classList.toggle('hidden', !showMade);
+                if (showMade) renderMadeContent();
+            }
+        }
+        function renderMadeContent() {
+            const madeContent = document.getElementById('madeContent');
+            if (!madeContent) return;
+            madeContent.innerHTML = '';
+            const createTile = document.createElement('div');
+            createTile.className = 'materialTile';
+            createTile.title = 'Create your own';
+            createTile.innerHTML = '<div class="tileColor" style="background:linear-gradient(135deg,#6644aa,#cc4488)"></div><span class="tileName">Create your own</span>';
+            createTile.addEventListener('click', () => openCreateMaterialModal());
+            madeContent.appendChild(createTile);
+            customMaterials.forEach(c => {
+                const tile = document.createElement('div');
+                tile.className = 'materialTile';
+                tile.dataset.material = c.id;
+                tile.innerHTML = `<div class="tileColor" style="background:${c.hex || '#888'}"></div><span class="tileName">${(c.name || 'Custom').slice(0,12)}</span>`;
+                tile.title = c.name || 'Custom';
+                tile.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    destroyModeActive = false;
+                    document.getElementById('materialDestroyBtn').classList.remove('active');
+                    document.querySelectorAll('.materialTile').forEach(t => t.classList.remove('selected'));
+                    tile.classList.add('selected');
+                    selectedMaterial = { type: 'material', id: c.id, label: c.name || 'Custom', color: c.hex };
+                    updateCurrentMaterialDisplay();
+                });
+                madeContent.appendChild(tile);
+            });
+        }
+        function openCreateMaterialModal() {
+            document.getElementById('createMaterialModal').classList.remove('hidden');
+            document.getElementById('customMaterialLoadedMsg').classList.add('hidden');
+            document.getElementById('customMaterialName').value = '';
+            document.getElementById('customMaterialHex').value = '#ff6600';
+            ['propDensity','propFlammability','propConductivity','propViscosity','propHeatResist','propReactivity'].forEach((id, i) => {
+                const el = document.getElementById(id);
+                const val = document.getElementById(id + 'Val');
+                if (el && val) {
+                    el.value = [50,0,0,0,50,0][i];
+                    val.textContent = el.value;
+                }
+            });
+        }
+        function closeCreateMaterialModal() {
+            document.getElementById('createMaterialModal').classList.add('hidden');
+        }
 
+        // Build material menu
         function initMaterialMenu() {
             const tabsEl = document.getElementById('materialTabs');
             const contentEl = document.getElementById('materialContent');
             const tabNames = Object.keys(MATERIAL_TABS);
-
-            function updateMadeTabVisibility() {
-                const cmdEl = document.getElementById('settingsCommand');
-                const searchVal = (cmdEl && cmdEl.value || '').toLowerCase();
-                const showMade = searchVal.includes('make');
-                if (madeTabEl) madeTabEl.style.display = showMade ? '' : 'none';
-                if (showMade && tabsEl.querySelector('.tab.active[data-tab="Made"]')) {
-                    renderMaterialContent('Made');
-                }
+            
+            const cmdInput = document.getElementById('materialCommands');
+            if (cmdInput) {
+                cmdInput.addEventListener('input', updateMadeSection);
+                cmdInput.addEventListener('keyup', updateMadeSection);
             }
-
+            
             tabNames.forEach((tabName, i) => {
                 const tab = document.createElement('span');
                 tab.className = 'tab' + (i === 0 ? ' active' : '');
@@ -4631,61 +4736,9 @@
                 });
                 tabsEl.appendChild(tab);
             });
-
-            madeTabEl = document.createElement('span');
-            madeTabEl.className = 'tab';
-            madeTabEl.textContent = 'Made';
-            madeTabEl.dataset.tab = 'Made';
-            madeTabEl.style.display = 'none';
-            madeTabEl.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (materialMenuMinimized) {
-                    materialMenuMinimized = false;
-                    document.getElementById('materialMenu').classList.remove('minimized');
-                    document.getElementById('minimizeBtn').textContent = '−';
-                }
-                tabsEl.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                madeTabEl.classList.add('active');
-                renderMaterialContent('Made');
-            });
-            tabsEl.appendChild(madeTabEl);
-
-            const cmdEl = document.getElementById('settingsCommand');
-            if (cmdEl) cmdEl.addEventListener('input', updateMadeTabVisibility);
-
+            
             function renderMaterialContent(tabName) {
                 contentEl.innerHTML = '';
-                if (tabName === 'Made') {
-                    const createTile = document.createElement('div');
-                    createTile.className = 'materialTile';
-                    createTile.dataset.special = 'createCustom';
-                    createTile.innerHTML = `<div class="tileColor" style="background:linear-gradient(135deg,#6a6,#4a4);"></div><span class="tileName">Create your own</span>`;
-                    createTile.title = 'Create your own material';
-                    createTile.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        openCustomMaterialEditor();
-                    });
-                    contentEl.appendChild(createTile);
-                    customMaterials.forEach(c => {
-                        const tile = document.createElement('div');
-                        tile.className = 'materialTile';
-                        tile.dataset.material = c.id;
-                        tile.dataset.custom = 'true';
-                        tile.innerHTML = `<div class="tileColor" style="background:${c.hex || '#888'}"></div><span class="tileName">${c.name || 'Custom'}</span>`;
-                        tile.title = c.name || 'Custom';
-                        tile.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            destroyModeActive = false;
-                            document.getElementById('materialDestroyBtn').classList.remove('active');
-                            document.querySelectorAll('.materialTile').forEach(t => t.classList.remove('selected'));
-                            tile.classList.add('selected');
-                            selectedMaterial = { type: 'material', id: c.id, label: c.name || 'Custom', color: c.hex || '#888' };
-                            updateCurrentMaterialDisplay();
-                        });
-                        contentEl.appendChild(tile);
-                    });
-                    return;
-                }
                 const items = MATERIAL_TABS[tabName];
                 items.forEach(item => {
                     const tile = document.createElement('div');
@@ -4696,8 +4749,8 @@
                         tile.title = item.label;
                     } else {
                         const m = item;
-                        const props = getMaterialProps(m);
-                        const label = getMaterialLabel(m);
+                        const props = MATERIAL_PROPS[m];
+                        const label = MATERIAL_LABELS[m] || '?';
                         tile.dataset.material = m;
                         tile.innerHTML = `<div class="tileColor" style="background:${props.color || '#444'}"></div><span class="tileName">${label}</span>`;
                         tile.title = label;
@@ -4711,14 +4764,14 @@
                         if (typeof item === 'object' && item.special) {
                             selectedMaterial = { type: 'special', action: item.special, label: item.label, color: item.color };
                         } else {
-                            selectedMaterial = { type: 'material', id: item, label: getMaterialLabel(item), color: getMaterialProps(item).color };
+                            selectedMaterial = { type: 'material', id: item, label: MATERIAL_LABELS[item], color: MATERIAL_PROPS[item].color };
                         }
                         updateCurrentMaterialDisplay();
                     });
                     contentEl.appendChild(tile);
                 });
             }
-
+            
             renderMaterialContent(tabNames[0]);
             
             // Drag handle - move material menu
@@ -4766,6 +4819,39 @@
                 updateCurrentMaterialDisplay();
             });
             
+            document.getElementById('createModalClose').addEventListener('click', closeCreateMaterialModal);
+            document.getElementById('createMaterialModal').addEventListener('click', (e) => { if (e.target.id === 'createMaterialModal') closeCreateMaterialModal(); });
+            document.getElementById('createMaterialSave').addEventListener('click', () => {
+                const name = (document.getElementById('customMaterialName').value || 'Custom').trim().slice(0, 20);
+                let hex = (document.getElementById('customMaterialHex').value || '#ff6600').trim();
+                if (!hex.startsWith('#')) hex = '#' + hex;
+                if (!/^#[0-9a-fA-F]{6}$/.test(hex)) hex = '#ff6600';
+                const nextId = CUSTOM_MATERIAL_START + customMaterials.length;
+                const c = {
+                    id: nextId, name: name || 'Custom', hex,
+                    density: parseInt(document.getElementById('propDensity').value) || 50,
+                    flammability: parseInt(document.getElementById('propFlammability').value) || 0,
+                    conductivity: parseInt(document.getElementById('propConductivity').value) || 0,
+                    viscosity: parseInt(document.getElementById('propViscosity').value) || 0,
+                    heatResist: parseInt(document.getElementById('propHeatResist').value) || 50,
+                    reactivity: parseInt(document.getElementById('propReactivity').value) || 0
+                };
+                customMaterials.push(c);
+                registerCustomMaterial(c);
+                saveCustomMaterials();
+                document.getElementById('customMaterialLoadedMsg').classList.remove('hidden');
+                renderMadeContent();
+                selectedMaterial = { type: 'material', id: c.id, label: c.name, color: c.hex };
+                updateCurrentMaterialDisplay();
+            });
+            ['propDensity','propFlammability','propConductivity','propViscosity','propHeatResist','propReactivity'].forEach(id => {
+                const el = document.getElementById(id);
+                const valEl = document.getElementById(id + 'Val');
+                if (el && valEl) {
+                    el.addEventListener('input', () => { valEl.textContent = el.value; });
+                }
+            });
+
             // Minimize button
             document.getElementById('minimizeBtn').addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -4801,81 +4887,6 @@
             }
         }
         
-        const CUSTOM_SLIDER_PROPS = [
-            { key: 'density', label: 'Density', hint: 'lighter floats, heavier sinks' },
-            { key: 'flammability', label: 'Flammability', hint: 'how easily it ignites' },
-            { key: 'conductivity', label: 'Conductivity', hint: 'how well it carries electricity' },
-            { key: 'viscosity', label: 'Viscosity', hint: 'how thick and slow it flows' },
-            { key: 'heatResistance', label: 'Heat Resistance', hint: 'how well it survives heat' },
-            { key: 'reactivity', label: 'Reactivity', hint: 'how strongly it reacts with other materials' }
-        ];
-
-        function openCustomMaterialEditor() {
-            const editor = document.getElementById('customMaterialEditor');
-            const nameEl = document.getElementById('customMaterialName');
-            const hexEl = document.getElementById('customMaterialHex');
-            const previewEl = document.getElementById('customMaterialPreview');
-            const slidersEl = document.getElementById('customMaterialSliders');
-            nameEl.value = '';
-            hexEl.value = '#ff6b6b';
-            previewEl.style.background = '#ff6b6b';
-            slidersEl.innerHTML = '';
-            CUSTOM_SLIDER_PROPS.forEach(({ key, label, hint }) => {
-                const div = document.createElement('div');
-                div.style.marginBottom = '10px';
-                div.innerHTML = `<label style="font-size:7px;color:#999;display:block;">${label}: ${hint}</label><input type="range" min="0" max="1" step="0.05" value="0.5" data-prop="${key}" style="width:100%;" />`;
-                slidersEl.appendChild(div);
-            });
-            editor.classList.remove('hidden');
-        }
-
-        document.getElementById('customEditorClose').addEventListener('click', () => {
-            document.getElementById('customMaterialEditor').classList.add('hidden');
-        });
-        document.getElementById('customMaterialHex').addEventListener('input', (e) => {
-            const v = e.target.value;
-            const hex = /^#?([a-f\d]{3}){1,2}$/i.test(v) ? (v.startsWith('#') ? v : '#' + v) : '#888';
-            document.getElementById('customMaterialPreview').style.background = hex;
-        });
-        document.getElementById('customMaterialClearAll').addEventListener('click', () => {
-            if (confirm('Delete all custom materials? This cannot be undone.')) {
-                const oldIds = customMaterials.map(c => c.id);
-                customMaterials = [];
-                saveCustomMaterials();
-                for (let i = 0; i < game.grid.length; i++) {
-                    if (oldIds.includes(game.grid[i])) game.grid[i] = MATERIAL.EMPTY;
-                }
-                selectedMaterial = null;
-                updateCurrentMaterialDisplay();
-                document.getElementById('customMaterialEditor').classList.add('hidden');
-                const madeTab = document.querySelector('.tab[data-tab="Made"]');
-                if (madeTab && madeTab.style.display !== 'none') {
-                    madeTab.click();
-                }
-            }
-        });
-        document.getElementById('customMaterialSave').addEventListener('click', () => {
-            const nameEl = document.getElementById('customMaterialName');
-            const hexEl = document.getElementById('customMaterialHex');
-            const vals = { name: nameEl.value.trim() || 'Custom', hex: hexEl.value };
-            CUSTOM_SLIDER_PROPS.forEach(({ key }) => {
-                const r = document.querySelector(`#customMaterialSliders input[data-prop="${key}"]`);
-                vals[key] = r ? parseFloat(r.value) : 0.5;
-            });
-            const m = addCustomMaterial(vals);
-            selectedMaterial = { type: 'material', id: m.id, label: m.name, color: m.hex };
-            updateCurrentMaterialDisplay();
-            document.getElementById('customMaterialEditor').classList.add('hidden');
-            const madeTab = document.querySelector('.tab[data-tab="Made"]');
-            if (madeTab && madeTab.style.display !== 'none') {
-                madeTab.click();
-            } else {
-                const con = document.getElementById('settingsCommand');
-                if (con) { con.value = 'make'; con.dispatchEvent(new Event('input')); }
-                setTimeout(() => madeTab && madeTab.click(), 50);
-            }
-        });
-
         initMaterialMenu();
         updateCurrentMaterialDisplay();
         
@@ -4948,19 +4959,19 @@
                     uiVisible = !uiVisible;
                     const uiElement = document.getElementById('ui');
                     const materialMenu = document.getElementById('materialMenu');
-                    const topRightUI = document.getElementById('topRightUI');
+                    const currentDisplay = document.getElementById('currentMaterialDisplay');
                     const settingsElement = document.getElementById('settings');
                     const indicator = document.getElementById('uiToggleIndicator');
                     if (uiVisible) {
                         uiElement.classList.remove('hidden');
                         materialMenu.classList.remove('hidden');
-                        topRightUI.classList.remove('hidden');
+                        currentDisplay.classList.remove('hidden');
                         settingsElement.classList.remove('hidden');
                         indicator.classList.remove('visible');
                     } else {
                         uiElement.classList.add('hidden');
                         materialMenu.classList.add('hidden');
-                        topRightUI.classList.add('hidden');
+                        currentDisplay.classList.add('hidden');
                         settingsElement.classList.add('hidden');
                         indicator.classList.add('visible');
                     }
