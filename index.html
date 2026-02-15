@@ -235,138 +235,8 @@
             gap: 8px;
         }
         
-        #materialMenu.minimized #materialContent,
-        #materialMenu.minimized #materialCommands,
-        #materialMenu.minimized #madeSection {
+        #materialMenu.minimized #materialContent {
             display: none;
-        }
-        
-        #madeSection.hidden {
-            display: none;
-        }
-        
-        #madeSection {
-            padding: 8px;
-            border-top: 2px solid #444;
-            max-height: 120px;
-            overflow-y: auto;
-        }
-        
-        #madeContent {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        
-        #createMaterialModal {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            pointer-events: auto;
-        }
-        
-        #createMaterialModal.hidden {
-            display: none;
-            pointer-events: none;
-        }
-        
-        #createMaterialModal .createModalContent {
-            background: #1a1a1a;
-            border: 3px solid;
-            border-color: #333 #555 #555 #333;
-            padding: 16px;
-            min-width: 280px;
-            max-width: 90vw;
-            font-size: 9px;
-        }
-        
-        #createMaterialModal .createModalHeader {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            font-size: 10px;
-            color: #ccc;
-        }
-        
-        #createMaterialModal .createModalHeader button {
-            background: #333;
-            color: #888;
-            border: 2px solid #555;
-            cursor: pointer;
-            font-size: 16px;
-            padding: 0 8px;
-            line-height: 1;
-        }
-        
-        #createMaterialModal .createModalHeader button:hover {
-            color: #ccc;
-        }
-        
-        #createMaterialModal .createForm {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-        }
-        
-        #createMaterialModal .createForm label {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        #createMaterialModal .createForm input[type="text"] {
-            padding: 4px 8px;
-            background: #222;
-            border: 2px solid #444;
-            color: #ccc;
-            font-family: inherit;
-        }
-        
-        #createMaterialModal .createProps {
-            margin-bottom: 12px;
-        }
-        
-        #createMaterialModal .propRow {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 6px 0;
-        }
-        
-        #createMaterialModal .propRow span:first-child {
-            min-width: 90px;
-            color: #999;
-        }
-        
-        #createMaterialModal .propRow input[type="range"] {
-            flex: 1;
-            accent-color: #cc8888;
-        }
-        
-        #createMaterialModal .propRow span:last-child {
-            min-width: 28px;
-            color: #888;
-        }
-        
-        #createMaterialModal #createMaterialSave {
-            width: 100%;
-            padding: 8px;
-            background: #333;
-            border: 2px solid #555;
-            color: #ccc;
-            cursor: pointer;
-            font-family: inherit;
-        }
-        
-        #createMaterialModal #createMaterialSave:hover {
-            background: #444;
-            color: #fff;
         }
         
         .materialTile {
@@ -941,34 +811,7 @@
                 <span style="font-size:10px;color:#666;margin-left:8px;">R=Rebuild</span>
                 <span id="minimizeBtn">−</span>
             </div>
-            <input type="text" id="materialCommands" placeholder="commands here" title="Type 'make' to show Made section" style="width:100%;padding:6px 8px;margin:0;font-family:inherit;font-size:8px;color:#ccc;background:#222;border:2px solid #444;box-sizing:border-box;">
             <div id="materialContent"></div>
-            <div id="madeSection" class="hidden">
-                <div class="madeHeader" style="padding:6px 10px;border-bottom:2px solid #444;font-size:8px;color:#888;">MADE</div>
-                <div id="madeContent"></div>
-            </div>
-        </div>
-        <div id="createMaterialModal" class="hidden">
-            <div class="createModalContent">
-                <div class="createModalHeader">
-                    <span>Create your own</span>
-                    <button id="createModalClose" type="button">×</button>
-                </div>
-                <div id="customMaterialLoadedMsg" class="hidden" style="color:#4ade80;font-size:8px;margin:6px 0;">Custom Material Loaded ✅<br>Now tune its behavior with sliders. Your changes apply instantly.</div>
-                <div class="createForm">
-                    <label>Name: <input type="text" id="customMaterialName" placeholder="My Material" maxlength="20"></label>
-                    <label>Hex: <input type="text" id="customMaterialHex" placeholder="#ff6600" value="#ff6600" maxlength="7"></label>
-                </div>
-                <div class="createProps">
-                    <div class="propRow"><span>Density</span><input type="range" id="propDensity" min="0" max="100" value="50" title="lighter floats, heavier sinks"><span id="propDensityVal">50</span></div>
-                    <div class="propRow"><span>Flammability</span><input type="range" id="propFlammability" min="0" max="100" value="0" title="how easily it ignites"><span id="propFlammabilityVal">0</span></div>
-                    <div class="propRow"><span>Conductivity</span><input type="range" id="propConductivity" min="0" max="100" value="0" title="how well it carries electricity"><span id="propConductivityVal">0</span></div>
-                    <div class="propRow"><span>Viscosity</span><input type="range" id="propViscosity" min="0" max="100" value="0" title="how thick and slow it flows"><span id="propViscosityVal">0</span></div>
-                    <div class="propRow"><span>Heat Resistance</span><input type="range" id="propHeatResist" min="0" max="100" value="50" title="how well it survives heat"><span id="propHeatResistVal">50</span></div>
-                    <div class="propRow"><span>Reactivity</span><input type="range" id="propReactivity" min="0" max="100" value="0" title="how strongly it reacts with other materials"><span id="propReactivityVal">0</span></div>
-                </div>
-                <button id="createMaterialSave" type="button">Create & Save</button>
-            </div>
         </div>
         
         <div id="uiToggleIndicator">H = show UI | Esc = map menu | Left-click = place | Right-click = destroy | Shift+drag = draw lines | Spawner = put material inside hollow square | O/C = trapdoors | R = rebuild</div>
@@ -1052,37 +895,12 @@
             PLAYER_BODY: 46,   // Survival mode: player entity body
             FISH: 47,          // Life form - swims in water only, dies out of water
             ANT: 48,            // Life form - marches on ground, attracted to honey
-            MOUSE: 49          // Life form - scurries on ground, flees from humans
+            MOUSE: 49,          // Life form - scurries on ground, flees from humans
+            INK: 50,            // Dark liquid - flows like water
+            TAR: 51,            // Black viscous liquid, flammable
+            CHLORINE: 52,       // Green gas that rises, toxic
+            MAPLE_SYRUP: 53     // Amber viscous liquid
         };
-
-        const CUSTOM_MATERIAL_START = 100;
-        let customMaterials = []; // { id, name, hex, density, flammability, conductivity, viscosity, heatResist, reactivity }
-
-        function loadCustomMaterials() {
-            try {
-                const stored = localStorage.getItem('rampage_custom_materials');
-                customMaterials = stored ? JSON.parse(stored) : [];
-                customMaterials.forEach(c => registerCustomMaterial(c));
-            } catch (e) { customMaterials = []; }
-        }
-        function saveCustomMaterials() {
-            localStorage.setItem('rampage_custom_materials', JSON.stringify(customMaterials));
-        }
-        function registerCustomMaterial(c) {
-            const hex = c.hex || '#888888';
-            const rgb = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-            const shadeBase = rgb ? [parseInt(rgb[1], 16), parseInt(rgb[2], 16), parseInt(rgb[3], 16)] : [136, 136, 136];
-            const flow = (c.viscosity || 0) > 60;
-            const density = Math.max(0.5, (c.density || 50) / 12);
-            MATERIAL_PROPS[c.id] = {
-                color: hex, density, strength: 2, flow,
-                shadeBase,
-                custom: true,
-                flammability: (c.flammability || 0) / 100,
-                heatResist: (c.heatResist || 50) / 100
-            };
-            MATERIAL_LABELS[c.id] = c.name || 'Custom';
-        }
 
         // Material Properties
         const MATERIAL_PROPS = {
@@ -1135,7 +953,11 @@
             [MATERIAL.PLAYER_BODY]: { color: '#00cc6a', density: 5, strength: 5, flow: false, shadeBase: [0, 204, 106], isPlayer: true },
             [MATERIAL.FISH]: { color: '#1e90ff', density: 1, strength: 0, flow: false, shadeBase: [30, 144, 255], isFish: true },
             [MATERIAL.ANT]: { color: '#2d1b0e', density: 0.5, strength: 0, flow: false, shadeBase: [45, 27, 14], isAnt: true },
-            [MATERIAL.MOUSE]: { color: '#6b6b6b', density: 2, strength: 0, flow: false, shadeBase: [107, 107, 107], isMouse: true }
+            [MATERIAL.MOUSE]: { color: '#6b6b6b', density: 2, strength: 0, flow: false, shadeBase: [107, 107, 107], isMouse: true },
+            [MATERIAL.INK]: { color: '#1a1a2e', density: 2.5, strength: 0, flow: true, shadeBase: [26, 26, 46] },
+            [MATERIAL.TAR]: { color: '#0d0d0d', density: 5, strength: 0, flow: true, shadeBase: [13, 13, 13], viscous: true, flammable: true },
+            [MATERIAL.CHLORINE]: { color: '#90ee90', density: 0.4, strength: 0, flow: true, shadeBase: [144, 238, 144], rises: true, toxic: true },
+            [MATERIAL.MAPLE_SYRUP]: { color: '#d2691e', density: 5, strength: 0, flow: true, shadeBase: [210, 105, 30], viscous: true }
         };
 
         // Material display names
@@ -1157,9 +979,9 @@
             [MATERIAL.PLAYER_BODY]: 'You',
             [MATERIAL.FLY]: 'Flies', [MATERIAL.DEAD_HUMAN]: 'Dead', [MATERIAL.HUMAN_HEAD]: 'Human', [MATERIAL.HUMAN_BODY]: 'Human',
             [MATERIAL.HUMAN_BODY_BUILDER]: 'Builder',
-            [MATERIAL.FISH]: 'Fish', [MATERIAL.ANT]: 'Ant', [MATERIAL.MOUSE]: 'Mouse'
+            [MATERIAL.FISH]: 'Fish', [MATERIAL.ANT]: 'Ant', [MATERIAL.MOUSE]: 'Mouse',
+            [MATERIAL.INK]: 'Ink', [MATERIAL.TAR]: 'Tar', [MATERIAL.CHLORINE]: 'Chlorine', [MATERIAL.MAPLE_SYRUP]: 'Maple Syrup'
         };
-        loadCustomMaterials();
 
         // Menu tabs: Solid | Liquid | Explosive | Life
         const MATERIAL_TABS = {
@@ -1171,7 +993,8 @@
             ],
             Liquid: [
                 MATERIAL.LIQUID, MATERIAL.LAVA, MATERIAL.ACID, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.BLOOD,
-                MATERIAL.SLIME, MATERIAL.HONEY, MATERIAL.MILK, MATERIAL.MERCURY
+                MATERIAL.SLIME, MATERIAL.HONEY, MATERIAL.MILK, MATERIAL.MERCURY,
+                MATERIAL.INK, MATERIAL.TAR, MATERIAL.CHLORINE, MATERIAL.MAPLE_SYRUP
             ],
             Explosive: [
                 MATERIAL.GUNPOWDER, MATERIAL.FIRE, MATERIAL.ANTIMATTER,
@@ -1837,7 +1660,7 @@
                 for (const [hx, hy] of [[p.headX, p.headY], [p.bodyX, p.bodyY]]) {
                     for (const [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
                         const m = this.get(hx + dx, hy + dy);
-                        if (m === MATERIAL.LAVA || m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.MERCURY) {
+                        if (m === MATERIAL.LAVA || m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.MERCURY || m === MATERIAL.CHLORINE) {
                             p.health = Math.max(0, p.health - 2);
                             p.invincibleUntil = now + 400;
                             if (p.health <= 0) {
@@ -1878,7 +1701,7 @@
 
             addToInventory(material, count) {
                 if (this.gameMode !== 'survival') return;
-                const gatherable = [MATERIAL.CONCRETE, MATERIAL.STONE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.WOOD, MATERIAL.SAND, MATERIAL.DUST, MATERIAL.GRAVEL, MATERIAL.ICE, MATERIAL.LIQUID, MATERIAL.PLANT, MATERIAL.SNOW, MATERIAL.LAVA, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.SLIME, MATERIAL.GUNPOWDER, MATERIAL.FUSE, MATERIAL.RUBBER, MATERIAL.GLUE_METAL, MATERIAL.TRAPDOOR, MATERIAL.WATER_SPOUT, MATERIAL.LAVA_SPOUT, MATERIAL.ANTIMETAL, MATERIAL.HONEY, MATERIAL.ACID, MATERIAL.BLOOD, MATERIAL.EMBER, MATERIAL.FEECES, MATERIAL.LEAD, MATERIAL.LEAD_BRICK, MATERIAL.MILK, MATERIAL.MERCURY, MATERIAL.PELLET, MATERIAL.ANTIMATTER, MATERIAL.FLY, MATERIAL.WORM, MATERIAL.BACTERIA, MATERIAL.FIRE];
+                const gatherable = [MATERIAL.CONCRETE, MATERIAL.STONE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.WOOD, MATERIAL.SAND, MATERIAL.DUST, MATERIAL.GRAVEL, MATERIAL.ICE, MATERIAL.LIQUID, MATERIAL.PLANT, MATERIAL.SNOW, MATERIAL.LAVA, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.SLIME, MATERIAL.GUNPOWDER, MATERIAL.FUSE, MATERIAL.RUBBER, MATERIAL.GLUE_METAL, MATERIAL.TRAPDOOR, MATERIAL.WATER_SPOUT, MATERIAL.LAVA_SPOUT, MATERIAL.ANTIMETAL, MATERIAL.HONEY, MATERIAL.ACID, MATERIAL.BLOOD, MATERIAL.EMBER, MATERIAL.FEECES, MATERIAL.LEAD, MATERIAL.LEAD_BRICK, MATERIAL.MILK, MATERIAL.MERCURY, MATERIAL.PELLET, MATERIAL.ANTIMATTER, MATERIAL.FLY, MATERIAL.WORM, MATERIAL.BACTERIA, MATERIAL.FIRE, MATERIAL.INK, MATERIAL.TAR, MATERIAL.CHLORINE, MATERIAL.MAPLE_SYRUP];
                 if (!gatherable.includes(material)) return;
                 this.inventory[material] = (this.inventory[material] || 0) + (count || 1);
                 this.updateInventoryUI();
@@ -1920,15 +1743,17 @@
                     
                     let touchingAcid = false;
                     let touchingMercury = false;
+                    let touchingChlorine = false;
                     for (const [nx, ny] of neighbors) {
                         const n = this.get(nx, ny);
                         if (n === MATERIAL.ACID) touchingAcid = true;
                         if (n === MATERIAL.MERCURY) touchingMercury = true;
-                        if (touchingAcid || touchingMercury) break;
+                        if (n === MATERIAL.CHLORINE) touchingChlorine = true;
+                        if (touchingAcid || touchingMercury || touchingChlorine) break;
                     }
                     
-                    // If acid or mercury (toxic) touches human, convert to static red voxels
-                    if (touchingAcid || touchingMercury) {
+                    // If acid, mercury, or chlorine (toxic) touches human, convert to static red voxels
+                    if (touchingAcid || touchingMercury || touchingChlorine) {
                         this.set(human.headX, human.headY, MATERIAL.DEAD_HUMAN);
                         this.set(human.bodyX, human.bodyY, MATERIAL.DEAD_HUMAN);
                         human.alive = false;
@@ -2045,7 +1870,9 @@
                                     materialAtGroundPos === MATERIAL.OIL ||
                                     materialAtGroundPos === MATERIAL.BLOOD ||
                                     materialAtGroundPos === MATERIAL.SLIME ||
-                                    materialAtGroundPos === MATERIAL.HONEY;
+                                    materialAtGroundPos === MATERIAL.HONEY ||
+                                    materialAtGroundPos === MATERIAL.INK || materialAtGroundPos === MATERIAL.TAR ||
+                                    materialAtGroundPos === MATERIAL.CHLORINE || materialAtGroundPos === MATERIAL.MAPLE_SYRUP;
                                 
                                 if (canBuildGround) {
                                     // Always build ground block first
@@ -2069,7 +1896,9 @@
                                                 materialAtTowerPos === MATERIAL.OIL ||
                                                 materialAtTowerPos === MATERIAL.BLOOD ||
                                                 materialAtTowerPos === MATERIAL.SLIME ||
-                                                materialAtTowerPos === MATERIAL.HONEY) {
+                                                materialAtTowerPos === MATERIAL.HONEY ||
+                                                materialAtTowerPos === MATERIAL.INK || materialAtTowerPos === MATERIAL.TAR ||
+                                                materialAtTowerPos === MATERIAL.CHLORINE || materialAtTowerPos === MATERIAL.MAPLE_SYRUP) {
                                                 
                                                 this.set(buildX, towerY, MATERIAL.CONCRETE);
                                                 const towerIdx = this.getIndex(buildX, towerY);
@@ -2089,7 +1918,9 @@
                                             materialAtUpperPos === MATERIAL.OIL ||
                                             materialAtUpperPos === MATERIAL.BLOOD ||
                                             materialAtUpperPos === MATERIAL.SLIME ||
-                                            materialAtUpperPos === MATERIAL.HONEY) {
+                                            materialAtUpperPos === MATERIAL.HONEY ||
+                                            materialAtUpperPos === MATERIAL.INK || materialAtUpperPos === MATERIAL.TAR ||
+                                            materialAtUpperPos === MATERIAL.CHLORINE || materialAtUpperPos === MATERIAL.MAPLE_SYRUP) {
                                             
                                             this.set(buildX, upperBuildY, MATERIAL.CONCRETE);
                                             const upperIdx = this.getIndex(buildX, upperBuildY);
@@ -2178,7 +2009,7 @@
                     ];
                     for (const [nx, ny] of neighbors) {
                         const m = this.get(nx, ny);
-                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA || m === MATERIAL.MERCURY) {
+                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA || m === MATERIAL.MERCURY || m === MATERIAL.CHLORINE) {
                             this.set(fly.x, fly.y, MATERIAL.EMPTY);
                             fly.alive = false;
                             this.flies.splice(i, 1);
@@ -2245,7 +2076,7 @@
                     const neighbors = [[worm.x, worm.y + 1], [worm.x, worm.y - 1], [worm.x - 1, worm.y], [worm.x + 1, worm.y]];
                     for (const [nx, ny] of neighbors) {
                         const m = this.get(nx, ny);
-                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA || m === MATERIAL.MERCURY) {
+                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA || m === MATERIAL.MERCURY || m === MATERIAL.CHLORINE) {
                             this.set(worm.x, worm.y, MATERIAL.EMPTY);
                             this.worms.splice(i, 1);
                             break;
@@ -2336,7 +2167,7 @@
                     let fishDead = false;
                     for (const [nx, ny] of fNeighbors) {
                         const m = this.get(nx, ny);
-                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA || m === MATERIAL.MERCURY) {
+                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA || m === MATERIAL.MERCURY || m === MATERIAL.CHLORINE) {
                             fishDead = true;
                             break;
                         }
@@ -2390,7 +2221,7 @@
                     let willDie = false;
                     for (const [nx, ny] of neighbors) {
                         const m = this.get(nx, ny);
-                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA || m === MATERIAL.MERCURY) {
+                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA || m === MATERIAL.MERCURY || m === MATERIAL.CHLORINE) {
                             willDie = true;
                             break;
                         }
@@ -2455,7 +2286,7 @@
                     let willDie = false;
                     for (const [nx, ny] of neighbors) {
                         const m = this.get(nx, ny);
-                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA || m === MATERIAL.MERCURY) {
+                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA || m === MATERIAL.MERCURY || m === MATERIAL.CHLORINE) {
                             willDie = true;
                             break;
                         }
@@ -2990,6 +2821,7 @@
                                     if (neighborMat === MATERIAL.STONE) corrodeChance = 0.06;
                                     else if (neighborMat === MATERIAL.METAL) corrodeChance = 0.12;
                                     else if (neighborMat === MATERIAL.CONCRETE || neighborMat === MATERIAL.LEAD_BRICK) corrodeChance = 0.45;
+                                    else if (neighborMat === MATERIAL.TAR || neighborMat === MATERIAL.MAPLE_SYRUP) corrodeChance = 0.2;
                                     if ((neighborMat === MATERIAL.HUMAN_HEAD || neighborMat === MATERIAL.HUMAN_BODY || neighborMat === MATERIAL.HUMAN_BODY_BUILDER) && Math.random() < 0.7) {
                                         newGrid[this.getIndex(nx, ny)] = MATERIAL.DEAD_HUMAN;
                                     }
@@ -3024,10 +2856,11 @@
                                 [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
                             ];
                             
-                            // WATER extinguishes FIRE - produces steam
+                            // WATER, MILK, INK extinguish FIRE - produces steam
                             let fireExtinguished = false;
                             for (const [nx, ny] of neighbors) {
-                                if (this.get(nx, ny) === MATERIAL.LIQUID) {
+                                const n = this.get(nx, ny);
+                                if (n === MATERIAL.LIQUID || n === MATERIAL.MILK || n === MATERIAL.INK) {
                                     newGrid[idx] = MATERIAL.STEAM;
                                     fireExtinguished = true;
                                     break;
@@ -3104,6 +2937,8 @@
                                     } else if (neighborMat === MATERIAL.DUST && Math.random() < 0.22) {
                                         newGrid[nIdx] = MATERIAL.FIRE;
                                     } else if (neighborMat === MATERIAL.HONEY && Math.random() < 0.2) {
+                                        newGrid[nIdx] = MATERIAL.FIRE;
+                                    } else if (neighborMat === MATERIAL.TAR && Math.random() < 0.25) {
                                         newGrid[nIdx] = MATERIAL.FIRE;
                                     } else if (neighborMat === MATERIAL.RUBBER && Math.random() < 0.18) {
                                         newGrid[nIdx] = MATERIAL.FIRE;
@@ -3396,7 +3231,7 @@
                             let willDie = false;
                             for (const [nx, ny] of deadlyNeighbors) {
                                 const n = this.get(nx, ny);
-                                if (n === MATERIAL.ACID || n === MATERIAL.FIRE || n === MATERIAL.LAVA || n === MATERIAL.MERCURY) {
+                                if (n === MATERIAL.ACID || n === MATERIAL.FIRE || n === MATERIAL.LAVA || n === MATERIAL.MERCURY || n === MATERIAL.CHLORINE) {
                                     willDie = true;
                                     break;
                                 }
@@ -3429,8 +3264,8 @@
                         // Flow behavior for dust and liquids (skip if particle was transformed, e.g. bacteria killed)
                         if (newGrid[idx] !== material) { moved = true; } // Already transformed, skip flow
                         else if (props.flow) {
-                            // STEAM, FIRE, EMBER, and ANTIMATTER_BLAST rise instead of fall
-                            if (material === MATERIAL.STEAM || material === MATERIAL.FIRE || material === MATERIAL.EMBER || material === MATERIAL.ANTIMATTER_BLAST) {
+                            // STEAM, FIRE, EMBER, ANTIMATTER_BLAST, and CHLORINE rise instead of fall
+                            if (material === MATERIAL.STEAM || material === MATERIAL.FIRE || material === MATERIAL.EMBER || material === MATERIAL.ANTIMATTER_BLAST || material === MATERIAL.CHLORINE) {
                                 if (emptyIn(newGrid, x, y - 1)) {
                                     const targetIdx = this.getIndex(x, y - 1);
                                     newGrid[targetIdx] = material;
@@ -3460,6 +3295,62 @@
                             // SLIME is viscous - moves slowly
                             else if (material === MATERIAL.SLIME) {
                                 if (Math.random() < 0.3) {
+                                    if (emptyIn(newGrid, x, y + 1)) {
+                                        const targetIdx = this.getIndex(x, y + 1);
+                                        newGrid[targetIdx] = material;
+                                        newGrid[idx] = MATERIAL.EMPTY;
+                                        moved = true;
+                                    } else if (emptyIn(newGrid, x - 1, y + 1) || emptyIn(newGrid, x + 1, y + 1)) {
+                                        const dir = Math.random() < 0.5 ? -1 : 1;
+                                        const nx = x + (emptyIn(newGrid, x + dir, y + 1) ? dir : -dir);
+                                        if (emptyIn(newGrid, nx, y + 1)) {
+                                            const targetIdx = this.getIndex(nx, y + 1);
+                                            newGrid[targetIdx] = material;
+                                            newGrid[idx] = MATERIAL.EMPTY;
+                                            moved = true;
+                                        }
+                                    } else {
+                                        const dir = Math.random() < 0.5 ? -1 : 1;
+                                        if (emptyIn(newGrid, x + dir, y)) {
+                                            const targetIdx = this.getIndex(x + dir, y);
+                                            newGrid[targetIdx] = material;
+                                            newGrid[idx] = MATERIAL.EMPTY;
+                                            moved = true;
+                                        }
+                                    }
+                                }
+                            }
+                            // TAR is viscous and flammable - slower than slime
+                            else if (material === MATERIAL.TAR) {
+                                if (Math.random() < 0.2) {
+                                    if (emptyIn(newGrid, x, y + 1)) {
+                                        const targetIdx = this.getIndex(x, y + 1);
+                                        newGrid[targetIdx] = material;
+                                        newGrid[idx] = MATERIAL.EMPTY;
+                                        moved = true;
+                                    } else if (emptyIn(newGrid, x - 1, y + 1) || emptyIn(newGrid, x + 1, y + 1)) {
+                                        const dir = Math.random() < 0.5 ? -1 : 1;
+                                        const nx = x + (emptyIn(newGrid, x + dir, y + 1) ? dir : -dir);
+                                        if (emptyIn(newGrid, nx, y + 1)) {
+                                            const targetIdx = this.getIndex(nx, y + 1);
+                                            newGrid[targetIdx] = material;
+                                            newGrid[idx] = MATERIAL.EMPTY;
+                                            moved = true;
+                                        }
+                                    } else {
+                                        const dir = Math.random() < 0.5 ? -1 : 1;
+                                        if (emptyIn(newGrid, x + dir, y)) {
+                                            const targetIdx = this.getIndex(x + dir, y);
+                                            newGrid[targetIdx] = material;
+                                            newGrid[idx] = MATERIAL.EMPTY;
+                                            moved = true;
+                                        }
+                                    }
+                                }
+                            }
+                            // MAPLE_SYRUP is very viscous - like honey
+                            else if (material === MATERIAL.MAPLE_SYRUP) {
+                                if (Math.random() < 0.12) {
                                     if (emptyIn(newGrid, x, y + 1)) {
                                         const targetIdx = this.getIndex(x, y + 1);
                                         newGrid[targetIdx] = material;
@@ -3544,7 +3435,8 @@
                                 }
                                 else if (material === MATERIAL.LIQUID || material === MATERIAL.LAVA || 
                                          material === MATERIAL.ACID || material === MATERIAL.OIL || 
-                                         material === MATERIAL.BLOOD || material === MATERIAL.MILK || material === MATERIAL.MERCURY) {
+                                         material === MATERIAL.BLOOD || material === MATERIAL.MILK || material === MATERIAL.MERCURY ||
+                                         material === MATERIAL.INK) {
                                     const dir = Math.random() < 0.5 ? -1 : 1;
                                     if (emptyIn(newGrid, x + dir, y)) {
                                         const targetIdx = this.getIndex(x + dir, y);
@@ -4257,8 +4149,7 @@
                         if (material === MATERIAL.EMPTY) continue;
 
                         const props = MATERIAL_PROPS[material];
-                        if (!props) continue;
-                        let base = props.shadeBase || [128, 128, 128];
+                        let base = props.shadeBase;
                         if (material === MATERIAL.PLANT) {
                             const pType = this.plantType[this.getIndex(x, y)] || 0;
                             base = PLANT_COLORS[Math.min(pType, 6)];
@@ -4286,6 +4177,10 @@
                         else if (material === MATERIAL.FLY) noise += Math.sin(t * 0.02 + x * 2 + y * 2) * 15;
                         else if (material === MATERIAL.WORM) noise += Math.sin(t * 0.025 + x * 1.5 + y * 1.5) * 12;
                         else if (material === MATERIAL.MERCURY) noise += Math.sin(t * 0.002 + x * 0.6 + y * 0.6) * 18;
+                        else if (material === MATERIAL.INK) noise += Math.sin(t * 0.005 + x * 0.8 + y * 0.8) * 12;
+                        else if (material === MATERIAL.TAR) noise += Math.sin(t * 0.001 + x * 0.2 + y * 0.2) * 6;
+                        else if (material === MATERIAL.CHLORINE) noise += Math.sin(t * 0.02 + x * 1.5 + y * 1.5) * 15;
+                        else if (material === MATERIAL.MAPLE_SYRUP) noise += Math.sin(x * 0.35 + y * 0.5) * 8;
                         else if (material === MATERIAL.ANTIMATTER) noise += Math.sin(t * 0.004 + x * 0.5 + y * 0.5) * 20;
                         else if (material === MATERIAL.ANTIMATTER_BLAST) {
                             noise += Math.sin(t * 0.015 + x + y * 2) * 45;
@@ -4296,7 +4191,6 @@
                         else if (material === MATERIAL.FISH) noise += Math.sin(t * 0.03 + x * 1.2 + y * 1.2) * 12;
                         else if (material === MATERIAL.ANT) noise += Math.sin(t * 0.02 + x * 3 + y * 3) * 8;
                         else if (material === MATERIAL.MOUSE) noise += Math.sin(t * 0.025 + x * 1.5 + y * 1.5) * 10;
-                        else if (material >= CUSTOM_MATERIAL_START) noise += Math.sin(t * 0.02 + x * 1.2 + y * 1.2) * 10;
                         else if (material === MATERIAL.PLANT) {
                             const pType = this.plantType[this.getIndex(x, y)] || 0;
                             noise += pType >= 2 ? Math.sin(x * 0.5 + y * 0.8) * 8
@@ -4595,7 +4489,7 @@
                 ? '<div style="color:#4ade80;font-weight:bold;padding:6px;background:#1a2a1a;border:1px solid #4ade80;margin-bottom:8px;">✓ Goal complete! Shelter built.</div>'
                 : '<div style="color:#fbbf24;padding:6px;background:#2a2a1a;border:1px solid #555;margin-bottom:8px;">Goal: Build your shelter — ' + placed + '/' + SURVIVAL_GOAL + ' blocks placed</div>';
             invList.innerHTML = '';
-            const gatherable = [MATERIAL.CONCRETE, MATERIAL.STONE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.WOOD, MATERIAL.SAND, MATERIAL.DUST, MATERIAL.GRAVEL, MATERIAL.ICE, MATERIAL.LIQUID, MATERIAL.PLANT, MATERIAL.SNOW, MATERIAL.LAVA, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.SLIME, MATERIAL.GUNPOWDER, MATERIAL.FUSE, MATERIAL.RUBBER, MATERIAL.GLUE_METAL, MATERIAL.TRAPDOOR, MATERIAL.WATER_SPOUT, MATERIAL.LAVA_SPOUT, MATERIAL.ANTIMETAL, MATERIAL.HONEY, MATERIAL.ACID, MATERIAL.BLOOD, MATERIAL.EMBER, MATERIAL.FEECES, MATERIAL.LEAD, MATERIAL.LEAD_BRICK, MATERIAL.MILK, MATERIAL.MERCURY, MATERIAL.PELLET, MATERIAL.ANTIMATTER, MATERIAL.FLY, MATERIAL.WORM, MATERIAL.BACTERIA, MATERIAL.FIRE];
+            const gatherable = [MATERIAL.CONCRETE, MATERIAL.STONE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.WOOD, MATERIAL.SAND, MATERIAL.DUST, MATERIAL.GRAVEL, MATERIAL.ICE, MATERIAL.LIQUID, MATERIAL.PLANT, MATERIAL.SNOW, MATERIAL.LAVA, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.SLIME, MATERIAL.GUNPOWDER, MATERIAL.FUSE, MATERIAL.RUBBER, MATERIAL.GLUE_METAL, MATERIAL.TRAPDOOR, MATERIAL.WATER_SPOUT, MATERIAL.LAVA_SPOUT, MATERIAL.ANTIMETAL, MATERIAL.HONEY, MATERIAL.ACID, MATERIAL.BLOOD, MATERIAL.EMBER, MATERIAL.FEECES, MATERIAL.LEAD, MATERIAL.LEAD_BRICK, MATERIAL.MILK, MATERIAL.MERCURY, MATERIAL.PELLET, MATERIAL.ANTIMATTER, MATERIAL.FLY, MATERIAL.WORM, MATERIAL.BACTERIA, MATERIAL.FIRE, MATERIAL.INK, MATERIAL.TAR, MATERIAL.CHLORINE, MATERIAL.MAPLE_SYRUP];
             for (const m of gatherable) {
                 const count = game.inventory[m] || 0;
                 if (count <= 0) continue;
@@ -4651,72 +4545,11 @@
         let destroyModeActive = false;
         let materialMenuPosition = null; // { left, bottom } when dragged, null = centered
 
-        function updateMadeSection() {
-            const cmd = (document.getElementById('materialCommands')?.value || '').toLowerCase();
-            const showMade = cmd.includes('make');
-            const madeSection = document.getElementById('madeSection');
-            if (madeSection) {
-                madeSection.classList.toggle('hidden', !showMade);
-                if (showMade) renderMadeContent();
-            }
-        }
-        function renderMadeContent() {
-            const madeContent = document.getElementById('madeContent');
-            if (!madeContent) return;
-            madeContent.innerHTML = '';
-            const createTile = document.createElement('div');
-            createTile.className = 'materialTile';
-            createTile.title = 'Create your own';
-            createTile.innerHTML = '<div class="tileColor" style="background:linear-gradient(135deg,#6644aa,#cc4488)"></div><span class="tileName">Create your own</span>';
-            createTile.addEventListener('click', () => openCreateMaterialModal());
-            madeContent.appendChild(createTile);
-            customMaterials.forEach(c => {
-                const tile = document.createElement('div');
-                tile.className = 'materialTile';
-                tile.dataset.material = c.id;
-                tile.innerHTML = `<div class="tileColor" style="background:${c.hex || '#888'}"></div><span class="tileName">${(c.name || 'Custom').slice(0,12)}</span>`;
-                tile.title = c.name || 'Custom';
-                tile.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    destroyModeActive = false;
-                    document.getElementById('materialDestroyBtn').classList.remove('active');
-                    document.querySelectorAll('.materialTile').forEach(t => t.classList.remove('selected'));
-                    tile.classList.add('selected');
-                    selectedMaterial = { type: 'material', id: c.id, label: c.name || 'Custom', color: c.hex };
-                    updateCurrentMaterialDisplay();
-                });
-                madeContent.appendChild(tile);
-            });
-        }
-        function openCreateMaterialModal() {
-            document.getElementById('createMaterialModal').classList.remove('hidden');
-            document.getElementById('customMaterialLoadedMsg').classList.add('hidden');
-            document.getElementById('customMaterialName').value = '';
-            document.getElementById('customMaterialHex').value = '#ff6600';
-            ['propDensity','propFlammability','propConductivity','propViscosity','propHeatResist','propReactivity'].forEach((id, i) => {
-                const el = document.getElementById(id);
-                const val = document.getElementById(id + 'Val');
-                if (el && val) {
-                    el.value = [50,0,0,0,50,0][i];
-                    val.textContent = el.value;
-                }
-            });
-        }
-        function closeCreateMaterialModal() {
-            document.getElementById('createMaterialModal').classList.add('hidden');
-        }
-
         // Build material menu
         function initMaterialMenu() {
             const tabsEl = document.getElementById('materialTabs');
             const contentEl = document.getElementById('materialContent');
             const tabNames = Object.keys(MATERIAL_TABS);
-            
-            const cmdInput = document.getElementById('materialCommands');
-            if (cmdInput) {
-                cmdInput.addEventListener('input', updateMadeSection);
-                cmdInput.addEventListener('keyup', updateMadeSection);
-            }
             
             tabNames.forEach((tabName, i) => {
                 const tab = document.createElement('span');
@@ -4819,39 +4652,6 @@
                 updateCurrentMaterialDisplay();
             });
             
-            document.getElementById('createModalClose').addEventListener('click', closeCreateMaterialModal);
-            document.getElementById('createMaterialModal').addEventListener('click', (e) => { if (e.target.id === 'createMaterialModal') closeCreateMaterialModal(); });
-            document.getElementById('createMaterialSave').addEventListener('click', () => {
-                const name = (document.getElementById('customMaterialName').value || 'Custom').trim().slice(0, 20);
-                let hex = (document.getElementById('customMaterialHex').value || '#ff6600').trim();
-                if (!hex.startsWith('#')) hex = '#' + hex;
-                if (!/^#[0-9a-fA-F]{6}$/.test(hex)) hex = '#ff6600';
-                const nextId = CUSTOM_MATERIAL_START + customMaterials.length;
-                const c = {
-                    id: nextId, name: name || 'Custom', hex,
-                    density: parseInt(document.getElementById('propDensity').value) || 50,
-                    flammability: parseInt(document.getElementById('propFlammability').value) || 0,
-                    conductivity: parseInt(document.getElementById('propConductivity').value) || 0,
-                    viscosity: parseInt(document.getElementById('propViscosity').value) || 0,
-                    heatResist: parseInt(document.getElementById('propHeatResist').value) || 50,
-                    reactivity: parseInt(document.getElementById('propReactivity').value) || 0
-                };
-                customMaterials.push(c);
-                registerCustomMaterial(c);
-                saveCustomMaterials();
-                document.getElementById('customMaterialLoadedMsg').classList.remove('hidden');
-                renderMadeContent();
-                selectedMaterial = { type: 'material', id: c.id, label: c.name, color: c.hex };
-                updateCurrentMaterialDisplay();
-            });
-            ['propDensity','propFlammability','propConductivity','propViscosity','propHeatResist','propReactivity'].forEach(id => {
-                const el = document.getElementById(id);
-                const valEl = document.getElementById(id + 'Val');
-                if (el && valEl) {
-                    el.addEventListener('input', () => { valEl.textContent = el.value; });
-                }
-            });
-
             // Minimize button
             document.getElementById('minimizeBtn').addEventListener('click', (e) => {
                 e.stopPropagation();
