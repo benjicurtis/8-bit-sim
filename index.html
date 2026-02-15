@@ -845,7 +845,10 @@
                 <div id="customMaterialPreview" style="width:40px;height:24px;border:2px solid #444;margin-bottom:12px;background:#ff6b6b;"></div>
                 <div style="font-size:8px;color:#999;margin-bottom:8px;">Properties</div>
                 <div id="customMaterialSliders"></div>
-                <button id="customMaterialSave" style="margin-top:16px;padding:8px 16px;font-size:9px;background:#4a7;color:#fff;border:2px solid #5b8;cursor:pointer;">Save & Use</button>
+                <div style="margin-top:16px;display:flex;gap:8px;">
+                    <button id="customMaterialSave" style="padding:8px 16px;font-size:9px;background:#4a7;color:#fff;border:2px solid #5b8;cursor:pointer;">Save & Use</button>
+                    <button id="customMaterialClearAll" style="padding:8px 12px;font-size:9px;background:#a44;color:#fff;border:2px solid #b55;cursor:pointer;">Clear all custom</button>
+                </div>
             </div>
         </div>
         
@@ -4833,6 +4836,23 @@
             const v = e.target.value;
             const hex = /^#?([a-f\d]{3}){1,2}$/i.test(v) ? (v.startsWith('#') ? v : '#' + v) : '#888';
             document.getElementById('customMaterialPreview').style.background = hex;
+        });
+        document.getElementById('customMaterialClearAll').addEventListener('click', () => {
+            if (confirm('Delete all custom materials? This cannot be undone.')) {
+                const oldIds = customMaterials.map(c => c.id);
+                customMaterials = [];
+                saveCustomMaterials();
+                for (let i = 0; i < game.grid.length; i++) {
+                    if (oldIds.includes(game.grid[i])) game.grid[i] = MATERIAL.EMPTY;
+                }
+                selectedMaterial = null;
+                updateCurrentMaterialDisplay();
+                document.getElementById('customMaterialEditor').classList.add('hidden');
+                const madeTab = document.querySelector('.tab[data-tab="Made"]');
+                if (madeTab && madeTab.style.display !== 'none') {
+                    madeTab.click();
+                }
+            }
         });
         document.getElementById('customMaterialSave').addEventListener('click', () => {
             const nameEl = document.getElementById('customMaterialName');
