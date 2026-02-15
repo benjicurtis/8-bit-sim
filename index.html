@@ -149,6 +149,10 @@
             opacity: 0;
             visibility: hidden;
         }
+        #customMaterialEditor.hidden {
+            display: none !important;
+            pointer-events: none;
+        }
         
         #materialMenuHeader {
             display: flex;
@@ -296,10 +300,34 @@
             border-color: #666 #444 #444 #666;
         }
         
-        #currentMaterialDisplay {
+        #topRightUI {
             position: absolute;
             top: 12px;
             right: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: flex-end;
+        }
+        #topRightUI.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        #topRightConsole {
+            width: 140px;
+            font-size: 8px;
+            padding: 6px 8px;
+            background: #222;
+            color: #ccc;
+            border: 2px solid #555;
+        }
+        
+        #topRightConsole::placeholder {
+            color: #666;
+        }
+        
+        #currentMaterialDisplay {
             display: flex;
             align-items: center;
             gap: 8px;
@@ -737,7 +765,6 @@
                 <ul>
                     <li>1–9, 0, Q–P, G–K: spawn materials (concrete, dust, water, lava, acid, humans, etc.)</li>
                     <li>Spawners: put material inside the hollow square to auto-spawn</li>
-                    <li>Mixer: put 2 materials in the left & right slots to create a new blended material (color + properties mix)</li>
                     <li>O/C: toggle trapdoors • Build tab: bridges, towers, spouts</li>
                 </ul>
                 <p style="font-size:8px;color:#666;margin-top:8px;">Press Esc for map menu • How to Play to reopen this</p>
@@ -799,9 +826,12 @@
             </div>
         </div>
 
-        <div id="currentMaterialDisplay">
-            <div class="swatch" id="currentSwatch"></div>
-            <div class="name" id="currentMaterialName">—</div>
+        <div id="topRightUI">
+            <input type="text" id="topRightConsole" placeholder="Type 'make' for custom materials" autocomplete="off" />
+            <div id="currentMaterialDisplay">
+                <div class="swatch" id="currentSwatch"></div>
+                <div class="name" id="currentMaterialName">—</div>
+            </div>
         </div>
 
         <div id="materialMenu">
@@ -813,6 +843,24 @@
                 <span id="minimizeBtn">−</span>
             </div>
             <div id="materialContent"></div>
+        </div>
+
+        <div id="customMaterialEditor" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;display:flex;align-items:center;justify-content:center;pointer-events:auto;">
+            <div style="background:#1a1a1a;border:3px solid #555;padding:20px;min-width:280px;max-width:95%;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <h3 style="font-size:10px;color:#cc8888;margin:0;">Create Your Own Material</h3>
+                    <span id="customEditorClose" style="cursor:pointer;font-size:14px;color:#888;">✕</span>
+                </div>
+                <p style="font-size:7px;color:#8a8;margin-bottom:12px;">Custom Material Loaded ✅ Now tune its behavior with sliders. Your changes apply instantly.</p>
+                <div style="font-size:8px;color:#ccc;margin-bottom:8px;">Name:</div>
+                <input type="text" id="customMaterialName" placeholder="My Material" style="width:100%;padding:8px;margin-bottom:12px;background:#222;color:#fff;border:1px solid #555;box-sizing:border-box;" />
+                <div style="font-size:8px;color:#ccc;margin-bottom:4px;">Color (hex):</div>
+                <input type="text" id="customMaterialHex" value="#ff6b6b" placeholder="#ff6b6b" style="width:120px;padding:6px;margin-bottom:12px;background:#222;color:#fff;border:1px solid #555;" />
+                <div id="customMaterialPreview" style="width:40px;height:24px;border:2px solid #444;margin-bottom:12px;background:#ff6b6b;"></div>
+                <div style="font-size:8px;color:#999;margin-bottom:8px;">Properties</div>
+                <div id="customMaterialSliders"></div>
+                <button id="customMaterialSave" style="margin-top:16px;padding:8px 16px;font-size:9px;background:#4a7;color:#fff;border:2px solid #5b8;cursor:pointer;">Save & Use</button>
+            </div>
         </div>
         
         <div id="uiToggleIndicator">H = show UI | Esc = map menu | Left-click = place | Right-click = destroy | Shift+drag = draw lines | Spawner = put material inside hollow square | O/C = trapdoors | R = rebuild</div>
@@ -899,58 +947,6 @@
             MOUSE: 49          // Life form - scurries on ground, flees from humans
         };
 
-        // Mixed materials: dynamically created by Mixer (IDs 50+)
-        const MIXED_MATERIAL_START = 50;
-        let nextMixedMaterialId = 50;
-        const mixedMaterialCache = {}; // "minId,maxId" -> materialId
-        const MIXABLE_MATERIALS = [
-            MATERIAL.CONCRETE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.DUST, MATERIAL.LIQUID, MATERIAL.LAVA,
-            MATERIAL.ACID, MATERIAL.SNOW, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.BLOOD, MATERIAL.SLIME,
-            MATERIAL.FIRE, MATERIAL.PLANT, MATERIAL.ICE, MATERIAL.SAND, MATERIAL.HONEY, MATERIAL.GRAVEL,
-            MATERIAL.WOOD, MATERIAL.GUNPOWDER, MATERIAL.STONE, MATERIAL.EMBER, MATERIAL.FEECES,
-            MATERIAL.GLUE_METAL, MATERIAL.MILK, MATERIAL.LEAD_BRICK, MATERIAL.BACTERIA, MATERIAL.MERCURY,
-            MATERIAL.FUSE, MATERIAL.RUBBER, MATERIAL.ANTIMATTER, MATERIAL.ANTIMETAL
-        ];
-        function getOrCreateMixedMaterial(a, b) {
-            const key = [Math.min(a, b), Math.max(a, b)].join(',');
-            if (mixedMaterialCache[key] !== undefined) return mixedMaterialCache[key];
-            const pA = MATERIAL_PROPS[a] || { density: 5, strength: 2, flow: false, shadeBase: [128, 128, 128] };
-            const pB = MATERIAL_PROPS[b] || { density: 5, strength: 2, flow: false, shadeBase: [128, 128, 128] };
-            let baseA = (pA.shadeBase && Array.isArray(pA.shadeBase)) ? [...pA.shadeBase] : [128, 128, 128];
-            let baseB = (pB.shadeBase && Array.isArray(pB.shadeBase)) ? [...pB.shadeBase] : [128, 128, 128];
-            while (baseA.length < 3) baseA.push(128);
-            while (baseB.length < 3) baseB.push(128);
-            const shadeBase = [
-                Math.round((baseA[0] + baseB[0]) / 2),
-                Math.round((baseA[1] + baseB[1]) / 2),
-                Math.round((baseA[2] + baseB[2]) / 2)
-            ];
-            const id = nextMixedMaterialId++;
-            const flow = pA.flow || pB.flow;
-            const props = {
-                color: '#' + shadeBase.map(c => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0')).join(''),
-                density: (pA.density + pB.density) / 2,
-                strength: Math.round((pA.strength + pB.strength) / 2),
-                flow,
-                shadeBase,
-                flammable: pA.flammable || pB.flammable,
-                explosive: pA.explosive || pB.explosive,
-                corrosive: pA.corrosive || pB.corrosive,
-                viscous: pA.viscous || pB.viscous,
-                rises: pA.rises || pB.rises,
-                cold: pA.cold || pB.cold,
-                melts: pA.melts || pB.melts,
-                grows: pA.grows || pB.grows,
-                burns: pA.burns || pB.burns
-            };
-            MATERIAL_PROPS[id] = props;
-            const nameA = MATERIAL_LABELS[a] || '?';
-            const nameB = MATERIAL_LABELS[b] || '?';
-            MATERIAL_LABELS[id] = nameA + '+' + nameB;
-            mixedMaterialCache[key] = id;
-            return id;
-        }
-
         // Material Properties
         const MATERIAL_PROPS = {
             [MATERIAL.EMPTY]: { color: null, density: 0, strength: 0 },
@@ -1027,6 +1023,75 @@
             [MATERIAL.FISH]: 'Fish', [MATERIAL.ANT]: 'Ant', [MATERIAL.MOUSE]: 'Mouse'
         };
 
+        // Custom materials (user-created, stored in localStorage)
+        const CUSTOM_MATERIAL_BASE = 100;
+        let customMaterials = [];
+        try {
+            const stored = localStorage.getItem('rampage_custom_materials');
+            if (stored) customMaterials = JSON.parse(stored);
+        } catch (_) {}
+
+        function getMaterialProps(material) {
+            if (material >= CUSTOM_MATERIAL_BASE) {
+                const c = customMaterials.find(m => m.id === material);
+                if (c) {
+                    const rgb = (() => {
+                        const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(c.hex || '#888888');
+                        return r ? [parseInt(r[1], 16), parseInt(r[2], 16), parseInt(r[3], 16)] : [136, 136, 136];
+                    })();
+                    return {
+                        color: c.hex || '#888888',
+                        density: 1 + c.density * 14,
+                        strength: Math.floor(c.heatResistance * 8),
+                        flow: c.density < 0.3,
+                        shadeBase: rgb,
+                        flammable: (c.flammability || 0) > 0.4,
+                        viscous: (c.viscosity || 0) > 0.6,
+                        isCustom: true,
+                        customFlammability: c.flammability || 0,
+                        customHeatResistance: c.heatResistance || 0.5,
+                        customReactivity: c.reactivity || 0.5
+                    };
+                }
+            }
+            return MATERIAL_PROPS[material] || { color: '#888', density: 5, strength: 0, flow: false, shadeBase: [136, 136, 136] };
+        }
+
+        function getMaterialLabel(material) {
+            if (material >= CUSTOM_MATERIAL_BASE) {
+                const c = customMaterials.find(m => m.id === material);
+                return c ? (c.name || 'Custom') : 'Custom';
+            }
+            return MATERIAL_LABELS[material] || '?';
+        }
+
+        function isCustomMaterial(material) {
+            return material >= CUSTOM_MATERIAL_BASE && customMaterials.some(c => c.id === material);
+        }
+
+        function saveCustomMaterials() {
+            try { localStorage.setItem('rampage_custom_materials', JSON.stringify(customMaterials)); } catch (_) {}
+        }
+
+        function addCustomMaterial(cfg) {
+            const maxId = customMaterials.length ? Math.max(...customMaterials.map(c => c.id)) : CUSTOM_MATERIAL_BASE - 1;
+            const id = maxId + 1;
+            const m = {
+                id,
+                name: cfg.name || 'Custom',
+                hex: (cfg.hex || '#888888').replace(/^([a-f\d])([a-f\d])([a-f\d])$/i, '#$1$1$2$2$3$3'),
+                density: cfg.density ?? 0.5,
+                flammability: cfg.flammability ?? 0.5,
+                conductivity: cfg.conductivity ?? 0.5,
+                viscosity: cfg.viscosity ?? 0.5,
+                heatResistance: cfg.heatResistance ?? 0.5,
+                reactivity: cfg.reactivity ?? 0.5
+            };
+            customMaterials.push(m);
+            saveCustomMaterials();
+            return m;
+        }
+
         // Menu tabs: Solid | Liquid | Explosive | Life
         const MATERIAL_TABS = {
             Solid: [
@@ -1045,7 +1110,6 @@
             ],
             Build: [
                 { special: 'spawner', label: 'Spawner', color: '#8b9dc3' },
-                { special: 'mixer', label: 'Mixer', color: '#9b59b6' },
                 { special: 'bridge', label: 'Bridge', color: '#5a6268' },
                 { special: 'tower', label: 'Tower', color: '#8899aa' },
                 { special: 'arch', label: 'Arch', color: '#696969' },
@@ -1103,7 +1167,6 @@
                 this.trapdoorIndices = new Set(); // Grid indices where trapdoors exist (O=open all, C=close all)
                 this.spoutIndices = new Map();   // idx -> liquid (LIQUID or LAVA) for spouts that emit
                 this.spawnerStructures = [];     // { left, top, right, bottom, emitX, emitY, material } - hollow square, emits what's inside
-                this.mixerStructures = [];       // { inAx, inAy, inBx, inBy, outX, outY } - two inputs, one output
                 this.undoHistory = [];           // Stack of { type: 'place'|'destroy', changes: [...] }
                 this.maxUndoHistory = 50;        // Limit memory usage
                 this.gameMode = 'sandbox';
@@ -1236,7 +1299,6 @@
                 this.trapdoorIndices.clear();
                 this.spoutIndices.clear();
                 this.spawnerStructures = [];
-                this.mixerStructures = [];
                 const groundLevel = GRID_HEIGHT - 15;
                 
                 // Ground
@@ -1309,7 +1371,6 @@
                 this.trapdoorIndices.clear();
                 this.spoutIndices.clear();
                 this.spawnerStructures = [];
-                this.mixerStructures = [];
                 const groundY = Math.floor(GRID_HEIGHT * 0.72);
                 const seed = Math.random() * 10000;
                 const n = (x, y, s) => (Math.sin((x + seed) * s * 0.1) * Math.cos((y + seed * 0.7) * s * 0.08) + Math.sin((x + y + seed) * s * 0.05)) * 0.5 + 0.5;
@@ -1402,7 +1463,6 @@
                 this.trapdoorIndices.clear();
                 this.spoutIndices.clear();
                 this.spawnerStructures = [];
-                this.mixerStructures = [];
                 const groundY = Math.floor(GRID_HEIGHT * 0.75);
                 const seed = Math.random() * 10000;
                 const n = (x, y, s) => (Math.sin((x + seed) * s * 0.1) * Math.cos((y + seed * 0.7) * s * 0.08) + Math.sin((x + y + seed) * s * 0.05)) * 0.5 + 0.5;
@@ -1514,7 +1574,6 @@
                 this.trapdoorIndices.clear();
                 this.spoutIndices.clear();
                 this.spawnerStructures = [];
-                this.mixerStructures = [];
                 const groundY = Math.floor(GRID_HEIGHT * 0.65);
                 const seed = Math.random() * 10000;
                 const n = (x, y, s) => (Math.sin((x + seed) * s * 0.1) * Math.cos((y + seed * 0.7) * s * 0.08) + Math.sin((x + y + seed) * s * 0.05)) * 0.5 + 0.5;
@@ -1612,7 +1671,6 @@
                 this.trapdoorIndices.clear();
                 this.spoutIndices.clear();
                 this.spawnerStructures = [];
-                this.mixerStructures = [];
                 const waterLine = Math.floor(GRID_HEIGHT * 0.55);
                 const seed = Math.random() * 10000;
                 const n = (x, y, s) => (Math.sin((x + seed) * s * 0.1) * Math.cos((y + seed * 0.7) * s * 0.08) + Math.sin((x + y + seed) * s * 0.05)) * 0.5 + 0.5;
@@ -2678,7 +2736,6 @@
                 this.updateLeadBalls();
                 this.updatePellets();
                 this.updateSpawners();
-                this.updateMixers();
                 this.updateSpouts();
                 
                 const newGrid = [...this.grid];
@@ -2742,7 +2799,7 @@
                         // Skip fuse - sticks in air, doesn't fall
                         if (material === MATERIAL.FUSE) continue;
 
-                        const props = MATERIAL_PROPS[material];
+                        const props = getMaterialProps(material);
                         const vx = this.velocityX[idx];
                         const vy = this.velocityY[idx];
 
@@ -2844,6 +2901,11 @@
                                         newGrid[this.getIndex(nx, ny)] = MATERIAL.LAVA;
                                     } else if (neighborMat === MATERIAL.RUBBER && Math.random() < 0.25) {
                                         newGrid[this.getIndex(nx, ny)] = MATERIAL.FIRE;
+                                    } else if (isCustomMaterial(neighborMat)) {
+                                        const cp = getMaterialProps(neighborMat);
+                                        if ((cp.customHeatResistance || 0) < 0.5 && Math.random() < 0.25) {
+                                            newGrid[this.getIndex(nx, ny)] = (cp.customFlammability || 0) > 0.5 ? MATERIAL.FIRE : MATERIAL.LAVA;
+                                        }
                                     }
                                 }
                             }
@@ -2981,6 +3043,9 @@
                                         newGrid[nIdx] = MATERIAL.FIRE;
                                     } else if (neighborMat === MATERIAL.RUBBER && Math.random() < 0.18) {
                                         newGrid[nIdx] = MATERIAL.FIRE;
+                                    } else if (isCustomMaterial(neighborMat)) {
+                                        const cp = getMaterialProps(neighborMat);
+                                        if ((cp.customFlammability || 0) > 0.4 && Math.random() < 0.15) newGrid[nIdx] = MATERIAL.FIRE;
                                     }
                                 }
                                 
@@ -3500,8 +3565,8 @@
                         if (uIdx === -1 || dIdx === -1) continue;
                         const upper = newGrid[uIdx];
                         const lower = newGrid[dIdx];
-                        const upProps = MATERIAL_PROPS[upper];
-                        const loProps = MATERIAL_PROPS[lower];
+                        const upProps = getMaterialProps(upper);
+                        const loProps = getMaterialProps(lower);
                         if (upper !== MATERIAL.EMPTY && lower !== MATERIAL.EMPTY &&
                             upProps && upProps.flow && loProps && loProps.flow &&
                             !upProps.rises && !loProps.rises &&
@@ -3668,25 +3733,6 @@
             closeAllTrapdoors() {
                 for (const idx of this.trapdoorIndices) {
                     this.grid[idx] = MATERIAL.TRAPDOOR;
-                }
-            }
-
-            // Update mixers - two input cells, blend materials into new mixed material at output
-            updateMixers() {
-                for (const m of this.mixerStructures) {
-                    const matA = this.get(m.inAx, m.inAy);
-                    const matB = this.get(m.inBx, m.inBy);
-                    if (matA === MATERIAL.EMPTY || matB === MATERIAL.EMPTY) continue;
-                    if (!MIXABLE_MATERIALS.includes(matA) || !MIXABLE_MATERIALS.includes(matB)) continue;
-                    const outIdx = this.getIndex(m.outX, m.outY);
-                    if (outIdx === -1) continue;
-                    if (this.grid[outIdx] !== MATERIAL.EMPTY) continue;
-                    if (this.frameCount % 8 !== 0) continue;
-                    const mixed = getOrCreateMixedMaterial(matA, matB);
-                    this.set(m.inAx, m.inAy, MATERIAL.EMPTY);
-                    this.set(m.inBx, m.inBy, MATERIAL.EMPTY);
-                    this.grid[outIdx] = mixed;
-                    this.humanBuiltBlocks[outIdx] = true;
                 }
             }
 
@@ -3892,30 +3938,6 @@
                         if (idx >= 0) this.humanBuiltBlocks[idx] = true;
                     }
                 }
-            }
-
-            // Mixer - two input cells (left & right), one output below; mixes 2 materials into new blended material
-            spawnMixer() {
-                const mx = Math.floor(this.mouse.x / CONFIG.pixelSize);
-                const my = Math.floor(this.mouse.y / CONFIG.pixelSize);
-                const left = mx - 2, right = mx + 2, top = my - 1, bottom = my + 2;
-                const inAx = mx - 1, inAy = my;
-                const inBx = mx + 1, inBy = my;
-                const outX = mx, outY = my + 1;
-                for (let x = left; x <= right; x++) {
-                    for (let y = top; y <= bottom; y++) {
-                        if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) continue;
-                        const isInputA = x === inAx && y === inAy;
-                        const isInputB = x === inBx && y === inBy;
-                        const isOutput = x === outX && y === outY;
-                        if (!isInputA && !isInputB && !isOutput) {
-                            const idx = this.getIndex(x, y);
-                            this.set(x, y, MATERIAL.CONCRETE);
-                            if (idx >= 0) this.humanBuiltBlocks[idx] = true;
-                        }
-                    }
-                }
-                this.mixerStructures.push({ inAx, inAy, inBx, inBy, outX, outY });
             }
 
             // Spawner - hollow square: put material inside, it emits it (sticky output)
@@ -4173,7 +4195,7 @@
                         const material = this.get(x, y);
                         if (material === MATERIAL.EMPTY) continue;
 
-                        const props = MATERIAL_PROPS[material];
+                        const props = getMaterialProps(material);
                         let base = props.shadeBase;
                         if (material === MATERIAL.PLANT) {
                             const pType = this.plantType[this.getIndex(x, y)] || 0;
@@ -4212,7 +4234,7 @@
                         else if (material === MATERIAL.FISH) noise += Math.sin(t * 0.03 + x * 1.2 + y * 1.2) * 12;
                         else if (material === MATERIAL.ANT) noise += Math.sin(t * 0.02 + x * 3 + y * 3) * 8;
                         else if (material === MATERIAL.MOUSE) noise += Math.sin(t * 0.025 + x * 1.5 + y * 1.5) * 10;
-                        else if (material >= MIXED_MATERIAL_START) noise += Math.sin(t * 0.01 + x * 1.2 + y * 1.2) * 10;
+                        else if (material >= CUSTOM_MATERIAL_BASE) noise += Math.sin(t * 0.01 + x * 1.2 + y * 1.2) * 10;
                         else if (material === MATERIAL.PLANT) {
                             const pType = this.plantType[this.getIndex(x, y)] || 0;
                             noise += pType >= 2 ? Math.sin(x * 0.5 + y * 0.8) * 8
@@ -4308,7 +4330,6 @@
             game.trapdoorIndices.clear();
             game.spoutIndices.clear();
             game.spawnerStructures = [];
-            game.mixerStructures = [];
             if (mapType === 'city') game.generateBuildings();
             else if (mapType === 'jungle') game.generateJungle();
             else if (mapType === 'hill') game.generateHill();
@@ -4327,7 +4348,7 @@
             document.getElementById('ui').classList.remove('hidden');
             document.getElementById('materialMenu').classList.remove('hidden');
             document.getElementById('settings').classList.remove('hidden');
-            document.getElementById('currentMaterialDisplay').classList.remove('hidden');
+            document.getElementById('topRightUI').classList.remove('hidden');
             game.grid.fill(MATERIAL.EMPTY);
             game.humanBuiltBlocks.fill(false);
             game.plantType.fill(0);
@@ -4335,7 +4356,6 @@
             game.trapdoorIndices.clear();
             game.spoutIndices.clear();
             game.spawnerStructures = [];
-            game.mixerStructures = [];
             generateMap(selectedMap);
             if (!window._gameInfoShown) {
                 window._gameInfoShown = true;
@@ -4364,7 +4384,7 @@
             document.getElementById('ui').classList.remove('hidden');
             document.getElementById('materialMenu').classList.remove('hidden');
             document.getElementById('settings').classList.remove('hidden');
-            document.getElementById('currentMaterialDisplay').classList.remove('hidden');
+            document.getElementById('topRightUI').classList.remove('hidden');
             game.grid.fill(MATERIAL.EMPTY);
             game.humanBuiltBlocks.fill(false);
             game.plantType.fill(0);
@@ -4372,7 +4392,6 @@
             game.trapdoorIndices.clear();
             game.spoutIndices.clear();
             game.spawnerStructures = [];
-            game.mixerStructures = [];
             generateMap(selectedMap);
         });
 
@@ -4388,7 +4407,6 @@
             game.trapdoorIndices.clear();
             game.spoutIndices.clear();
             game.spawnerStructures = [];
-            game.mixerStructures = [];
             generateMap(selectedMap);
             hideAllUIForSurvival();
             renderCraftingPanel();
@@ -4470,7 +4488,7 @@
             document.getElementById('ui').classList.add('hidden');
             document.getElementById('materialMenu').classList.add('hidden');
             document.getElementById('settings').classList.add('hidden');
-            document.getElementById('currentMaterialDisplay').classList.add('hidden');
+            document.getElementById('topRightUI').classList.add('hidden');
         }
 
         const SURVIVAL_GOAL = 20;
@@ -4572,11 +4590,23 @@
         let materialMenuPosition = null; // { left, bottom } when dragged, null = centered
 
         // Build material menu
+        let madeTabEl = null;
+
         function initMaterialMenu() {
             const tabsEl = document.getElementById('materialTabs');
             const contentEl = document.getElementById('materialContent');
             const tabNames = Object.keys(MATERIAL_TABS);
-            
+
+            function updateMadeTabVisibility() {
+                const consoleEl = document.getElementById('topRightConsole');
+                const searchVal = (consoleEl && consoleEl.value || '').toLowerCase();
+                const showMade = searchVal.includes('make');
+                if (madeTabEl) madeTabEl.style.display = showMade ? '' : 'none';
+                if (showMade && tabsEl.querySelector('.tab.active[data-tab="Made"]')) {
+                    renderMaterialContent('Made');
+                }
+            }
+
             tabNames.forEach((tabName, i) => {
                 const tab = document.createElement('span');
                 tab.className = 'tab' + (i === 0 ? ' active' : '');
@@ -4595,9 +4625,61 @@
                 });
                 tabsEl.appendChild(tab);
             });
-            
+
+            madeTabEl = document.createElement('span');
+            madeTabEl.className = 'tab';
+            madeTabEl.textContent = 'Made';
+            madeTabEl.dataset.tab = 'Made';
+            madeTabEl.style.display = 'none';
+            madeTabEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (materialMenuMinimized) {
+                    materialMenuMinimized = false;
+                    document.getElementById('materialMenu').classList.remove('minimized');
+                    document.getElementById('minimizeBtn').textContent = '−';
+                }
+                tabsEl.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                madeTabEl.classList.add('active');
+                renderMaterialContent('Made');
+            });
+            tabsEl.appendChild(madeTabEl);
+
+            const consoleEl = document.getElementById('topRightConsole');
+            if (consoleEl) consoleEl.addEventListener('input', updateMadeTabVisibility);
+
             function renderMaterialContent(tabName) {
                 contentEl.innerHTML = '';
+                if (tabName === 'Made') {
+                    const createTile = document.createElement('div');
+                    createTile.className = 'materialTile';
+                    createTile.dataset.special = 'createCustom';
+                    createTile.innerHTML = `<div class="tileColor" style="background:linear-gradient(135deg,#6a6,#4a4);"></div><span class="tileName">Create your own</span>`;
+                    createTile.title = 'Create your own material';
+                    createTile.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openCustomMaterialEditor();
+                    });
+                    contentEl.appendChild(createTile);
+                    customMaterials.forEach(c => {
+                        const tile = document.createElement('div');
+                        tile.className = 'materialTile';
+                        tile.dataset.material = c.id;
+                        tile.dataset.custom = 'true';
+                        tile.innerHTML = `<div class="tileColor" style="background:${c.hex || '#888'}"></div><span class="tileName">${c.name || 'Custom'}</span>`;
+                        tile.title = c.name || 'Custom';
+                        tile.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            destroyModeActive = false;
+                            document.getElementById('materialDestroyBtn').classList.remove('active');
+                            document.querySelectorAll('.materialTile').forEach(t => t.classList.remove('selected'));
+                            tile.classList.add('selected');
+                            selectedMaterial = { type: 'material', id: c.id, label: c.name || 'Custom', color: c.hex || '#888' };
+                            updateCurrentMaterialDisplay();
+                        });
+                        contentEl.appendChild(tile);
+                    });
+                    return;
+                }
                 const items = MATERIAL_TABS[tabName];
                 items.forEach(item => {
                     const tile = document.createElement('div');
@@ -4608,8 +4690,8 @@
                         tile.title = item.label;
                     } else {
                         const m = item;
-                        const props = MATERIAL_PROPS[m];
-                        const label = MATERIAL_LABELS[m] || '?';
+                        const props = getMaterialProps(m);
+                        const label = getMaterialLabel(m);
                         tile.dataset.material = m;
                         tile.innerHTML = `<div class="tileColor" style="background:${props.color || '#444'}"></div><span class="tileName">${label}</span>`;
                         tile.title = label;
@@ -4623,14 +4705,14 @@
                         if (typeof item === 'object' && item.special) {
                             selectedMaterial = { type: 'special', action: item.special, label: item.label, color: item.color };
                         } else {
-                            selectedMaterial = { type: 'material', id: item, label: MATERIAL_LABELS[item], color: MATERIAL_PROPS[item].color };
+                            selectedMaterial = { type: 'material', id: item, label: getMaterialLabel(item), color: getMaterialProps(item).color };
                         }
                         updateCurrentMaterialDisplay();
                     });
                     contentEl.appendChild(tile);
                 });
             }
-            
+
             renderMaterialContent(tabNames[0]);
             
             // Drag handle - move material menu
@@ -4713,6 +4795,64 @@
             }
         }
         
+        const CUSTOM_SLIDER_PROPS = [
+            { key: 'density', label: 'Density', hint: 'lighter floats, heavier sinks' },
+            { key: 'flammability', label: 'Flammability', hint: 'how easily it ignites' },
+            { key: 'conductivity', label: 'Conductivity', hint: 'how well it carries electricity' },
+            { key: 'viscosity', label: 'Viscosity', hint: 'how thick and slow it flows' },
+            { key: 'heatResistance', label: 'Heat Resistance', hint: 'how well it survives heat' },
+            { key: 'reactivity', label: 'Reactivity', hint: 'how strongly it reacts with other materials' }
+        ];
+
+        function openCustomMaterialEditor() {
+            const editor = document.getElementById('customMaterialEditor');
+            const nameEl = document.getElementById('customMaterialName');
+            const hexEl = document.getElementById('customMaterialHex');
+            const previewEl = document.getElementById('customMaterialPreview');
+            const slidersEl = document.getElementById('customMaterialSliders');
+            nameEl.value = '';
+            hexEl.value = '#ff6b6b';
+            previewEl.style.background = '#ff6b6b';
+            slidersEl.innerHTML = '';
+            CUSTOM_SLIDER_PROPS.forEach(({ key, label, hint }) => {
+                const div = document.createElement('div');
+                div.style.marginBottom = '10px';
+                div.innerHTML = `<label style="font-size:7px;color:#999;display:block;">${label}: ${hint}</label><input type="range" min="0" max="1" step="0.05" value="0.5" data-prop="${key}" style="width:100%;" />`;
+                slidersEl.appendChild(div);
+            });
+            editor.classList.remove('hidden');
+        }
+
+        document.getElementById('customEditorClose').addEventListener('click', () => {
+            document.getElementById('customMaterialEditor').classList.add('hidden');
+        });
+        document.getElementById('customMaterialHex').addEventListener('input', (e) => {
+            const v = e.target.value;
+            const hex = /^#?([a-f\d]{3}){1,2}$/i.test(v) ? (v.startsWith('#') ? v : '#' + v) : '#888';
+            document.getElementById('customMaterialPreview').style.background = hex;
+        });
+        document.getElementById('customMaterialSave').addEventListener('click', () => {
+            const nameEl = document.getElementById('customMaterialName');
+            const hexEl = document.getElementById('customMaterialHex');
+            const vals = { name: nameEl.value.trim() || 'Custom', hex: hexEl.value };
+            CUSTOM_SLIDER_PROPS.forEach(({ key }) => {
+                const r = document.querySelector(`#customMaterialSliders input[data-prop="${key}"]`);
+                vals[key] = r ? parseFloat(r.value) : 0.5;
+            });
+            const m = addCustomMaterial(vals);
+            selectedMaterial = { type: 'material', id: m.id, label: m.name, color: m.hex };
+            updateCurrentMaterialDisplay();
+            document.getElementById('customMaterialEditor').classList.add('hidden');
+            const madeTab = document.querySelector('.tab[data-tab="Made"]');
+            if (madeTab && madeTab.style.display !== 'none') {
+                madeTab.click();
+            } else {
+                const con = document.getElementById('topRightConsole');
+                if (con) { con.value = 'make'; con.dispatchEvent(new Event('input')); }
+                setTimeout(() => madeTab && madeTab.click(), 50);
+            }
+        });
+
         initMaterialMenu();
         updateCurrentMaterialDisplay();
         
@@ -4785,19 +4925,19 @@
                     uiVisible = !uiVisible;
                     const uiElement = document.getElementById('ui');
                     const materialMenu = document.getElementById('materialMenu');
-                    const currentDisplay = document.getElementById('currentMaterialDisplay');
+                    const topRightUI = document.getElementById('topRightUI');
                     const settingsElement = document.getElementById('settings');
                     const indicator = document.getElementById('uiToggleIndicator');
                     if (uiVisible) {
                         uiElement.classList.remove('hidden');
                         materialMenu.classList.remove('hidden');
-                        currentDisplay.classList.remove('hidden');
+                        topRightUI.classList.remove('hidden');
                         settingsElement.classList.remove('hidden');
                         indicator.classList.remove('visible');
                     } else {
                         uiElement.classList.add('hidden');
                         materialMenu.classList.add('hidden');
-                        currentDisplay.classList.add('hidden');
+                        topRightUI.classList.add('hidden');
                         settingsElement.classList.add('hidden');
                         indicator.classList.add('visible');
                     }
@@ -4904,7 +5044,6 @@
                     else if (a === 'leadBall') game.spawnLeadBall();
                     else if (a === 'pellets') game.spawnPellets();
                     else if (a === 'spawner') game.spawnSpawner();
-                    else if (a === 'mixer') game.spawnMixer();
                     else if (a === 'bridge') game.spawnBridge();
                     else if (a === 'tower') game.spawnTower();
                     else if (a === 'arch') game.spawnArch();
