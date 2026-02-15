@@ -314,19 +314,6 @@
             visibility: hidden;
         }
         
-        #topRightConsole {
-            width: 140px;
-            font-size: 8px;
-            padding: 6px 8px;
-            background: #222;
-            color: #ccc;
-            border: 2px solid #555;
-        }
-        
-        #topRightConsole::placeholder {
-            color: #666;
-        }
-        
         #currentMaterialDisplay {
             display: flex;
             align-items: center;
@@ -821,13 +808,12 @@
             </div>
             <div class="setting-item">
                 <label>Command:</label>
-                <input type="text" id="settingsCommand" placeholder="commands here" autocomplete="off">
+                <input type="text" id="settingsCommand" placeholder="commands here (type 'make' for custom materials)" autocomplete="off">
             </div>
             </div>
         </div>
 
         <div id="topRightUI">
-            <input type="text" id="topRightConsole" placeholder="Type 'make' for custom materials" autocomplete="off" />
             <div id="currentMaterialDisplay">
                 <div class="swatch" id="currentSwatch"></div>
                 <div class="name" id="currentMaterialName">—</div>
@@ -4598,8 +4584,8 @@
             const tabNames = Object.keys(MATERIAL_TABS);
 
             function updateMadeTabVisibility() {
-                const consoleEl = document.getElementById('topRightConsole');
-                const searchVal = (consoleEl && consoleEl.value || '').toLowerCase();
+                const cmdEl = document.getElementById('settingsCommand');
+                const searchVal = (cmdEl && cmdEl.value || '').toLowerCase();
                 const showMade = searchVal.includes('make');
                 if (madeTabEl) madeTabEl.style.display = showMade ? '' : 'none';
                 if (showMade && tabsEl.querySelector('.tab.active[data-tab="Made"]')) {
@@ -4644,8 +4630,8 @@
             });
             tabsEl.appendChild(madeTabEl);
 
-            const consoleEl = document.getElementById('topRightConsole');
-            if (consoleEl) consoleEl.addEventListener('input', updateMadeTabVisibility);
+            const cmdEl = document.getElementById('settingsCommand');
+            if (cmdEl) cmdEl.addEventListener('input', updateMadeTabVisibility);
 
             function renderMaterialContent(tabName) {
                 contentEl.innerHTML = '';
@@ -4847,7 +4833,7 @@
             if (madeTab && madeTab.style.display !== 'none') {
                 madeTab.click();
             } else {
-                const con = document.getElementById('topRightConsole');
+                const con = document.getElementById('settingsCommand');
                 if (con) { con.value = 'make'; con.dispatchEvent(new Event('input')); }
                 setTimeout(() => madeTab && madeTab.click(), 50);
             }
