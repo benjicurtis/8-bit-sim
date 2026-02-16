@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>RAMPAGE: VOXEL FURY 🧱💥</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,10 +45,15 @@
             image-rendering: crisp-edges;
             background: #87ceeb;
             cursor: none !important;
+            touch-action: none;
         }
 
         #gameCanvas * {
             cursor: none !important;
+        }
+
+        @media (hover: none) {
+            #gameCanvas, #gameContainer { cursor: default !important; }
         }
 
         #settings input[type="range"] {
@@ -709,6 +714,91 @@
         .craftHint { font-size: 10px; color: #666; margin-top: 12px; padding-top: 8px; border-top: 1px solid #333; }
         #craftingHearts { display: flex; gap: 2px; margin-bottom: 12px; }
         #craftingHearts span { font-size: 18px; }
+
+        /* Mobile: touch-friendly sizing */
+        @media (max-width: 768px), (hover: none) {
+            .materialTile { width: 48px; height: 48px; font-size: 6px; }
+            .materialTile .tileColor { width: 28px; height: 20px; }
+            #materialContent { max-height: 120px; }
+            .modeBtn { min-width: 140px; padding: 16px 32px; }
+            .mapBtn { padding: 10px 16px; min-height: 44px; }
+        }
+
+        /* Mobile floating controls */
+        #mobileControls {
+            display: none;
+            position: absolute;
+            bottom: max(12px, env(safe-area-inset-bottom));
+            right: max(12px, env(safe-area-inset-right));
+            z-index: 20;
+            pointer-events: auto;
+            gap: 8px;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        @media (max-width: 768px), (hover: none) {
+            #mobileControls { display: flex; }
+        }
+        .mobileBtn {
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            min-height: 48px;
+            font-size: 12px;
+            background: rgba(26,26,26,0.9);
+            border: 2px solid #555;
+            color: #ccc;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .mobileBtn:active { background: #333; }
+        .mobileBtn.destroy.active { background: #442222; border-color: #cc8888; color: #cc8888; }
+
+        /* Virtual d-pad for survival */
+        #virtualDpad {
+            display: none;
+            position: absolute;
+            bottom: max(80px, calc(env(safe-area-inset-bottom) + 68px));
+            left: max(12px, env(safe-area-inset-left));
+            z-index: 20;
+            pointer-events: auto;
+        }
+        @media (max-width: 768px), (hover: none) {
+            #virtualDpad { display: block; }
+        }
+        #virtualDpad .dpadCenter {
+            position: absolute;
+            left: 44px;
+            top: 44px;
+            width: 44px;
+            height: 44px;
+        }
+        #virtualDpad .dpadBtn {
+            position: absolute;
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            min-height: 44px;
+            background: rgba(26,26,26,0.85);
+            border: 2px solid #555;
+            color: #ccc;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        #virtualDpad .dpadUp { left: 44px; top: 0; }
+        #virtualDpad .dpadDown { left: 44px; top: 88px; }
+        #virtualDpad .dpadLeft { left: 0; top: 44px; }
+        #virtualDpad .dpadRight { left: 88px; top: 44px; }
+        #virtualDpad.hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -738,6 +828,7 @@
                 <p>A pixel-perfect destruction sandbox with cellular automata physics. Build, destroy, and watch everything crumble particle by particle.</p>
                 <p><strong>Sandbox:</strong> Unlimited materials, full creative freedom. <strong>Survival:</strong> Gather materials, manage health, survive hazards. Type <code>survivalstart</code> in Settings to enable.</p>
                 <p><strong>Controls:</strong> Left-click = place • Right-click = destroy • Shift+drag = draw lines • R = rebuild • H = hide UI • Esc = map/mode menu</p>
+                <p style="font-size:8px;color:#888;"><strong>Mobile:</strong> Tap = place • Long-press = destroy • Use on-screen buttons for rebuild, UI, destroy mode</p>
                 <ul>
                     <li>Material menu: select materials from tabs, then left-click to place</li>
                     <li>Spawners: put material inside the hollow square to auto-spawn</li>
@@ -819,6 +910,18 @@
         </div>
         
         <div id="uiToggleIndicator">H = show UI | Esc = map menu | Left-click = place | Right-click = destroy | Shift+drag = draw lines | Spawner = put material inside hollow square | O/C = trapdoors | R = rebuild</div>
+
+        <div id="mobileControls">
+            <button class="mobileBtn rebuild" title="Rebuild">R</button>
+            <button class="mobileBtn uiToggle" title="Hide/Show UI">H</button>
+            <button class="mobileBtn destroy" id="mobileDestroyBtn" title="Destroy mode">✕</button>
+        </div>
+        <div id="virtualDpad">
+            <button class="dpadBtn dpadUp">▲</button>
+            <button class="dpadBtn dpadDown">▼</button>
+            <button class="dpadBtn dpadLeft">◀</button>
+            <button class="dpadBtn dpadRight">▶</button>
+        </div>
     </div>
 
     <script>
@@ -1021,11 +1124,7 @@
             { special: 'plant', label: 'Plant', color: '#228b22' },
             { special: 'flies', label: 'Flies', color: '#1a1a1a' },
             { special: 'worm', label: 'Worm', color: '#ff69b4' },
-            { special: 'bacteria', label: 'Bacteria', color: '#7cfc00' },
-            { special: 'fish', label: 'Fish', color: '#1e90ff' },
-            { special: 'ant', label: 'Ant', color: '#2d1b0e' },
-            { special: 'mouse', label: 'Mouse', color: '#6b6b6b' },
-            { special: 'pellets', label: 'Pellets', color: '#8b7355' }
+            { special: 'bacteria', label: 'Bacteria', color: '#7cfc00' }
             ]
         };
 
@@ -1420,32 +1519,6 @@
                     }
                 }
 
-                for (let a = 0; a < 25; a++) {
-                    const ax = 15 + Math.floor(Math.random() * (GRID_WIDTH - 40));
-                    let surfY = groundY;
-                    for (let y = groundY; y >= 0; y--) {
-                        if (this.get(ax, y) !== MATERIAL.EMPTY) { surfY = y; break; }
-                    }
-                    const ay = surfY - 1;
-                    if (ay >= 0 && this.isEmpty(ax, ay) && this.get(ax, ay + 1) !== MATERIAL.EMPTY && this.get(ax, ay + 1) !== MATERIAL.LIQUID) {
-                        this.set(ax, ay, MATERIAL.ANT);
-                        this.ants.push({ id: this.nextAntId++, x: ax, y: ay, direction: Math.random() < 0.5 ? -1 : 1 });
-                    }
-                }
-
-                for (let m = 0; m < 15; m++) {
-                    const mx = 20 + Math.floor(Math.random() * (GRID_WIDTH - 50));
-                    let surfY = groundY;
-                    for (let y = groundY; y >= 0; y--) {
-                        if (this.get(mx, y) !== MATERIAL.EMPTY) { surfY = y; break; }
-                    }
-                    const my = surfY - 1;
-                    if (my >= 0 && this.isEmpty(mx, my) && this.get(mx, my + 1) !== MATERIAL.EMPTY && this.get(mx, my + 1) !== MATERIAL.LIQUID) {
-                        this.set(mx, my, MATERIAL.MOUSE);
-                        this.mice.push({ id: this.nextMouseId++, x: mx, y: my, direction: Math.random() < 0.5 ? -1 : 1 });
-                    }
-                }
-
                 for (let i = 0; i < 6; i++) {
                     const px = Math.floor(Math.random() * (GRID_WIDTH - 40)) + 20;
                     const py = groundY - 20 - Math.floor(Math.random() * 80);
@@ -1509,32 +1582,6 @@
                     }
                 }
 
-                for (let a = 0; a < 12; a++) {
-                    const ax = 25 + Math.floor(Math.random() * (GRID_WIDTH - 60));
-                    let surfY = groundY;
-                    for (let y = groundY; y >= 0; y--) {
-                        if (this.get(ax, y) !== MATERIAL.EMPTY) { surfY = y; break; }
-                    }
-                    const ay = surfY - 1;
-                    if (ay >= 0 && this.isEmpty(ax, ay) && this.get(ax, ay + 1) !== MATERIAL.EMPTY && this.get(ax, ay + 1) !== MATERIAL.LIQUID) {
-                        this.set(ax, ay, MATERIAL.ANT);
-                        this.ants.push({ id: this.nextAntId++, x: ax, y: ay, direction: Math.random() < 0.5 ? -1 : 1 });
-                    }
-                }
-
-                for (let m = 0; m < 8; m++) {
-                    const mx = 30 + Math.floor(Math.random() * (GRID_WIDTH - 70));
-                    let surfY = groundY;
-                    for (let y = groundY; y >= 0; y--) {
-                        if (this.get(mx, y) !== MATERIAL.EMPTY) { surfY = y; break; }
-                    }
-                    const my = surfY - 1;
-                    if (my >= 0 && this.isEmpty(mx, my) && this.get(mx, my + 1) !== MATERIAL.EMPTY && this.get(mx, my + 1) !== MATERIAL.LIQUID) {
-                        this.set(mx, my, MATERIAL.MOUSE);
-                        this.mice.push({ id: this.nextMouseId++, x: mx, y: my, direction: Math.random() < 0.5 ? -1 : 1 });
-                    }
-                }
-
                 for (let i = 0; i < 4; i++) {
                     const px = Math.floor(Math.random() * (GRID_WIDTH - 30)) + 15;
                     const py = groundY - 20 - Math.floor(Math.random() * 50);
@@ -1552,14 +1599,6 @@
                 }
 
                 for (let s = 0; s < 45; s++) this.simulate();
-                for (let fi = 0; fi < 12; fi++) {
-                    const fx = Math.floor(Math.random() * (GRID_WIDTH - 20)) + 10;
-                    const fy = Math.floor(Math.random() * (groundY - 30)) + 10;
-                    if (this.get(fx, fy) === MATERIAL.LIQUID) {
-                        this.set(fx, fy, MATERIAL.FISH);
-                        this.fish.push({ id: this.nextFishId++, x: fx, y: fy, direction: Math.random() < 0.5 ? -1 : 1 });
-                    }
-                }
                 this.finishMapWithSpawn(groundY, Math.floor(GRID_WIDTH / 2));
             }
 
@@ -1609,15 +1648,6 @@
                 }
 
                 for (let s = 0; s < 50; s++) this.simulate();
-                // Spawn fish in water
-                for (let fi = 0; fi < 30; fi++) {
-                    const fx = Math.floor(Math.random() * GRID_WIDTH);
-                    const fy = waterLine - 5 - Math.floor(Math.random() * (waterLine - 20));
-                    if (fy > 0 && this.get(fx, fy) === MATERIAL.LIQUID) {
-                        this.set(fx, fy, MATERIAL.FISH);
-                        this.fish.push({ id: this.nextFishId++, x: fx, y: fy, direction: Math.random() < 0.5 ? -1 : 1 });
-                    }
-                }
                 this.finishMapWithSpawn(waterLine, Math.floor(GRID_WIDTH / 2));
             }
 
@@ -1705,7 +1735,7 @@
 
             addToInventory(material, count) {
                 if (this.gameMode !== 'survival') return;
-                const gatherable = [MATERIAL.CONCRETE, MATERIAL.STONE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.WOOD, MATERIAL.SAND, MATERIAL.DUST, MATERIAL.GRAVEL, MATERIAL.ICE, MATERIAL.LIQUID, MATERIAL.PLANT, MATERIAL.SNOW, MATERIAL.LAVA, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.SLIME, MATERIAL.GUNPOWDER, MATERIAL.FUSE, MATERIAL.RUBBER, MATERIAL.GLUE_METAL, MATERIAL.TRAPDOOR, MATERIAL.WATER_SPOUT, MATERIAL.LAVA_SPOUT, MATERIAL.ANTIMETAL, MATERIAL.HONEY, MATERIAL.ACID, MATERIAL.BLOOD, MATERIAL.EMBER, MATERIAL.FEECES, MATERIAL.LEAD, MATERIAL.LEAD_BRICK, MATERIAL.MILK, MATERIAL.MERCURY, MATERIAL.PELLET, MATERIAL.ANTIMATTER, MATERIAL.FLY, MATERIAL.WORM, MATERIAL.BACTERIA, MATERIAL.FIRE, MATERIAL.INK, MATERIAL.TAR, MATERIAL.CHLORINE, MATERIAL.MAPLE_SYRUP];
+                const gatherable = [MATERIAL.CONCRETE, MATERIAL.STONE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.WOOD, MATERIAL.SAND, MATERIAL.DUST, MATERIAL.GRAVEL, MATERIAL.ICE, MATERIAL.LIQUID, MATERIAL.PLANT, MATERIAL.SNOW, MATERIAL.LAVA, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.SLIME, MATERIAL.GUNPOWDER, MATERIAL.FUSE, MATERIAL.RUBBER, MATERIAL.GLUE_METAL, MATERIAL.TRAPDOOR, MATERIAL.WATER_SPOUT, MATERIAL.LAVA_SPOUT, MATERIAL.ANTIMETAL, MATERIAL.HONEY, MATERIAL.ACID, MATERIAL.BLOOD, MATERIAL.EMBER, MATERIAL.FEECES, MATERIAL.LEAD, MATERIAL.LEAD_BRICK, MATERIAL.MILK, MATERIAL.MERCURY, MATERIAL.ANTIMATTER, MATERIAL.FLY, MATERIAL.WORM, MATERIAL.BACTERIA, MATERIAL.FIRE, MATERIAL.INK, MATERIAL.TAR, MATERIAL.CHLORINE, MATERIAL.MAPLE_SYRUP];
                 if (!gatherable.includes(material)) return;
                 this.inventory[material] = (this.inventory[material] || 0) + (count || 1);
                 this.updateInventoryUI();
@@ -2150,207 +2180,28 @@
                 return nearest;
             }
 
-            // Update fish - swim only in water, die out of water
+            // Fish removed - clear any existing fish from grid
             updateFish() {
-                if (this.frameCount % 12 === 0) {
-                    for (let y = 0; y < GRID_HEIGHT; y++) {
-                        for (let x = 0; x < GRID_WIDTH; x++) {
-                            if (this.get(x, y) === MATERIAL.FISH && !this.fish.some(f => f.x === x && f.y === y)) {
-                                this.fish.push({ id: this.nextFishId++, x, y, direction: Math.random() < 0.5 ? -1 : 1 });
-                            }
-                        }
-                    }
+                for (const f of this.fish) {
+                    if (this.get(f.x, f.y) === MATERIAL.FISH) this.set(f.x, f.y, MATERIAL.LIQUID);
                 }
-                for (let i = this.fish.length - 1; i >= 0; i--) {
-                    const f = this.fish[i];
-                    if (this.get(f.x, f.y) !== MATERIAL.FISH) {
-                        this.fish.splice(i, 1);
-                        continue;
-                    }
-                    const fNeighbors = [[f.x, f.y + 1], [f.x, f.y - 1], [f.x - 1, f.y], [f.x + 1, f.y]];
-                    let fishDead = false;
-                    for (const [nx, ny] of fNeighbors) {
-                        const m = this.get(nx, ny);
-                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA || m === MATERIAL.MERCURY || m === MATERIAL.CHLORINE) {
-                            fishDead = true;
-                            break;
-                        }
-                    }
-                    if (fishDead) {
-                        this.set(f.x, f.y, MATERIAL.EMPTY);
-                        this.fish.splice(i, 1);
-                        continue;
-                    }
-                    const dir = f.direction || 1;
-                    const moves = [
-                        [f.x + dir, f.y],
-                        [f.x + dir, f.y - 1],
-                        [f.x + dir, f.y + 1],
-                        [f.x - dir, f.y],
-                        [f.x - dir, f.y - 1],
-                        [f.x - dir, f.y + 1]
-                    ].filter(([nx, ny]) => nx >= 0 && nx < GRID_WIDTH && ny >= 0 && ny < GRID_HEIGHT && this.get(nx, ny) === MATERIAL.LIQUID);
-                    if (moves.length > 0) {
-                        const [nx, ny] = moves[Math.floor(Math.random() * moves.length)];
-                        if (nx !== f.x) f.direction = nx > f.x ? 1 : -1;
-                        this.set(f.x, f.y, MATERIAL.LIQUID);
-                        f.x = nx;
-                        f.y = ny;
-                        this.set(f.x, f.y, MATERIAL.FISH);
-                    } else {
-                        f.direction *= -1;
-                    }
-                }
+                this.fish = [];
             }
 
-            // Update ants - walk on solid ground, attracted to honey
+            // Ants removed - clear any existing ants from grid
             updateAnts() {
-                if (this.frameCount % 15 === 0) {
-                    for (let y = 0; y < GRID_HEIGHT; y++) {
-                        for (let x = 0; x < GRID_WIDTH; x++) {
-                            if (this.get(x, y) === MATERIAL.ANT && !this.ants.some(a => a.x === x && a.y === y)) {
-                                this.ants.push({ id: this.nextAntId++, x, y, direction: Math.random() < 0.5 ? -1 : 1 });
-                            }
-                        }
-                    }
+                for (const ant of this.ants) {
+                    if (this.get(ant.x, ant.y) === MATERIAL.ANT) this.set(ant.x, ant.y, MATERIAL.EMPTY);
                 }
-                const HONEY_RANGE = 15;
-                for (let i = this.ants.length - 1; i >= 0; i--) {
-                    const ant = this.ants[i];
-                    if (this.get(ant.x, ant.y) !== MATERIAL.ANT) {
-                        this.ants.splice(i, 1);
-                        continue;
-                    }
-                    const neighbors = [[ant.x, ant.y + 1], [ant.x, ant.y - 1], [ant.x - 1, ant.y], [ant.x + 1, ant.y]];
-                    let willDie = false;
-                    for (const [nx, ny] of neighbors) {
-                        const m = this.get(nx, ny);
-                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA || m === MATERIAL.MERCURY || m === MATERIAL.CHLORINE) {
-                            willDie = true;
-                            break;
-                        }
-                    }
-                    if (willDie) {
-                        this.set(ant.x, ant.y, MATERIAL.EMPTY);
-                        this.ants.splice(i, 1);
-                        continue;
-                    }
-                    let moveX = ant.direction, moveY = 0;
-                    const honey = this.findNearestHoney(ant.x, ant.y, HONEY_RANGE);
-                    if (honey) {
-                        const dx = honey[0] - ant.x, dy = honey[1] - ant.y;
-                        if (Math.abs(dx) >= Math.abs(dy)) moveX = dx > 0 ? 1 : dx < 0 ? -1 : ant.direction;
-                        else moveY = dy > 0 ? 1 : dy < 0 ? -1 : 0;
-                        if (moveX !== 0) ant.direction = moveX;
-                    }
-                    if (this.isEmpty(ant.x, ant.y + 1)) {
-                        moveX = 0;
-                        moveY = 1;
-                    }
-                    const newX = ant.x + moveX, newY = ant.y + moveY;
-                    if (moveY === 1 && newY < GRID_HEIGHT && this.isEmpty(newX, newY)) {
-                        this.set(ant.x, ant.y, MATERIAL.EMPTY);
-                        ant.x = newX;
-                        ant.y = newY;
-                        this.set(ant.x, ant.y, MATERIAL.ANT);
-                    } else if (moveX !== 0 && newX >= 0 && newX < GRID_WIDTH && this.isEmpty(newX, ant.y)) {
-                        const groundBelow = this.get(newX, ant.y + 1);
-                        if (groundBelow !== MATERIAL.EMPTY && groundBelow !== MATERIAL.LIQUID && groundBelow !== MATERIAL.ACID) {
-                            this.set(ant.x, ant.y, MATERIAL.EMPTY);
-                            ant.x = newX;
-                            this.set(ant.x, ant.y, MATERIAL.ANT);
-                        } else {
-                            ant.direction *= -1;
-                        }
-                    } else if (moveX !== 0) {
-                        ant.direction *= -1;
-                    }
-                }
+                this.ants = [];
             }
 
-            // Update mice - scurries on ground, flees from nearby humans
+            // Mice removed - clear any existing mice from grid
             updateMice() {
-                if (this.frameCount % 15 === 0) {
-                    for (let y = 0; y < GRID_HEIGHT; y++) {
-                        for (let x = 0; x < GRID_WIDTH; x++) {
-                            if (this.get(x, y) === MATERIAL.MOUSE && !this.mice.some(m => m.x === x && m.y === y)) {
-                                this.mice.push({ id: this.nextMouseId++, x, y, direction: Math.random() < 0.5 ? -1 : 1 });
-                            }
-                        }
-                    }
+                for (const mouse of this.mice) {
+                    if (this.get(mouse.x, mouse.y) === MATERIAL.MOUSE) this.set(mouse.x, mouse.y, MATERIAL.EMPTY);
                 }
-                const FLEE_RANGE = 8;
-                for (let i = this.mice.length - 1; i >= 0; i--) {
-                    const mouse = this.mice[i];
-                    if (this.get(mouse.x, mouse.y) !== MATERIAL.MOUSE) {
-                        this.mice.splice(i, 1);
-                        continue;
-                    }
-                    const neighbors = [[mouse.x, mouse.y + 1], [mouse.x, mouse.y - 1], [mouse.x - 1, mouse.y], [mouse.x + 1, mouse.y]];
-                    let willDie = false;
-                    for (const [nx, ny] of neighbors) {
-                        const m = this.get(nx, ny);
-                        if (m === MATERIAL.ACID || m === MATERIAL.FIRE || m === MATERIAL.LAVA || m === MATERIAL.MERCURY || m === MATERIAL.CHLORINE) {
-                            willDie = true;
-                            break;
-                        }
-                    }
-                    if (willDie) {
-                        this.set(mouse.x, mouse.y, MATERIAL.EMPTY);
-                        this.mice.splice(i, 1);
-                        continue;
-                    }
-                    let fleeDir = null;
-                    for (const h of this.humans) {
-                        if (!h.alive) continue;
-                        const dist = Math.sqrt((h.bodyX - mouse.x) ** 2 + (h.bodyY - mouse.y) ** 2);
-                        if (dist <= FLEE_RANGE) {
-                            const dx = mouse.x - h.bodyX, dy = mouse.y - h.bodyY;
-                            fleeDir = [dx > 0 ? 1 : dx < 0 ? -1 : 0, dy > 0 ? 1 : dy < 0 ? -1 : 0];
-                            break;
-                        }
-                    }
-                    let moveX = mouse.direction, moveY = 0;
-                    if (fleeDir) {
-                        moveX = fleeDir[0] || mouse.direction;
-                        moveY = fleeDir[1];
-                    } else {
-                        moveX = mouse.direction;
-                        if (Math.random() < 0.08) mouse.direction *= -1;
-                    }
-                    if (this.isEmpty(mouse.x, mouse.y + 1)) {
-                        moveY = 1;
-                        moveX = 0;
-                    }
-                    const newX = mouse.x + (moveX || 0);
-                    const newY = mouse.y + (moveY || 0);
-                    if (newX >= 0 && newX < GRID_WIDTH && newY >= 0 && newY < GRID_HEIGHT) {
-                        if (moveY === 1 && this.isEmpty(newX, newY)) {
-                            this.set(mouse.x, mouse.y, MATERIAL.EMPTY);
-                            mouse.x = newX;
-                            mouse.y = newY;
-                            this.set(mouse.x, mouse.y, MATERIAL.MOUSE);
-                        } else if (moveY === 0 && this.isEmpty(newX, mouse.y) && this.get(newX, mouse.y + 1) !== MATERIAL.EMPTY) {
-                            this.set(mouse.x, mouse.y, MATERIAL.EMPTY);
-                            mouse.x = newX;
-                            this.set(mouse.x, mouse.y, MATERIAL.MOUSE);
-                        } else if (fleeDir && moveX !== 0 && !this.isEmpty(newX, mouse.y) && this.isEmpty(mouse.x, mouse.y - 1) && this.get(mouse.x - moveX, mouse.y) === MATERIAL.EMPTY) {
-                            const jumpX = mouse.x - moveX;
-                            if (this.get(jumpX, mouse.y + 1) !== MATERIAL.EMPTY) {
-                                this.set(mouse.x, mouse.y, MATERIAL.EMPTY);
-                                mouse.x = jumpX;
-                                this.set(mouse.x, mouse.y, MATERIAL.MOUSE);
-                                mouse.direction *= -1;
-                            }
-                        } else if (moveX !== 0 && (this.isEmpty(newX, mouse.y) && this.get(newX, mouse.y + 1) !== MATERIAL.EMPTY)) {
-                            this.set(mouse.x, mouse.y, MATERIAL.EMPTY);
-                            mouse.x = newX;
-                            this.set(mouse.x, mouse.y, MATERIAL.MOUSE);
-                        } else if (moveX !== 0) {
-                            mouse.direction *= -1;
-                        }
-                    }
-                }
+                this.mice = [];
             }
 
             // Lead ball shape: rough sphere pattern (big ball, ~13 voxels)
@@ -2381,22 +2232,8 @@
                 }
             }
 
-            // Launch pellets within explosion radius - SPREAD pattern (shotgun style)
-            launchPelletsNear(ex, ey, radius) {
-                for (const ball of this.pelletBalls) {
-                    const dist = Math.sqrt((ball.cx - ex) ** 2 + (ball.cy - ey) ** 2);
-                    if (dist <= radius) {
-                        const dx = ball.cx - ex, dy = ball.cy - ey;
-                        const mag = Math.sqrt(dx * dx + dy * dy) || 1;
-                        const baseForce = 5 + (radius - dist) * 0.6;
-                        const spread = (Math.random() - 0.5) * 0.8;
-                        const angle = Math.atan2(dy, dx) + spread;
-                        const force = baseForce * (0.8 + Math.random() * 0.4);
-                        ball.vx += Math.cos(angle) * force;
-                        ball.vy += Math.sin(angle) * force;
-                    }
-                }
-            }
+            // Pellets removed - no-op
+            launchPelletsNear(ex, ey, radius) { }
 
             // Launch lead balls within explosion radius (gunpowder or antimatter)
             launchLeadBallsNear(ex, ey, radius, fromAntimatter = false) {
@@ -2551,81 +2388,12 @@
                 }
             }
 
-            // Update pellets - single-voxel projectiles, lighter than lead, bounce off rubber
+            // Pellets removed - clear any existing pellets from grid
             updatePellets() {
-                for (let i = this.pelletBalls.length - 1; i >= 0; i--) {
-                    const ball = this.pelletBalls[i];
-                    const px = ball.cx, py = ball.cy;
-                    if (this.get(px, py) !== MATERIAL.PELLET) {
-                        this.pelletBalls.splice(i, 1);
-                        continue;
-                    }
-                    ball.vy += CONFIG.gravity * 1.2;
-                    ball.vx *= 0.98;
-                    ball.vy *= 0.98;
-                    const moveX = Math.round(ball.vx);
-                    const moveY = Math.round(ball.vy);
-                    if (moveX === 0 && moveY === 0) continue;
-                    const newX = px + moveX, newY = py + moveY;
-                    const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
-                    const targetMat = this.get(newX, newY);
-                    const hitsGunpowder = speed > 2 && targetMat === MATERIAL.GUNPOWDER;
-                    if (hitsGunpowder) {
-                        this.set(newX, newY, MATERIAL.FIRE);
-                        ball.vx *= -0.3;
-                        ball.vy *= -0.3;
-                        continue;
-                    }
-                    const hitsSlimeOrHoney = targetMat === MATERIAL.SLIME || targetMat === MATERIAL.HONEY;
-                    if (hitsSlimeOrHoney) {
-                        if (speed > 3) this.screenShake = Math.min(12, this.screenShake + speed * 0.8);
-                        ball.vx *= -1.2;
-                        ball.vy *= -1.2;
-                        continue;
-                    }
-                    const hitsGlueMetalOrTrapdoor = targetMat === MATERIAL.GLUE_METAL || targetMat === MATERIAL.TRAPDOOR;
-                    if (hitsGlueMetalOrTrapdoor) {
-                        ball.vx = 0;
-                        ball.vy = 0;
-                        continue;
-                    }
-                    const hitsLeadBrick = targetMat === MATERIAL.LEAD_BRICK;
-                    if (hitsLeadBrick) {
-                        ball.vx = 0;
-                        ball.vy = 0;
-                        continue;
-                    }
-                    const hitsRubber = targetMat === MATERIAL.RUBBER;
-                    if (hitsRubber) {
-                        if (speed > 2) this.screenShake = Math.min(10, this.screenShake + speed * 0.6);
-                        ball.vx *= -1.6;
-                        ball.vy *= -1.6;
-                        continue;
-                    }
-                    const hitsHuman = targetMat === MATERIAL.HUMAN_HEAD || targetMat === MATERIAL.HUMAN_BODY || targetMat === MATERIAL.HUMAN_BODY_BUILDER;
-                    if (hitsHuman && speed > 2) {
-                        for (const h of this.humans) {
-                            if (!h.alive) continue;
-                            if ((newX === h.headX && newY === h.headY) || (newX === h.bodyX && newY === h.bodyY)) {
-                                this.set(h.headX, h.headY, MATERIAL.DEAD_HUMAN);
-                                this.set(h.bodyX, h.bodyY, MATERIAL.DEAD_HUMAN);
-                                h.alive = false;
-                            }
-                        }
-                        ball.vx *= 0.5;
-                        ball.vy *= 0.5;
-                    }
-                    if (targetMat !== MATERIAL.EMPTY && !hitsHuman) {
-                        this.set(px, py, MATERIAL.DUST);
-                        this.pelletBalls.splice(i, 1);
-                        continue;
-                    }
-                    this.set(px, py, MATERIAL.EMPTY);
-                    if (newX >= 0 && newX < GRID_WIDTH && newY >= 0 && newY < GRID_HEIGHT)
-                        this.set(newX, newY, MATERIAL.PELLET);
-                    ball.cx = newX;
-                    ball.cy = newY;
+                for (const ball of this.pelletBalls) {
+                    if (this.get(ball.cx, ball.cy) === MATERIAL.PELLET) this.set(ball.cx, ball.cy, MATERIAL.DUST);
                 }
+                this.pelletBalls = [];
             }
 
             // Physics simulation (cellular automata)
@@ -3201,24 +2969,7 @@
                             }
                         }
 
-                        // STEAM: Condenses to water when near cold (ice, snow) or at top of screen
-                        if (material === MATERIAL.STEAM) {
-                            const neighbors = [
-                                [x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]
-                            ];
-                            const atTop = y < GRID_HEIGHT * 0.1;
-                            let nearCold = false;
-                            for (const [nx, ny] of neighbors) {
-                                const n = this.get(nx, ny);
-                                if (n === MATERIAL.ICE || n === MATERIAL.SNOW) {
-                                    nearCold = true;
-                                    break;
-                                }
-                            }
-                            if ((nearCold || atTop) && Math.random() < 0.15) {
-                                newGrid[idx] = MATERIAL.LIQUID;
-                            }
-                        }
+                        // STEAM: Stays as steam (no condensation to water - prevents water glob at top from burning)
 
                         // STEAM: Rises (handled in flow section with special logic)
                         // BLOOD: Acts like water but thicker
@@ -4353,6 +4104,7 @@
             game.spoutIndices.clear();
             game.spawnerStructures = [];
             generateMap(selectedMap);
+            if (typeof setDpadVisibility === 'function') setDpadVisibility();
         });
 
         function startSurvivalMode() {
@@ -4374,6 +4126,7 @@
                 window._gameInfoShown = true;
                 document.getElementById('gameInfoModal').classList.remove('hidden');
             }
+            if (typeof setDpadVisibility === 'function') setDpadVisibility();
         }
 
         document.querySelector('.modeBtn.survival').addEventListener('click', () => {
@@ -4469,7 +4222,6 @@
             { inputs: [[MATERIAL.LEAD, 1], [MATERIAL.CONCRETE, 2]], output: MATERIAL.LEAD_BRICK },
             { inputs: [[MATERIAL.LIQUID, 1], [MATERIAL.SNOW, 1]], output: MATERIAL.MILK },
             { inputs: [[MATERIAL.METAL, 2], [MATERIAL.LAVA, 1]], output: MATERIAL.MERCURY },
-            { inputs: [[MATERIAL.GRAVEL, 1], [MATERIAL.GUNPOWDER, 1]], output: MATERIAL.PELLET },
             { inputs: [[MATERIAL.GUNPOWDER, 2], [MATERIAL.GLASS, 1], [MATERIAL.LAVA, 1]], output: MATERIAL.ANTIMATTER },
             { inputs: [[MATERIAL.FEECES, 1], [MATERIAL.PLANT, 1]], output: MATERIAL.FLY },
             { inputs: [[MATERIAL.PLANT, 1], [MATERIAL.DUST, 1]], output: MATERIAL.WORM },
@@ -4493,7 +4245,7 @@
                 ? '<div style="color:#4ade80;font-weight:bold;padding:6px;background:#1a2a1a;border:1px solid #4ade80;margin-bottom:8px;">✓ Goal complete! Shelter built.</div>'
                 : '<div style="color:#fbbf24;padding:6px;background:#2a2a1a;border:1px solid #555;margin-bottom:8px;">Goal: Build your shelter — ' + placed + '/' + SURVIVAL_GOAL + ' blocks placed</div>';
             invList.innerHTML = '';
-            const gatherable = [MATERIAL.CONCRETE, MATERIAL.STONE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.WOOD, MATERIAL.SAND, MATERIAL.DUST, MATERIAL.GRAVEL, MATERIAL.ICE, MATERIAL.LIQUID, MATERIAL.PLANT, MATERIAL.SNOW, MATERIAL.LAVA, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.SLIME, MATERIAL.GUNPOWDER, MATERIAL.FUSE, MATERIAL.RUBBER, MATERIAL.GLUE_METAL, MATERIAL.TRAPDOOR, MATERIAL.WATER_SPOUT, MATERIAL.LAVA_SPOUT, MATERIAL.ANTIMETAL, MATERIAL.HONEY, MATERIAL.ACID, MATERIAL.BLOOD, MATERIAL.EMBER, MATERIAL.FEECES, MATERIAL.LEAD, MATERIAL.LEAD_BRICK, MATERIAL.MILK, MATERIAL.MERCURY, MATERIAL.PELLET, MATERIAL.ANTIMATTER, MATERIAL.FLY, MATERIAL.WORM, MATERIAL.BACTERIA, MATERIAL.FIRE, MATERIAL.INK, MATERIAL.TAR, MATERIAL.CHLORINE, MATERIAL.MAPLE_SYRUP];
+            const gatherable = [MATERIAL.CONCRETE, MATERIAL.STONE, MATERIAL.METAL, MATERIAL.GLASS, MATERIAL.WOOD, MATERIAL.SAND, MATERIAL.DUST, MATERIAL.GRAVEL, MATERIAL.ICE, MATERIAL.LIQUID, MATERIAL.PLANT, MATERIAL.SNOW, MATERIAL.LAVA, MATERIAL.OIL, MATERIAL.STEAM, MATERIAL.SLIME, MATERIAL.GUNPOWDER, MATERIAL.FUSE, MATERIAL.RUBBER, MATERIAL.GLUE_METAL, MATERIAL.TRAPDOOR, MATERIAL.WATER_SPOUT, MATERIAL.LAVA_SPOUT, MATERIAL.ANTIMETAL, MATERIAL.HONEY, MATERIAL.ACID, MATERIAL.BLOOD, MATERIAL.EMBER, MATERIAL.FEECES, MATERIAL.LEAD, MATERIAL.LEAD_BRICK, MATERIAL.MILK, MATERIAL.MERCURY, MATERIAL.ANTIMATTER, MATERIAL.FLY, MATERIAL.WORM, MATERIAL.BACTERIA, MATERIAL.FIRE, MATERIAL.INK, MATERIAL.TAR, MATERIAL.CHLORINE, MATERIAL.MAPLE_SYRUP];
             for (const m of gatherable) {
                 const count = game.inventory[m] || 0;
                 if (count <= 0) continue;
@@ -4596,6 +4348,8 @@
                         e.stopPropagation();
                         destroyModeActive = false;
                         document.getElementById('materialDestroyBtn').classList.remove('active');
+                        const mob = document.getElementById('mobileDestroyBtn');
+                        if (mob) mob.classList.remove('active');
                         document.querySelectorAll('.materialTile').forEach(t => t.classList.remove('selected'));
                         tile.classList.add('selected');
                         if (typeof item === 'object' && item.special) {
@@ -4615,18 +4369,18 @@
             const dragHandle = document.getElementById('materialDragHandle');
             const menuEl = document.getElementById('materialMenu');
             const containerEl = document.getElementById('gameContainer');
-            dragHandle.addEventListener('mousedown', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                const startX = e.clientX;
-                const startY = e.clientY;
+            function startDrag(clientX, clientY) {
+                const startX = clientX;
+                const startY = clientY;
                 const rect = menuEl.getBoundingClientRect();
                 const cRect = containerEl.getBoundingClientRect();
                 let startLeft = materialMenuPosition ? materialMenuPosition.left : (rect.left - cRect.left);
                 let startBottom = materialMenuPosition ? materialMenuPosition.bottom : (cRect.bottom - rect.bottom);
                 const onMove = (ev) => {
-                    const dx = ev.clientX - startX;
-                    const dy = startY - ev.clientY;
+                    const cx = ev.clientX !== undefined ? ev.clientX : (ev.touches && ev.touches[0] ? ev.touches[0].clientX : ev.changedTouches[0].clientX);
+                    const cy = ev.clientY !== undefined ? ev.clientY : (ev.touches && ev.touches[0] ? ev.touches[0].clientY : ev.changedTouches[0].clientY);
+                    const dx = cx - startX;
+                    const dy = startY - cy;
                     materialMenuPosition = {
                         left: Math.max(0, Math.min(cRect.width - rect.width, startLeft + dx)),
                         bottom: Math.max(0, Math.min(cRect.height - 40, startBottom + dy))
@@ -4638,10 +4392,23 @@
                 const onUp = () => {
                     document.removeEventListener('mousemove', onMove);
                     document.removeEventListener('mouseup', onUp);
+                    document.removeEventListener('touchmove', onMove, { passive: false });
+                    document.removeEventListener('touchend', onUp);
                 };
                 document.addEventListener('mousemove', onMove);
                 document.addEventListener('mouseup', onUp);
+                document.addEventListener('touchmove', onMove, { passive: false });
+                document.addEventListener('touchend', onUp, { once: true });
+            }
+            dragHandle.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                startDrag(e.clientX, e.clientY);
             });
+            dragHandle.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
+                if (e.touches.length === 1) startDrag(e.touches[0].clientX, e.touches[0].clientY);
+            }, { passive: true });
             
             // Destroy button - toggle destroy mode (left-click destroys when active)
             const destroyBtn = document.getElementById('materialDestroyBtn');
@@ -4649,6 +4416,8 @@
                 e.stopPropagation();
                 destroyModeActive = !destroyModeActive;
                 destroyBtn.classList.toggle('active', destroyModeActive);
+                const mobileDestroy = document.getElementById('mobileDestroyBtn');
+                if (mobileDestroy) mobileDestroy.classList.toggle('active', destroyModeActive);
                 if (destroyModeActive) {
                     document.querySelectorAll('.materialTile').forEach(t => t.classList.remove('selected'));
                     selectedMaterial = null;
@@ -4876,11 +4645,7 @@
                     else if (a === 'flies') game.spawnFly();
                     else if (a === 'worm') game.spawnWorm();
                     else if (a === 'bacteria') game.spawnMaterial(MATERIAL.BACTERIA);
-                    else if (a === 'fish') game.spawnFish();
-                    else if (a === 'ant') game.spawnAnt();
-                    else if (a === 'mouse') game.spawnMouse();
                     else if (a === 'leadBall') game.spawnLeadBall();
-                    else if (a === 'pellets') game.spawnPellets();
                     else if (a === 'spawner') game.spawnSpawner();
                     else if (a === 'bridge') game.spawnBridge();
                     else if (a === 'tower') game.spawnTower();
@@ -4914,6 +4679,151 @@
 
         canvas.addEventListener('contextmenu', (e) => {
             e.preventDefault();
+        });
+
+        // Touch support for canvas (with long-press for destroy)
+        function getCanvasCoords(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const scale = Math.min(rect.width / CONFIG.width, rect.height / CONFIG.height);
+            const offsetX = (rect.width - CONFIG.width * scale) / 2;
+            const offsetY = (rect.height - CONFIG.height * scale) / 2;
+            const dx = clientX - rect.left - offsetX;
+            const dy = clientY - rect.top - offsetY;
+            return { x: dx / scale, y: dy / scale, inCanvas: dx >= 0 && dx <= CONFIG.width * scale && dy >= 0 && dy <= CONFIG.height * scale };
+        }
+        let touchLongPressTimer = null;
+        let touchIsLongPress = false;
+        const LONG_PRESS_MS = 400;
+        function handleTouchStart(e) {
+            if (e.touches.length !== 1) return;
+            e.preventDefault();
+            const t = e.touches[0];
+            const coords = getCanvasCoords(t.clientX, t.clientY);
+            game.mouse.x = coords.x;
+            game.mouse.y = coords.y;
+            game.mouse.isInCanvas = coords.inCanvas;
+            game.mouse.down = true;
+            touchIsLongPress = false;
+            touchLongPressTimer = setTimeout(() => {
+                touchIsLongPress = true;
+                game.mouse.rightDown = true;
+                game.mouse.down = false;
+                lastLinePos = null;
+            }, LONG_PRESS_MS);
+            if (coords.inCanvas && !destroyModeActive && game.gameMode !== 'survival' && selectedMaterial && selectedMaterial.type === 'special') {
+                const a = selectedMaterial.action;
+                if (a === 'human') game.spawnHuman();
+                else if (a === 'builder') game.spawnBuilderHuman();
+                else if (a === 'plant') game.spawnPlant();
+                else if (a === 'flies') game.spawnFly();
+                else if (a === 'worm') game.spawnWorm();
+                else if (a === 'bacteria') game.spawnMaterial(MATERIAL.BACTERIA);
+                else if (a === 'leadBall') game.spawnLeadBall();
+                else if (a === 'spawner') game.spawnSpawner();
+                else if (a === 'bridge') game.spawnBridge();
+                else if (a === 'tower') game.spawnTower();
+                else if (a === 'arch') game.spawnArch();
+                else if (a === 'stairs') game.spawnStairs();
+                else if (a === 'wall') game.spawnWall();
+                else if (a === 'platform') game.spawnPlatform();
+                else if (a === 'pyramid') game.spawnPyramid();
+                else if (a === 'pillar') game.spawnPillar();
+            }
+        }
+        function handleTouchMove(e) {
+            if (e.touches.length !== 1) return;
+            e.preventDefault();
+            const t = e.touches[0];
+            const coords = getCanvasCoords(t.clientX, t.clientY);
+            game.mouse.x = coords.x;
+            game.mouse.y = coords.y;
+            game.mouse.isInCanvas = coords.inCanvas;
+        }
+        function handleTouchEnd(e) {
+            if (e.changedTouches.length !== 1) return;
+            clearTimeout(touchLongPressTimer);
+            touchLongPressTimer = null;
+            game.mouse.down = false;
+            game.mouse.rightDown = false;
+            lastLinePos = null;
+        }
+        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+        canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+        canvas.addEventListener('touchend', handleTouchEnd, { passive: true });
+        canvas.addEventListener('touchcancel', handleTouchEnd, { passive: true });
+
+        // Mobile floating buttons
+        document.querySelector('.mobileBtn.rebuild').addEventListener('click', () => {
+            game.grid.fill(MATERIAL.EMPTY);
+            game.humanBuiltBlocks.fill(false);
+            game.plantType.fill(0);
+            game.humans = [];
+            game.nextHumanId = 0;
+            game.flies = [];
+            game.nextFlyId = 0;
+            game.leadBalls = [];
+            game.nextLeadBallId = 0;
+            game.pelletBalls = [];
+            game.nextPelletId = 0;
+            game.worms = [];
+            game.nextWormId = 0;
+            game.spawnerStructures = [];
+            game.undoHistory = [];
+            if (game.gameMode === 'survival') game.inventory = {};
+            generateMap(selectedMap);
+        });
+        document.querySelector('.mobileBtn.uiToggle').addEventListener('click', () => {
+            if (game.gameMode === 'survival') {
+                craftingPanelOpen = !craftingPanelOpen;
+                document.getElementById('craftingPanel').classList.toggle('open', craftingPanelOpen);
+                if (craftingPanelOpen) renderCraftingPanel();
+            } else {
+                uiVisible = !uiVisible;
+                const uiElement = document.getElementById('ui');
+                const materialMenu = document.getElementById('materialMenu');
+                const currentDisplay = document.getElementById('currentMaterialDisplay');
+                const settingsElement = document.getElementById('settings');
+                const indicator = document.getElementById('uiToggleIndicator');
+                if (uiVisible) {
+                    uiElement.classList.remove('hidden');
+                    materialMenu.classList.remove('hidden');
+                    currentDisplay.classList.remove('hidden');
+                    settingsElement.classList.remove('hidden');
+                    indicator.classList.remove('visible');
+                } else {
+                    uiElement.classList.add('hidden');
+                    materialMenu.classList.add('hidden');
+                    currentDisplay.classList.add('hidden');
+                    settingsElement.classList.add('hidden');
+                    indicator.classList.add('visible');
+                }
+            }
+        });
+        document.getElementById('mobileDestroyBtn').addEventListener('click', () => {
+            destroyModeActive = !destroyModeActive;
+            document.getElementById('materialDestroyBtn').classList.toggle('active', destroyModeActive);
+            document.getElementById('mobileDestroyBtn').classList.toggle('active', destroyModeActive);
+            if (destroyModeActive) {
+                document.querySelectorAll('.materialTile').forEach(t => t.classList.remove('selected'));
+                selectedMaterial = null;
+            }
+            updateCurrentMaterialDisplay();
+        });
+
+        // Virtual d-pad for survival
+        const dpad = document.getElementById('virtualDpad');
+        function setDpadVisibility() {
+            dpad.classList.toggle('hidden', game.gameMode !== 'survival');
+        }
+        setDpadVisibility();
+        ['dpadUp','dpadDown','dpadLeft','dpadRight'].forEach(cls => {
+            const btn = dpad.querySelector('.' + cls);
+            const dir = cls.replace('dpad','').toLowerCase();
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); if (dir === 'up') game.playerKeys.up = true; else if (dir === 'down') game.playerKeys.down = true; else if (dir === 'left') game.playerKeys.left = true; else game.playerKeys.right = true; });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); if (dir === 'up') game.playerKeys.up = false; else if (dir === 'down') game.playerKeys.down = false; else if (dir === 'left') game.playerKeys.left = false; else game.playerKeys.right = false; });
+            btn.addEventListener('mousedown', () => { if (dir === 'up') game.playerKeys.up = true; else if (dir === 'down') game.playerKeys.down = true; else if (dir === 'left') game.playerKeys.left = true; else game.playerKeys.right = true; });
+            btn.addEventListener('mouseup', () => { if (dir === 'up') game.playerKeys.up = false; else if (dir === 'down') game.playerKeys.down = false; else if (dir === 'left') game.playerKeys.left = false; else game.playerKeys.right = false; });
+            btn.addEventListener('mouseleave', () => { if (dir === 'up') game.playerKeys.up = false; else if (dir === 'down') game.playerKeys.down = false; else if (dir === 'left') game.playerKeys.left = false; else game.playerKeys.right = false; });
         });
 
         window.addEventListener('keydown', (e) => { if (e.key === 'Shift') shiftKeyHeld = true; });
