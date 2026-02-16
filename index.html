@@ -448,7 +448,9 @@
         #uiToggleIndicator {
             position: absolute;
             top: 10px;
-            right: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: min(90vw, 600px);
             background: #1a1a1a;
             color: #999;
             padding: 8px 10px;
@@ -459,6 +461,8 @@
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
+            white-space: normal;
+            text-align: center;
         }
         
         #uiToggleIndicator.visible {
